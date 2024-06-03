@@ -5,8 +5,9 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "gql-assist": ".bin/cli"
+    "gqlassist": ".bin/cli"
   },
+  "private": false,
   "scripts": {
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "lint": "eslint --fix && tsc -p . --noEmit && yarn prettier",
@@ -16,8 +17,18 @@
     "cli": "ts-node src/index.ts",
     "start": "rimraf dist && tsc -p . --watch"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "GraphQL",
+    "GQL",
+    "Codegen",
+    "Code Generation",
+    "TypeScript",
+    "TS"
+  ],
+  "author": {
+    "name": "Rinto Jose",
+    "email": "rintoj@gmail.com"
+  },
   "license": "ISC",
   "dependencies": {
     "clifer": "^1.2.1",
