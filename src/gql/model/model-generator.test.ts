@@ -1,24 +1,24 @@
-import { toParsedOutput } from "../../util/test-util";
-import { parseTSFile, prettify, printTS } from "../../util/ts-util";
-import { generateModel } from "./model-generator";
+import { toParsedOutput } from '../../util/test-util'
+import { parseTSFile, prettify, printTS } from '../../util/ts-util'
+import { generateModel } from './model-generator'
 
 async function generate(fileName: string, content: string) {
-  const sourceFile = parseTSFile(fileName, content);
-  const output = await generateModel(sourceFile);
-  return prettify(printTS(output));
+  const sourceFile = parseTSFile(fileName, content)
+  const output = await generateModel(sourceFile)
+  return prettify(printTS(output))
 }
 
-describe("generateModel", () => {
-  test("should generate a model", async () => {
+describe('generateModel', () => {
+  test('should generate a model', async () => {
     const output = await generate(
-      "user.model.ts",
+      'user.model.ts',
       `
         class User {
           id!: string
           name?: string
         }
       `,
-    );
+    )
     expect(toParsedOutput(output)).toBe(
       toParsedOutput(`
         import { Field, ID, ObjectType } from '@nestjs/graphql'
@@ -32,12 +32,12 @@ describe("generateModel", () => {
           name?: string
         }
       `),
-    );
-  });
+    )
+  })
 
-  test("should generate a model if has @ObjectType decorator", async () => {
+  test('should generate a model if has @ObjectType decorator', async () => {
     const output = await generate(
-      "user.ts",
+      'user.ts',
       `
         @ObjectType()
         class User {
@@ -45,7 +45,7 @@ describe("generateModel", () => {
           name?: string
         }
       `,
-    );
+    )
     expect(toParsedOutput(output)).toBe(
       toParsedOutput(`
         import { Field, ID, ObjectType } from '@nestjs/graphql'
@@ -59,12 +59,12 @@ describe("generateModel", () => {
           name?: string
         }
       `),
-    );
-  });
+    )
+  })
 
-  test("should generate fields with camel case", async () => {
+  test('should generate fields with camel case', async () => {
     const output = await generate(
-      "user.ts",
+      'user.ts',
       `
         @ObjectType()
         class User {
@@ -72,7 +72,7 @@ describe("generateModel", () => {
           joined_on?: Date
         }
       `,
-    );
+    )
     expect(toParsedOutput(output)).toBe(
       toParsedOutput(`
         import { Field, ObjectType } from '@nestjs/graphql'
@@ -86,12 +86,12 @@ describe("generateModel", () => {
           joinedOn?: Date
         }
       `),
-    );
-  });
+    )
+  })
 
-  test("should infer nullability by exclamation", async () => {
+  test('should infer nullability by exclamation', async () => {
     const output = await generate(
-      "user.ts",
+      'user.ts',
       `
         @ObjectType()
         class User {
@@ -100,7 +100,7 @@ describe("generateModel", () => {
           bio?: string
         }
       `,
-    );
+    )
     expect(toParsedOutput(output)).toBe(
       toParsedOutput(`
         import { Field, ID, ObjectType } from '@nestjs/graphql'
@@ -117,12 +117,12 @@ describe("generateModel", () => {
           bio?: string
         }
       `),
-    );
-  });
+    )
+  })
 
-  test("should organize imports", async () => {
+  test('should organize imports', async () => {
     const output = await generate(
-      "user.ts",
+      'user.ts',
       `
         import 'reflect-metadata'
 
@@ -133,7 +133,7 @@ describe("generateModel", () => {
           org?: Organization
         }
       `,
-    );
+    )
     expect(toParsedOutput(output)).toBe(
       toParsedOutput(`
         import 'reflect-metadata'
@@ -151,6 +151,6 @@ describe("generateModel", () => {
           org?: Organization
         }
       `),
-    );
-  });
-});
+    )
+  })
+})
