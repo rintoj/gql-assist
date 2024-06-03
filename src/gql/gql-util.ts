@@ -67,7 +67,7 @@ export function createFieldDecorator(node: ts.PropertyDeclaration, context: Cont
     )
   }
 
-  if (!!node?.questionToken) {
+  if (!node?.exclamationToken) {
     argumentsArray.push(
       factory.createObjectLiteralExpression(
         [
