@@ -1,9 +1,9 @@
 import { command, input } from 'clifer'
+import { writeFile } from 'fs-extra'
 import { reduceAsync } from 'tsds-tools'
 import ts from 'typescript'
 import { generateModel } from '../gql/model/model-generator'
-import { printTS, readAndParseTSFile, prettify } from '../util/ts-util'
-import { writeFile } from 'fs-extra'
+import { prettify, printTS, readAndParseTSFile } from '../util/ts-util'
 
 interface GenerateProps {
   file: string
