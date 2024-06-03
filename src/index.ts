@@ -1,11 +1,11 @@
-import { cli, runCli } from 'clifer'
-import generate from './generate/generate-command'
+import { cli, runCli } from "clifer";
+import generate from "./generate/generate-command";
 
-const command = cli('gql-assist')
+const command = cli("gql-assist")
   .description(
-    'Assists in generating models, resolvers, field resolvers, and GraphQL types efficiently.'
+    "Assists in generating models, resolvers, field resolvers, and GraphQL types efficiently.",
   )
-  .version('1.0')
-  .command(generate)
+  .version("1.0")
+  .command(generate);
 
-runCli(command)
+runCli(command);
