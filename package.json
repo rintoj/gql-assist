@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "bin": {
+    "gql-assist": ".bin/cli"
+  },
   "scripts": {
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "lint": "eslint --fix && tsc -p . --noEmit && yarn prettier",
