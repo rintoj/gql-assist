@@ -48,7 +48,7 @@ export function parseTSExpression(content = '') {
 
 export function filterNodeByKind<K extends Node>(sourceFile: SourceFile, kind: SyntaxKind) {
   const nodes: K[] = []
-  sourceFile.forEachChild((node) => {
+  sourceFile.forEachChild(node => {
     if (node.kind === kind) {
       nodes.push(node as K)
     }
@@ -59,8 +59,8 @@ export function filterNodeByKind<K extends Node>(sourceFile: SourceFile, kind: S
 export function isPrivate(modifiers?: NodeArray<ModifierLike>) {
   return (
     modifiers?.find(
-      (modifier) =>
-        [SyntaxKind.PrivateKeyword, SyntaxKind.ProtectedKeyword].indexOf(modifier.kind) >= 0
+      modifier =>
+        [SyntaxKind.PrivateKeyword, SyntaxKind.ProtectedKeyword].indexOf(modifier.kind) >= 0,
     ) != undefined
   )
 }
@@ -86,7 +86,7 @@ const printerOptions: PrinterOptions = {
 }
 export function printTS(
   node: Node | undefined,
-  sourceFile: SourceFile = parseTSFile('./test.ts', '')
+  sourceFile: SourceFile = parseTSFile('./test.ts', ''),
 ) {
   if (node == undefined) return ''
   return createPrinter(printerOptions, {}).printNode(EmitHint.Unspecified, node, sourceFile)

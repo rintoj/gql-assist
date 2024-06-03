@@ -4,7 +4,7 @@ import { Context } from './context'
 export function hasDecorator(node: ts.Node, name: string) {
   const modifiers = (node as any).modifiers as ModifierLike[]
   if (!modifiers?.length) return false
-  return modifiers.filter(isDecorator).some((decorator) => {
+  return modifiers.filter(isDecorator).some(decorator => {
     if (isCallExpression(decorator.expression) && isIdentifier(decorator.expression.expression)) {
       return decorator.expression.expression.text === name
     }
@@ -22,7 +22,7 @@ export function addDecorator(
       ...decorators,
       ...(node.modifiers ?? []).filter(
         (s: any) =>
-          !s?.expression?.expression?.text || !names.includes(s.expression.expression.text)
+          !s?.expression?.expression?.text || !names.includes(s.expression.expression.text),
       ),
     ],
   }
@@ -31,7 +31,7 @@ export function addDecorator(
 export function createObjectTypeDecorator(context: Context) {
   context.imports.push(createImport('@nestjs/graphql', 'ObjectType'))
   return factory.createDecorator(
-    factory.createCallExpression(factory.createIdentifier('ObjectType'), undefined, undefined)
+    factory.createCallExpression(factory.createIdentifier('ObjectType'), undefined, undefined),
   )
 }
 
@@ -46,8 +46,8 @@ export function createFieldDecorator(node: ts.PropertyDeclaration, context: Cont
         [],
         undefined,
         factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
-        factory.createIdentifier('ID')
-      )
+        factory.createIdentifier('ID'),
+      ),
     )
     context.imports.push(createImport('@nestjs/graphql', 'ID'))
   } else if (
@@ -62,26 +62,26 @@ export function createFieldDecorator(node: ts.PropertyDeclaration, context: Cont
         [],
         undefined,
         factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
-        factory.createIdentifier(node.type.typeName.text)
-      )
+        factory.createIdentifier(node.type.typeName.text),
+      ),
     )
   }
 
-  if (!!node?.questionToken) {
+  if (!node?.exclamationToken) {
     argumentsArray.push(
       factory.createObjectLiteralExpression(
         [
           factory.createPropertyAssignment(
             factory.createIdentifier('nullable'),
-            factory.createTrue()
+            factory.createTrue(),
           ),
         ],
-        false
-      )
+        false,
+      ),
     )
   }
   return factory.createDecorator(
-    factory.createCallExpression(factory.createIdentifier('Field'), undefined, argumentsArray)
+    factory.createCallExpression(factory.createIdentifier('Field'), undefined, argumentsArray),
   )
 }
 
@@ -93,20 +93,20 @@ export function createImport(from: string, ...imports: string[]) {
           false,
           undefined,
           factory.createNamedImports(
-            imports.map((item) =>
-              factory.createImportSpecifier(false, undefined, factory.createIdentifier(item))
-            )
-          )
+            imports.map(item =>
+              factory.createImportSpecifier(false, undefined, factory.createIdentifier(item)),
+            ),
+          ),
         )
       : undefined,
     factory.createStringLiteral(from),
-    undefined
+    undefined,
   )
 }
 
 export function addImports(
   sourceFile: ts.SourceFile,
-  imports: ts.ImportDeclaration[]
+  imports: ts.ImportDeclaration[],
 ): ts.SourceFile {
   const statements = [...imports, ...sourceFile.statements] as any
   return { ...sourceFile, statements }
@@ -127,8 +127,8 @@ export function organizeImports(sourceFile: ts.SourceFile): ts.SourceFile {
           statement.importClause.namedBindings &&
           ts.isNamedImports(statement.importClause.namedBindings)
         ) {
-          statement.importClause.namedBindings.elements.map((el) =>
-            importStatements[importFrom].add(el.name.text)
+          statement.importClause.namedBindings.elements.map(el =>
+            importStatements[importFrom].add(el.name.text),
           )
         }
       }
@@ -140,18 +140,14 @@ export function organizeImports(sourceFile: ts.SourceFile): ts.SourceFile {
     ...sourceFile,
     statements: [
       ...Object.keys(importStatements)
-        .filter((fromFile) => !importStatements[fromFile].size)
+        .filter(fromFile => !importStatements[fromFile].size)
         .sort()
-        .map((fromFile) =>
-          createImport(fromFile, ...Array.from(importStatements[fromFile]).sort())
-        ),
+        .map(fromFile => createImport(fromFile, ...Array.from(importStatements[fromFile]).sort())),
       ...Object.keys(importStatements)
-        .filter((fromFile) => !!importStatements[fromFile].size)
+        .filter(fromFile => !!importStatements[fromFile].size)
         .sort()
-        .map((fromFile) =>
-          createImport(fromFile, ...Array.from(importStatements[fromFile]).sort())
-        ),
-      ...sourceFile.statements.filter((statement) => !ts.isImportDeclaration(statement)),
+        .map(fromFile => createImport(fromFile, ...Array.from(importStatements[fromFile]).sort())),
+      ...sourceFile.statements.filter(statement => !ts.isImportDeclaration(statement)),
     ] as any,
   }
 }

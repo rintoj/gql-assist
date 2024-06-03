@@ -17,11 +17,11 @@ describe('generateModel', () => {
           id!: string
           name?: string
         }
-      `
+      `,
     )
     expect(toParsedOutput(output)).toBe(
       toParsedOutput(`
-        import { ID } from '@nestjs/graphql'
+        import { Field, ID, ObjectType } from '@nestjs/graphql'
 
         @ObjectType()
         class User {
@@ -31,7 +31,7 @@ describe('generateModel', () => {
           @Field({ nullable: true })
           name?: string
         }
-      `)
+      `),
     )
   })
 
@@ -44,11 +44,11 @@ describe('generateModel', () => {
           id!: string
           name?: string
         }
-      `
+      `,
     )
     expect(toParsedOutput(output)).toBe(
       toParsedOutput(`
-        import { ID } from '@nestjs/graphql'
+        import { Field, ID, ObjectType } from '@nestjs/graphql'
 
         @ObjectType()
         class User {
@@ -58,11 +58,69 @@ describe('generateModel', () => {
           @Field({ nullable: true })
           name?: string
         }
-      `)
+      `),
     )
   })
 
-  test('should generate a model with reference type', async () => {
+  test('should generate fields with camel case', async () => {
+    const output = await generate(
+      'user.ts',
+      `
+        @ObjectType()
+        class User {
+          archivedOn?: Date
+          joined_on?: Date
+        }
+      `,
+    )
+    expect(toParsedOutput(output)).toBe(
+      toParsedOutput(`
+        import { Field, ObjectType } from '@nestjs/graphql'
+
+        @ObjectType()
+        class User {
+          @Field(() => Date, { nullable: true })
+          archivedOn?: Date
+
+          @Field(() => Date, { nullable: true })
+          joinedOn?: Date
+        }
+      `),
+    )
+  })
+
+  test('should infer nullability by exclamation', async () => {
+    const output = await generate(
+      'user.ts',
+      `
+        @ObjectType()
+        class User {
+          id!: string
+          name: string
+          bio?: string
+        }
+      `,
+    )
+    expect(toParsedOutput(output)).toBe(
+      toParsedOutput(`
+        import { Field, ID, ObjectType } from '@nestjs/graphql'
+
+        @ObjectType()
+        class User {
+          @Field(() => ID)
+          id!: string
+
+          @Field({ nullable: true })
+          name?: string
+
+          @Field({ nullable: true })
+          bio?: string
+        }
+      `),
+    )
+  })
+
+  test('should organize imports', async () => {
     const output = await generate(
       'user.ts',
       `
@@ -74,11 +132,12 @@ describe('generateModel', () => {
           name?: string
           org?: Organization
         }
-      `
+      `,
     )
     expect(toParsedOutput(output)).toBe(
       toParsedOutput(`
-        import { ID } from '@nestjs/graphql'
+        import 'reflect-metadata'
+        import { Field, ID, ObjectType } from '@nestjs/graphql'
 
         @ObjectType()
         class User {
@@ -91,7 +150,7 @@ describe('generateModel', () => {
           @Field(() => Organization, { nullable: true })
           org?: Organization
         }
-      `)
+      `),
     )
   })
 })

@@ -1,9 +1,9 @@
 import { command, input } from 'clifer'
+import { writeFile } from 'fs-extra'
 import { reduceAsync } from 'tsds-tools'
 import ts from 'typescript'
 import { generateModel } from '../gql/model/model-generator'
-import { printTS, readAndParseTSFile, prettify } from '../util/ts-util'
-import { writeFile } from 'fs-extra'
+import { prettify, printTS, readAndParseTSFile } from '../util/ts-util'
 
 interface GenerateProps {
   file: string
@@ -23,6 +23,6 @@ async function run({ file }: GenerateProps) {
 
 export default command<GenerateProps>('generate')
   .argument(
-    input('file').description('The source file to inspect and generate').string().required()
+    input('file').description('The source file to inspect and generate').string().required(),
   )
   .handle(run)
