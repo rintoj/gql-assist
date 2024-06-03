@@ -1,0 +1,24 @@
+{
+  "testPathIgnorePatterns": ["/node_modules/", "/dist/"],
+  "testEnvironment": "node",
+  "collectCoverage": false,
+  "transform": {
+    "^.+\\.(ts|tsx)$": [
+      "ts-jest",
+      {
+        "testPathIgnorePatterns": ["/node_modules/", "/dist/"],
+        "isolatedModules": true,
+        "tsconfig": "./tsconfig.json"
+      }
+    ]
+  },
+  "collectCoverageFrom": [
+    "**/*.{ts,tsx}",
+    "!**/dist/**",
+    "!**/coverage/**",
+    "!**/node_modules/**",
+    "!**/src/decorators/**",
+    "!**/src/error/**",
+    "!**/test/**"
+  ]
+}
