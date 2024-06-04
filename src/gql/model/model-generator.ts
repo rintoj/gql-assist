@@ -1,12 +1,13 @@
+import { toCamelCase } from 'name-util'
 import ts, { isClassDeclaration } from 'typescript'
 import { Context, createContext } from '../context'
-import { toCamelCase } from 'name-util'
 import {
   addDecorator,
   addImports,
   createFieldDecorator,
   createObjectTypeDecorator,
   hasDecorator,
+  isNullable,
   organizeImports,
 } from '../gql-util'
 
@@ -15,11 +16,10 @@ function processClassDeclaration(classDeclaration: ts.ClassDeclaration, context:
     addDecorator(classDeclaration, createObjectTypeDecorator(context)),
     node => {
       if (ts.isPropertyDeclaration(node) && ts.isIdentifier(node.name)) {
-        const isNullable = !node.exclamationToken
         return addDecorator(
           {
             ...node,
-            ...(isNullable
+            ...(isNullable(node)
               ? {
                   questionToken: ts.factory.createToken(ts.SyntaxKind.QuestionToken),
                 }

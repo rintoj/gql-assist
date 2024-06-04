@@ -1,5 +1,6 @@
 import ts, { ModifierLike, factory, isCallExpression, isDecorator, isIdentifier } from 'typescript'
 import { Context } from './context'
+import { config } from '../config'
 
 export function hasDecorator(node: ts.Node, name: string) {
   const modifiers = (node as any).modifiers as ModifierLike[]
@@ -35,6 +36,10 @@ export function createObjectTypeDecorator(context: Context) {
   )
 }
 
+export function isNullable(node: ts.PropertyDeclaration) {
+  return config.nullableByDefault ? !node.exclamationToken : !!node.questionToken
+}
+
 export function createFieldDecorator(node: ts.PropertyDeclaration, context: Context) {
   const argumentsArray: ts.Expression[] = []
   context.imports.push(createImport('@nestjs/graphql', 'Field'))
@@ -67,7 +72,7 @@ export function createFieldDecorator(node: ts.PropertyDeclaration, context: Cont
     )
   }
 
-  if (!node?.exclamationToken) {
+  if (isNullable(node)) {
     argumentsArray.push(
       factory.createObjectLiteralExpression(
         [

@@ -1,3 +1,4 @@
+import { config } from '../../config'
 import { toParsedOutput } from '../../util/test-util'
 import { parseTSFile, prettify, printTS } from '../../util/ts-util'
 import { generateModel } from './model-generator'
@@ -112,6 +113,38 @@ describe('generateModel', () => {
 
           @Field({ nullable: true })
           name?: string
+
+          @Field({ nullable: true })
+          bio?: string
+        }
+      `),
+    )
+  })
+
+  test('should infer nullability by question mark', async () => {
+    config.nullableByDefault = false
+    const output = await generate(
+      'user.ts',
+      `
+        @ObjectType()
+        class User {
+          id!: string
+          name: string
+          bio?: string
+        }
+      `,
+    )
+    expect(toParsedOutput(output)).toBe(
+      toParsedOutput(`
+        import { Field, ID, ObjectType } from '@nestjs/graphql'
+
+        @ObjectType()
+        class User {
+          @Field(() => ID)
+          id!: string
+
+          @Field()
+          name!: string
 
           @Field({ nullable: true })
           bio?: string
