@@ -13,7 +13,7 @@ import {
 
 function processClassDeclaration(classDeclaration: ts.ClassDeclaration, context: Context) {
   return ts.visitEachChild(
-    addDecorator(classDeclaration, createObjectTypeDecorator(context)),
+    addDecorator(classDeclaration, createObjectTypeDecorator(classDeclaration, context)),
     node => {
       if (ts.isPropertyDeclaration(node) && ts.isIdentifier(node.name)) {
         return addDecorator(

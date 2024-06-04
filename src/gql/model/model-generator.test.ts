@@ -6,7 +6,7 @@ import { generateModel } from './model-generator'
 async function generate(fileName: string, content: string) {
   const sourceFile = parseTSFile(fileName, content)
   const output = await generateModel(sourceFile)
-  return prettify(printTS(output))
+  return prettify(printTS(output, undefined, { removeComments: true }))
 }
 
 describe('generateModel', () => {
@@ -178,6 +178,52 @@ describe('generateModel', () => {
           id!: string
 
           @Field({ nullable: true })
+          name?: string
+
+          @Field(() => Organization, { nullable: true })
+          org?: Organization
+        }
+      `),
+    )
+  })
+
+  test('should generate description from comments', async () => {
+    const output = await generate(
+      'user.ts',
+      `
+        import 'reflect-metadata'
+
+        /**
+         * Defines a user
+         */
+        @ObjectType()
+        class User {
+          /**
+           * Unique identifier for the User
+           */
+          id!: string
+
+          /**
+           * Name of the user.
+           *
+           * Expect this to be null
+           */
+          name?: string
+          org?: Organization
+        }
+      `,
+    )
+    expect(toParsedOutput(output)).toBe(
+      toParsedOutput(`
+        import 'reflect-metadata'
+        import { Field, ID, ObjectType } from '@nestjs/graphql'
+
+        @ObjectType({ description: 'Defines a user' })
+        class User {
+          @Field(() => ID, { description: 'Unique identifier for the User' })
+          id!: string
+
+          @Field({ nullable: true, description: 'Name of the user.\\n\\nExpect this to be null' })
           name?: string
 
           @Field(() => Organization, { nullable: true })

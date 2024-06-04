@@ -1,6 +1,13 @@
 import ts, { ModifierLike, factory, isCallExpression, isDecorator, isIdentifier } from 'typescript'
-import { Context } from './context'
 import { config } from '../config'
+import { Context } from './context'
+
+export function getComment(node: ts.Node) {
+  return (node as any)?.jsDoc
+    ?.map((doc: { comment?: string }) => doc.comment)
+    .filter((comment: string | undefined) => !!comment)
+    .join('\n')
+}
 
 export function hasDecorator(node: ts.Node, name: string) {
   const modifiers = (node as any).modifiers as ModifierLike[]
@@ -29,10 +36,25 @@ export function addDecorator(
   }
 }
 
-export function createObjectTypeDecorator(context: Context) {
+export function createObjectTypeDecorator(node: ts.ClassDeclaration, context: Context) {
+  const comment = getComment(node)
+  const argumentsArray: ts.Expression[] = []
+  if (!!comment) {
+    argumentsArray.push(
+      factory.createObjectLiteralExpression(
+        [
+          factory.createPropertyAssignment(
+            factory.createIdentifier('description'),
+            factory.createStringLiteral(comment),
+          ),
+        ],
+        false,
+      ),
+    )
+  }
   context.imports.push(createImport('@nestjs/graphql', 'ObjectType'))
   return factory.createDecorator(
-    factory.createCallExpression(factory.createIdentifier('ObjectType'), undefined, undefined),
+    factory.createCallExpression(factory.createIdentifier('ObjectType'), undefined, argumentsArray),
   )
 }
 
@@ -43,6 +65,7 @@ export function isNullable(node: ts.PropertyDeclaration) {
 export function createFieldDecorator(node: ts.PropertyDeclaration, context: Context) {
   const argumentsArray: ts.Expression[] = []
   context.imports.push(createImport('@nestjs/graphql', 'Field'))
+  const comment = getComment(node)
   if (node && ts.isIdentifier(node?.name) && node.name.text === 'id') {
     argumentsArray.push(
       factory.createArrowFunction(
@@ -72,19 +95,28 @@ export function createFieldDecorator(node: ts.PropertyDeclaration, context: Cont
     )
   }
 
-  if (isNullable(node)) {
+  if (isNullable(node) || !!comment) {
     argumentsArray.push(
       factory.createObjectLiteralExpression(
         [
-          factory.createPropertyAssignment(
-            factory.createIdentifier('nullable'),
-            factory.createTrue(),
-          ),
-        ],
+          isNullable(node)
+            ? factory.createPropertyAssignment(
+                factory.createIdentifier('nullable'),
+                factory.createTrue(),
+              )
+            : (undefined as any),
+          comment
+            ? factory.createPropertyAssignment(
+                factory.createIdentifier('description'),
+                factory.createStringLiteral(comment),
+              )
+            : (undefined as any),
+        ].filter(i => !!i),
         false,
       ),
     )
   }
+
   return factory.createDecorator(
     factory.createCallExpression(factory.createIdentifier('Field'), undefined, argumentsArray),
   )

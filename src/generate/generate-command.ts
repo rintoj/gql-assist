@@ -17,7 +17,9 @@ async function generate(sourceFile: ts.SourceFile) {
 
 async function run({ file }: GenerateProps) {
   const sourceFile = readAndParseTSFile(file)
-  const output = await prettify(printTS(await generate(sourceFile)))
+  const output = await prettify(
+    printTS(await generate(sourceFile), undefined, { removeComments: true }),
+  )
   await writeFile(file, output)
 }
 

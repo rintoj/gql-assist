@@ -31,7 +31,7 @@ export function readAndParseTSFile(filePath: string) {
 }
 
 export function parseTSFile(filePath: string, content = '') {
-  return createSourceFile(basename(filePath), content, ScriptTarget.Latest, false, ScriptKind.TSX)
+  return createSourceFile(basename(filePath), content, ScriptTarget.Latest, true, ScriptKind.TSX)
 }
 
 export function parseTS(content = '') {
@@ -90,9 +90,14 @@ const printerOptions: PrinterOptions = {
 export function printTS(
   node: Node | undefined,
   sourceFile: SourceFile = parseTSFile('./test.ts', ''),
+  options?: PrinterOptions,
 ) {
   if (node == undefined) return ''
-  return createPrinter(printerOptions, {}).printNode(EmitHint.Unspecified, node, sourceFile)
+  return createPrinter({ ...printerOptions, ...options }, {}).printNode(
+    EmitHint.Unspecified,
+    node,
+    sourceFile,
+  )
 }
 
 export function prettify(code: string) {
