@@ -22,6 +22,9 @@ import {
 } from 'typescript'
 
 import { format } from 'prettier'
+import { getPrettierOptions } from './prettier-util'
+
+const prettierOptions = getPrettierOptions()
 
 export function readAndParseTSFile(filePath: string) {
   return parseTSFile(filePath, readFileSync(filePath, 'utf8'))
@@ -114,21 +117,5 @@ export function prettify(code: string) {
     .replace(new RegExp(`\\/\\/${COMMENT}`, 'g'), '')
     .replace(new RegExp(`^function`, 'g'), '\nfunction')
     .replace(new RegExp(`^declare function`, 'g'), '\ndeclare function')
-  return format(formattedCode, {
-    arrowParens: 'avoid',
-    bracketSpacing: true,
-    endOfLine: 'lf',
-    htmlWhitespaceSensitivity: 'css',
-    bracketSameLine: false,
-    jsxSingleQuote: true,
-    printWidth: 100,
-    proseWrap: 'always',
-    requirePragma: false,
-    semi: false,
-    singleQuote: true,
-    tabWidth: 2,
-    trailingComma: 'all',
-    useTabs: false,
-    parser: 'typescript',
-  } as any)
+  return format(formattedCode, prettierOptions)
 }
