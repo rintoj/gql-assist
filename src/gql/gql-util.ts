@@ -1,8 +1,7 @@
+import { toNonNullArray } from 'tsds-tools'
 import ts, { ModifierLike, factory, isCallExpression, isIdentifier } from 'typescript'
 import { config } from '../config'
 import { Context } from './context'
-import { toNonNullArray } from 'tsds-tools'
-import { printTS } from '../util/ts-util'
 
 export function getComment(node: ts.Node) {
   return (node as any)?.jsDoc
@@ -332,10 +331,10 @@ export function removeNullability<T extends ts.PropertyDeclaration | ts.MethodDe
   }
 }
 
-export function transformName<T extends ts.PropertyDeclaration | ts.MethodDeclaration>(
-  node: T,
-  transform: (name: string) => string,
-): T {
+export function transformName<
+  T extends ts.PropertyDeclaration | ts.ParameterDeclaration | ts.MethodDeclaration | undefined,
+>(node: T, transform: (name: string) => string): T {
+  if (!node) return undefined as T
   if (node.name && ts.isIdentifier(node.name)) {
     return { ...node, name: ts.factory.createIdentifier(transform(node.name.text)) } as T
   }

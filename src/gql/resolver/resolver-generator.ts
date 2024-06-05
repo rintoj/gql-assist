@@ -55,9 +55,7 @@ function processParameters(
   parentType: string,
   context: Context,
 ): ts.MethodDeclaration {
-  let contextParam
   let parentParam
-  const isFieldResolver = hasDecorator(node, 'ResolveField')
   const otherParams = toNonNullArray(
     node.parameters.map(parameter => {
       const name = getName(parameter)
@@ -68,11 +66,11 @@ function processParameters(
         )
         return undefined
       } else if (name === 'context') {
-        contextParam = addDecorator(
+        context.imports.push(createImport('@nestjs/graphql', 'Context'))
+        return addDecorator(
           withDefaultType(parameter, createReferenceType('GQLContext')),
           createContextDecorator(),
         )
-        return undefined
       }
       return addDecorator(
         withDefaultType(parameter, createStringType()),
@@ -80,11 +78,7 @@ function processParameters(
       )
     }),
   )
-  const parameters = toNonNullArray([
-    contextParam ?? createContextParameter(context),
-    parentParam ?? (isFieldResolver ? createParentParameter(parentType, context) : undefined),
-    ...otherParams,
-  ]) as any
+  const parameters = toNonNullArray([parentParam, ...otherParams]) as any
   return { ...node, parameters }
 }
 
