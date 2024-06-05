@@ -27,29 +27,6 @@ import {
   withDefaultType,
 } from '../gql-util'
 
-function createContextParameter(context: Context) {
-  context.imports.push(createImport('@nestjs/graphql', 'Context'))
-  return factory.createParameterDeclaration(
-    [createContextDecorator()],
-    undefined,
-    factory.createIdentifier('context'),
-    undefined,
-    factory.createTypeReferenceNode(factory.createIdentifier('GQLContext'), undefined),
-    undefined,
-  )
-}
-
-function createParentParameter(parentType: string, context: Context) {
-  return factory.createParameterDeclaration(
-    [createParentDecorator(context)],
-    undefined,
-    factory.createIdentifier('parent'),
-    undefined,
-    factory.createTypeReferenceNode(factory.createIdentifier(parentType), undefined),
-    undefined,
-  )
-}
-
 function processParameters(
   node: ts.MethodDeclaration,
   parentType: string,
