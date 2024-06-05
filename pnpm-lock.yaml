@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      chalk:
+        specifier: 4.0.0
+        version: 4.0.0
       clifer:
         specifier: ^1.2.1
         version: 1.2.1
@@ -17,10 +20,16 @@ importers:
       name-util:
         specifier: ^1.3.0
         version: 1.3.0
+      shelljs:
+        specifier: ^0.8.5
+        version: 0.8.5
       tsds-tools:
         specifier: ^1.2.1
         version: 1.2.1
     devDependencies:
+      '@types/chalk':
+        specifier: ^2.2.0
+        version: 2.2.0
       '@types/fs-extra':
         specifier: ^11.0.4
         version: 11.0.4
@@ -30,6 +39,9 @@ importers:
       '@types/node':
         specifier: ^20.14.0
         version: 20.14.0
+      '@types/shelljs':
+        specifier: ^0.8.15
+        version: 0.8.15
       eslint:
         specifier: ^8.23.0
         version: 8.57.0
@@ -525,8 +537,15 @@ packages:
   '@types/babel__traverse@7.20.6':
     resolution: {integrity: sha512-r1bzfrm0tomOI8g1SzvCaQHo6Lcv6zu0EA+W2kHrt8dyrHQxGzBBL4kdkzIS+jBMV+EYcMAEAqXqYaLJq5rOZg==}
 
+  '@types/chalk@2.2.0':
+    resolution: {integrity: sha512-1zzPV9FDe1I/WHhRkf9SNgqtRJWZqrBWgu7JGveuHmmyR9CnAPCie2N/x+iHrgnpYBIcCJWHBoMRv2TRWktsvw==}
+    deprecated: This is a stub types definition for chalk (https://github.com/chalk/chalk). chalk provides its own type definitions, so you don't need @types/chalk installed!
+
   '@types/fs-extra@11.0.4':
     resolution: {integrity: sha512-yTbItCNreRooED33qjunPthRcSjERP1r4MqCZc7wv0u2sUkzTFp45tgUfS5+r7FrZPdmCCNflLhVSP/o+SemsQ==}
+
+  '@types/glob@7.2.0':
+    resolution: {integrity: sha512-ZUxbzKl0IfJILTS6t7ip5fQQM/J3TJYubDm3nMbgubNNYS62eXeUpoLUC8/7fJNiFYHTrGPQn7hspDUzIHX3UA==}
 
   '@types/graceful-fs@4.1.9':
     resolution: {integrity: sha512-olP3sd1qOEe5dXTSaFvQG+02VdRXcdytWLAZsAq1PecU8uqQAhkrnbli7DagjtXKW/Bl7YJbUsa8MPcuc8LHEQ==}
@@ -549,6 +568,9 @@ packages:
   '@types/jsonfile@6.1.4':
     resolution: {integrity: sha512-D5qGUYwjvnNNextdU59/+fI+spnwtTFmyQP0h+PfIOSkNfpU6AOICUOkm4i0OnSk+NyjdPJrxCDro0sJsWlRpQ==}
 
+  '@types/minimatch@5.1.2':
+    resolution: {integrity: sha512-K0VQKziLUWkVKiRVrx4a40iPaxTUefQmjtkQofBkYRcoaaL/8rhwDWww9qWbrgicNOgnpIsMxyNIUM4+n6dUIA==}
+
   '@types/node@20.14.0':
     resolution: {integrity: sha512-5cHBxFGJx6L4s56Bubp4fglrEpmyJypsqI6RgzMfBHWUJQGWAAi8cWcgetEbZXHYXo9C2Fa4EEds/uSyS4cxmA==}
 
@@ -557,6 +579,9 @@ packages:
 
   '@types/semver@7.5.8':
     resolution: {integrity: sha512-I8EUhyrgfLrcTkzV3TSsGyl1tSuPrEDzr0yd5m90UgNxQkyDXULk3b6MlQqTCpZpNtWe1K0hzclnZkTcLBe2UQ==}
+
+  '@types/shelljs@0.8.15':
+    resolution: {integrity: sha512-vzmnCHl6hViPu9GNLQJ+DZFd6BQI2DBTUeOvYHqkWQLMfKAAQYMb/xAmZkTogZI/vqXHCWkqDRymDI5p0QTi5Q==}
 
   '@types/stack-utils@2.0.3':
     resolution: {integrity: sha512-9aEbYZ3TbYMznPdcdr3SmIrLXwC/AKZXQeCf9Pgao5CKb8CyHuEX5jzWPTkvregvhRJHcpRO6BFoGW9ycaOkYw==}
@@ -777,6 +802,10 @@ packages:
   chalk@2.4.2:
     resolution: {integrity: sha512-Mti+f9lpJNcwF4tWV8/OrTTtF1gZi+f8FqlyAdouralcFWFQWF2+NgCHShjkCb+IFBLq9buZwE1xckQU4peSuQ==}
     engines: {node: '>=4'}
+
+  chalk@4.0.0:
+    resolution: {integrity: sha512-N9oWFcegS0sFr9oh1oz2d7Npos6vNoWW9HvtCg5N1KRFpUhaAhvTv5Y58g880fZaEYSNm3qDz8SU1UrGvp+n7A==}
+    engines: {node: '>=10'}
 
   chalk@4.1.2:
     resolution: {integrity: sha512-oKnbhFyRIXpUuez8iBMmyEa4nbj4IOQyuhc/wy9kY7/WVPcwIO9VA668Pu8RkO7+0G76SLROeyw9CpQ061i4mA==}
@@ -1454,6 +1483,10 @@ packages:
   internal-slot@1.0.7:
     resolution: {integrity: sha512-NGnrKwXzSms2qUUih/ILZ5JBqNTSa1+ZmP6flaIp6KmSElgE9qdndzS3cqjrDovwFdmwsGsLdeFgB6suw+1e9g==}
     engines: {node: '>= 0.4'}
+
+  interpret@1.4.0:
+    resolution: {integrity: sha512-agE4QfB2Lkp9uICn7BAqoscw4SZP9kTE2hxiFI3jBPmXJfdqiahTbUuKGsMoN2GtqL9AxhYioAcVvgsb1HvRbA==}
+    engines: {node: '>= 0.10'}
 
   into-stream@7.0.0:
     resolution: {integrity: sha512-2dYz766i9HprMBasCMvHMuazJ7u4WzhJwo5kb3iPSiW/iRYV6uPari3zHoqZlnuaR7V1bEiNMxikhp37rdBXbw==}
@@ -2267,6 +2300,10 @@ packages:
   readable-stream@2.3.8:
     resolution: {integrity: sha512-8p0AUk4XODgIewSi0l8Epjs+EVnWiK7NoDIEGU0HhE7+ZyY8D1IMY7odu5lRrFXGg71L15KG8QrPmum45RTtdA==}
 
+  rechoir@0.6.2:
+    resolution: {integrity: sha512-HFM8rkZ+i3zrV+4LQjwQ0W+ez98pApMGM3HUrN04j3CqzPOzl9nmP15Y8YXNm8QHGv/eacOVEjqhmWpkRV0NAw==}
+    engines: {node: '>= 0.10'}
+
   regexp.prototype.flags@1.5.2:
     resolution: {integrity: sha512-NcDiDkTLuPR+++OCKB0nWafEmhg/Da8aUPLPMQbK+bxKKCm1/S5he+AqYa4PlMCVBalb4/yxIRub6qkEx5yJbw==}
     engines: {node: '>= 0.4'}
@@ -2364,6 +2401,11 @@ packages:
   shebang-regex@3.0.0:
     resolution: {integrity: sha512-7++dFhtcx3353uBaq8DDR4NuxBetBzC7ZQOhmTQInHEd6bSrXdiEyzCvG07Z44UYdLShWUyXt5M/yhz8ekcb1A==}
     engines: {node: '>=8'}
+
+  shelljs@0.8.5:
+    resolution: {integrity: sha512-TiwcRcrkhHvbrZbnRcFYMLl30Dfov3HKqzp5tO5b4pt6G/SezKcYhmDg15zXVBswHmctSAQKznqNW2LO5tTDow==}
+    engines: {node: '>=4'}
+    hasBin: true
 
   side-channel@1.0.6:
     resolution: {integrity: sha512-fDW/EZ6Q9RiO8eFG8Hj+7u/oW+XrPTIChwCOM2+th2A6OblDtYYIpve9m+KvI9Z4C9qSEXlaGR6bTEYHReuglA==}
@@ -3064,7 +3106,7 @@ snapshots:
     dependencies:
       '@jest/types': 29.6.3
       '@types/node': 20.14.0
-      chalk: 4.1.2
+      chalk: 4.0.0
       jest-message-util: 29.7.0
       jest-util: 29.7.0
       slash: 3.0.0
@@ -3078,7 +3120,7 @@ snapshots:
       '@jest/types': 29.6.3
       '@types/node': 20.14.0
       ansi-escapes: 4.3.2
-      chalk: 4.1.2
+      chalk: 4.0.0
       ci-info: 3.9.0
       exit: 0.1.2
       graceful-fs: 4.2.11
@@ -3149,7 +3191,7 @@ snapshots:
       '@jest/types': 29.6.3
       '@jridgewell/trace-mapping': 0.3.25
       '@types/node': 20.14.0
-      chalk: 4.1.2
+      chalk: 4.0.0
       collect-v8-coverage: 1.0.2
       exit: 0.1.2
       glob: 7.2.3
@@ -3199,7 +3241,7 @@ snapshots:
       '@jest/types': 29.6.3
       '@jridgewell/trace-mapping': 0.3.25
       babel-plugin-istanbul: 6.1.1
-      chalk: 4.1.2
+      chalk: 4.0.0
       convert-source-map: 2.0.0
       fast-json-stable-stringify: 2.1.0
       graceful-fs: 4.2.11
@@ -3220,7 +3262,7 @@ snapshots:
       '@types/istanbul-reports': 3.0.4
       '@types/node': 20.14.0
       '@types/yargs': 17.0.32
-      chalk: 4.1.2
+      chalk: 4.0.0
 
   '@jridgewell/gen-mapping@0.3.5':
     dependencies:
@@ -3447,9 +3489,18 @@ snapshots:
     dependencies:
       '@babel/types': 7.24.6
 
+  '@types/chalk@2.2.0':
+    dependencies:
+      chalk: 4.0.0
+
   '@types/fs-extra@11.0.4':
     dependencies:
       '@types/jsonfile': 6.1.4
+      '@types/node': 20.14.0
+
+  '@types/glob@7.2.0':
+    dependencies:
+      '@types/minimatch': 5.1.2
       '@types/node': 20.14.0
 
   '@types/graceful-fs@4.1.9':
@@ -3477,6 +3528,8 @@ snapshots:
     dependencies:
       '@types/node': 20.14.0
 
+  '@types/minimatch@5.1.2': {}
+
   '@types/node@20.14.0':
     dependencies:
       undici-types: 5.26.5
@@ -3484,6 +3537,11 @@ snapshots:
   '@types/normalize-package-data@2.4.4': {}
 
   '@types/semver@7.5.8': {}
+
+  '@types/shelljs@0.8.15':
+    dependencies:
+      '@types/glob': 7.2.0
+      '@types/node': 20.14.0
 
   '@types/stack-utils@2.0.3': {}
 
@@ -3634,7 +3692,7 @@ snapshots:
       '@types/babel__core': 7.20.5
       babel-plugin-istanbul: 6.1.1
       babel-preset-jest: 29.6.3(@babel/core@7.24.6)
-      chalk: 4.1.2
+      chalk: 4.0.0
       graceful-fs: 4.2.11
       slash: 3.0.0
     transitivePeerDependencies:
@@ -3737,6 +3795,11 @@ snapshots:
       escape-string-regexp: 1.0.5
       supports-color: 5.5.0
 
+  chalk@4.0.0:
+    dependencies:
+      ansi-styles: 4.3.0
+      supports-color: 7.2.0
+
   chalk@4.1.2:
     dependencies:
       ansi-styles: 4.3.0
@@ -3756,7 +3819,7 @@ snapshots:
 
   cli-highlight@2.1.11:
     dependencies:
-      chalk: 4.1.2
+      chalk: 4.0.0
       highlight.js: 10.7.3
       mz: 2.7.0
       parse5: 5.1.1
@@ -3851,7 +3914,7 @@ snapshots:
   create-jest@29.7.0(@types/node@20.14.0)(ts-node@10.9.2(@types/node@20.14.0)(typescript@5.4.5)):
     dependencies:
       '@jest/types': 29.6.3
-      chalk: 4.1.2
+      chalk: 4.0.0
       exit: 0.1.2
       graceful-fs: 4.2.11
       jest-config: 29.7.0(@types/node@20.14.0)(ts-node@10.9.2(@types/node@20.14.0)(typescript@5.4.5))
@@ -4093,7 +4156,7 @@ snapshots:
       '@nodelib/fs.walk': 1.2.8
       '@ungap/structured-clone': 1.2.0
       ajv: 6.12.6
-      chalk: 4.1.2
+      chalk: 4.0.0
       cross-spawn: 7.0.3
       debug: 4.3.5
       doctrine: 3.0.0
@@ -4510,6 +4573,8 @@ snapshots:
       hasown: 2.0.2
       side-channel: 1.0.6
 
+  interpret@1.4.0: {}
+
   into-stream@7.0.0:
     dependencies:
       from2: 2.3.0
@@ -4678,7 +4743,7 @@ snapshots:
       '@jest/test-result': 29.7.0
       '@jest/types': 29.6.3
       '@types/node': 20.14.0
-      chalk: 4.1.2
+      chalk: 4.0.0
       co: 4.6.0
       dedent: 1.5.3
       is-generator-fn: 2.1.0
@@ -4702,7 +4767,7 @@ snapshots:
       '@jest/core': 29.7.0(ts-node@10.9.2(@types/node@20.14.0)(typescript@5.4.5))
       '@jest/test-result': 29.7.0
       '@jest/types': 29.6.3
-      chalk: 4.1.2
+      chalk: 4.0.0
       create-jest: 29.7.0(@types/node@20.14.0)(ts-node@10.9.2(@types/node@20.14.0)(typescript@5.4.5))
       exit: 0.1.2
       import-local: 3.1.0
@@ -4722,7 +4787,7 @@ snapshots:
       '@jest/test-sequencer': 29.7.0
       '@jest/types': 29.6.3
       babel-jest: 29.7.0(@babel/core@7.24.6)
-      chalk: 4.1.2
+      chalk: 4.0.0
       ci-info: 3.9.0
       deepmerge: 4.3.1
       glob: 7.2.3
@@ -4749,7 +4814,7 @@ snapshots:
 
   jest-diff@29.7.0:
     dependencies:
-      chalk: 4.1.2
+      chalk: 4.0.0
       diff-sequences: 29.6.3
       jest-get-type: 29.6.3
       pretty-format: 29.7.0
@@ -4761,7 +4826,7 @@ snapshots:
   jest-each@29.7.0:
     dependencies:
       '@jest/types': 29.6.3
-      chalk: 4.1.2
+      chalk: 4.0.0
       jest-get-type: 29.6.3
       jest-util: 29.7.0
       pretty-format: 29.7.0
@@ -4800,7 +4865,7 @@ snapshots:
 
   jest-matcher-utils@29.7.0:
     dependencies:
-      chalk: 4.1.2
+      chalk: 4.0.0
       jest-diff: 29.7.0
       jest-get-type: 29.6.3
       pretty-format: 29.7.0
@@ -4810,7 +4875,7 @@ snapshots:
       '@babel/code-frame': 7.24.6
       '@jest/types': 29.6.3
       '@types/stack-utils': 2.0.3
-      chalk: 4.1.2
+      chalk: 4.0.0
       graceful-fs: 4.2.11
       micromatch: 4.0.7
       pretty-format: 29.7.0
@@ -4838,7 +4903,7 @@ snapshots:
 
   jest-resolve@29.7.0:
     dependencies:
-      chalk: 4.1.2
+      chalk: 4.0.0
       graceful-fs: 4.2.11
       jest-haste-map: 29.7.0
       jest-pnp-resolver: 1.2.3(jest-resolve@29.7.0)
@@ -4856,7 +4921,7 @@ snapshots:
       '@jest/transform': 29.7.0
       '@jest/types': 29.6.3
       '@types/node': 20.14.0
-      chalk: 4.1.2
+      chalk: 4.0.0
       emittery: 0.13.1
       graceful-fs: 4.2.11
       jest-docblock: 29.7.0
@@ -4884,7 +4949,7 @@ snapshots:
       '@jest/transform': 29.7.0
       '@jest/types': 29.6.3
       '@types/node': 20.14.0
-      chalk: 4.1.2
+      chalk: 4.0.0
       cjs-module-lexer: 1.3.1
       collect-v8-coverage: 1.0.2
       glob: 7.2.3
@@ -4912,7 +4977,7 @@ snapshots:
       '@jest/transform': 29.7.0
       '@jest/types': 29.6.3
       babel-preset-current-node-syntax: 1.0.1(@babel/core@7.24.6)
-      chalk: 4.1.2
+      chalk: 4.0.0
       expect: 29.7.0
       graceful-fs: 4.2.11
       jest-diff: 29.7.0
@@ -4930,7 +4995,7 @@ snapshots:
     dependencies:
       '@jest/types': 29.6.3
       '@types/node': 20.14.0
-      chalk: 4.1.2
+      chalk: 4.0.0
       ci-info: 3.9.0
       graceful-fs: 4.2.11
       picomatch: 2.3.1
@@ -4939,7 +5004,7 @@ snapshots:
     dependencies:
       '@jest/types': 29.6.3
       camelcase: 6.3.0
-      chalk: 4.1.2
+      chalk: 4.0.0
       jest-get-type: 29.6.3
       leven: 3.1.0
       pretty-format: 29.7.0
@@ -4950,7 +5015,7 @@ snapshots:
       '@jest/types': 29.6.3
       '@types/node': 20.14.0
       ansi-escapes: 4.3.2
-      chalk: 4.1.2
+      chalk: 4.0.0
       emittery: 0.13.1
       jest-util: 29.7.0
       string-length: 4.0.2
@@ -5379,6 +5444,10 @@ snapshots:
       string_decoder: 1.1.1
       util-deprecate: 1.0.2
 
+  rechoir@0.6.2:
+    dependencies:
+      resolve: 1.22.8
+
   regexp.prototype.flags@1.5.2:
     dependencies:
       call-bind: 1.0.7
@@ -5503,6 +5572,12 @@ snapshots:
       shebang-regex: 3.0.0
 
   shebang-regex@3.0.0: {}
+
+  shelljs@0.8.5:
+    dependencies:
+      glob: 7.2.3
+      interpret: 1.4.0
+      rechoir: 0.6.2
 
   side-channel@1.0.6:
     dependencies:

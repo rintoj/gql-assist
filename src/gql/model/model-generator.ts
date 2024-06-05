@@ -4,11 +4,12 @@ import { Context, createContext } from '../context'
 import {
   addDecorator,
   addImports,
+  addNullability,
   createFieldDecorator,
   createObjectTypeDecorator,
   hasDecorator,
-  isNullable,
   organizeImports,
+  transformName,
 } from '../gql-util'
 
 function processClassDeclaration(classDeclaration: ts.ClassDeclaration, context: Context) {
@@ -17,18 +18,8 @@ function processClassDeclaration(classDeclaration: ts.ClassDeclaration, context:
     node => {
       if (ts.isPropertyDeclaration(node) && ts.isIdentifier(node.name)) {
         return addDecorator(
-          {
-            ...node,
-            ...(isNullable(node)
-              ? {
-                  questionToken: ts.factory.createToken(ts.SyntaxKind.QuestionToken),
-                }
-              : {
-                  exclamationToken: ts.factory.createToken(ts.SyntaxKind.ExclamationToken),
-                }),
-            name: ts.factory.createIdentifier(toCamelCase(node.name.text)),
-          },
-          createFieldDecorator(node, context),
+          addNullability(transformName(node, toCamelCase)),
+          createFieldDecorator(node, 'Field', context),
         )
       }
       return node
