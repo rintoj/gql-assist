@@ -263,6 +263,68 @@ describe('generateResolver', () => {
     )
   })
 
+  test('should preserve the existing type the @ResolveField() if type is unknown', async () => {
+    const output = await generate(
+      'user.resolver.ts',
+      `
+        class UserResolver implements FieldResolver<UserModel, UserAPIType> {
+          @ResolveField(() => UserModel, { nullable: true })
+          user(context, id?: string) {
+
+          }
+        }
+      `,
+    )
+    expect(toParsedOutput(output)).toBe(
+      toParsedOutput(`
+        import { Args, Context, ResolveField, Resolver } from '@nestjs/graphql'
+
+        @Resolver(() => UserModel)
+        export class UserResolver implements FieldResolver<UserModel, UserAPIType> {
+          @ResolveField(() => UserModel, { nullable: true })
+          user(
+            @Context()
+            context: GQLContext,
+
+            @Args('id', { nullable: true })
+            id?: string,
+          ) {}
+        }
+      `),
+    )
+  })
+
+  test('should replace the existing type the @ResolveField() if type exists', async () => {
+    const output = await generate(
+      'user.resolver.ts',
+      `
+        class UserResolver implements FieldResolver<UserModel, UserAPIType> {
+          @ResolveField(() => UserModel, { nullable: true })
+          user(context, id?: string): User | null {
+
+          }
+        }
+      `,
+    )
+    expect(toParsedOutput(output)).toBe(
+      toParsedOutput(`
+        import { Args, Context, ResolveField, Resolver } from '@nestjs/graphql'
+
+        @Resolver(() => UserModel)
+        export class UserResolver implements FieldResolver<UserModel, UserAPIType> {
+          @ResolveField(() => User, { nullable: true })
+          user(
+            @Context()
+            context: GQLContext,
+
+            @Args('id', { nullable: true })
+            id?: string,
+          ): User | null {}
+        }
+      `),
+    )
+  })
+
   test('should create mutation function', async () => {
     const output = await generate(
       'user.resolver.ts',

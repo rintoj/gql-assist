@@ -1,5 +1,5 @@
 import { toNonNullArray } from 'tsds-tools'
-import ts, { ModifierLike, factory, isCallExpression, isIdentifier } from 'typescript'
+import ts, { ModifierLike, SyntaxKind, factory, isCallExpression, isIdentifier } from 'typescript'
 import { config } from '../config'
 import { Context } from './context'
 
@@ -317,6 +317,32 @@ export function isNullable(
   return config.nullableByDefault ? !node.exclamationToken : !!node.questionToken
 }
 
+export function isNullableFromDecorator(
+  node: ts.PropertyDeclaration | ts.MethodDeclaration | ts.ParameterDeclaration,
+): boolean {
+  for (const decorator of node.modifiers ?? []) {
+    if (
+      ts.isDecorator(decorator) &&
+      isCallExpression(decorator.expression) &&
+      isIdentifier(decorator.expression.expression)
+    ) {
+      const object = decorator.expression.arguments?.find(i => ts.isObjectLiteralExpression(i))
+      if (object && ts.isObjectLiteralExpression(object)) {
+        const nullable = object.properties.find(
+          prop =>
+            ts.isPropertyAssignment(prop) &&
+            ts.isIdentifier(prop.name) &&
+            prop.name.text === 'nullable',
+        )
+        return nullable && ts.isPropertyAssignment(nullable)
+          ? nullable.initializer.kind === SyntaxKind.TrueKeyword
+          : false
+      }
+    }
+  }
+  return false
+}
+
 export function getAllTypes(
   node:
     | ts.TypeNode
@@ -452,7 +478,7 @@ export function createFieldDecorator(
   const argumentsArray: ts.Expression[] = []
   context.imports.push(createImport('@nestjs/graphql', decoratorName))
   const comment = getComment(node) ?? getCommentFromDecorator(node, decoratorName)
-  const type = getType(node)
+  const type = getType(node) ?? getTypeFromDecorator(node, decoratorName)
   if (type) {
     argumentsArray.push(
       factory.createArrowFunction(
@@ -467,11 +493,13 @@ export function createFieldDecorator(
     if (['ID', 'INT'].includes(type)) context.imports.push(createImport('@nestjs/graphql', type))
   }
 
-  if (isNullable(node) || !!comment) {
+  const isNull = isNullableFromDecorator(node) || isNullable(node)
+
+  if (isNull || !!comment) {
     argumentsArray.push(
       factory.createObjectLiteralExpression(
         [
-          isNullable(node)
+          isNull
             ? factory.createPropertyAssignment(
                 factory.createIdentifier('nullable'),
                 factory.createTrue(),
