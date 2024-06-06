@@ -26,6 +26,29 @@ describe('generateResolver', () => {
     )
   })
 
+  test('should remove ...args', async () => {
+    const output = await generate(
+      'user.resolver.ts',
+      `
+        @Resolver(() => UserModel)
+        class UserResolver {
+          createdBy: (...args: any[]) => User | Promise<User>
+        }
+      `,
+    )
+    expect(toParsedOutput(output)).toBe(
+      toParsedOutput(`
+        import { Query, Resolver } from '@nestjs/graphql'
+
+        @Resolver(() => UserModel)
+        export class UserResolver {
+          @Query(() => User)
+          createdBy(): Promise<User> {}
+        }
+      `),
+    )
+  })
+
   test('should use the correct model name', async () => {
     const output = await generate(
       'user.resolver.ts',

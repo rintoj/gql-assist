@@ -1,28 +1,31 @@
 import { toCamelCase } from 'name-util'
 import { toNonNullArray } from 'tsds-tools'
-import ts, { factory, isClassDeclaration } from 'typescript'
+import ts, { SyntaxKind, factory, isClassDeclaration } from 'typescript'
 import { Context, createContext } from '../context'
 import {
   addDecorator,
   addExport,
   addImports,
+  conditional,
   convertToMethod,
   createArgsDecorator,
   createContextDecorator,
   createFieldDecorator,
   createImport,
   createParentDecorator,
+  createPromiseType,
   createReferenceType,
   createResolverDecorator,
   createStringType,
+  createType,
   getAllParameters,
+  getAllTypes,
   getName,
   getParameterType,
   getTypeFromDecorator,
   hasDecorator,
   hasImplementationByName,
   hasParameter,
-  conditional,
   organizeImports,
   removeNullability,
   transformName,
@@ -38,6 +41,7 @@ function processParameters(
     ...node,
     parameters: toNonNullArray(
       node.parameters.map(parameter => {
+        if (!!parameter.dotDotDotToken) return
         const name = getName(parameter)
         if (name === 'parent') {
           return addDecorator(
@@ -57,6 +61,33 @@ function processParameters(
         )
       }),
     ) as any,
+  }
+}
+
+function processReturnType(node: ts.MethodDeclaration, context: Context): ts.MethodDeclaration {
+  if (!node.type) return node
+  const types: Array<string | string[]> = []
+  ts.visitEachChild(
+    node.type,
+    node => {
+      if (ts.isIdentifier(node)) {
+        types.push(node.text)
+      }
+      if (ts.isTypeNode(node)) {
+        types.push(getAllTypes(node))
+      }
+      return node
+    },
+    undefined,
+  )
+  const uniqueTypes = toNonNullArray(Array.from(new Set(types.flat())))
+  const typesWithoutPromise = uniqueTypes.filter(i => i !== 'Promise')
+  const hasPromise = uniqueTypes.some(i => i === 'Promise')
+  return {
+    ...node,
+    type: hasPromise
+      ? createPromiseType(...typesWithoutPromise)
+      : createType(...typesWithoutPromise),
   }
 }
 
@@ -158,25 +189,16 @@ function processClassDeclaration(classDeclaration: ts.ClassDeclaration, context:
     ),
     node => {
       const fieldDecoratorType = getFieldDecoratorType(node)
-      if (
-        ts.isPropertyDeclaration(node) &&
-        ts.isIdentifier(node.name) &&
-        node.type &&
-        ts.isFunctionTypeNode(node.type)
-      ) {
-        const method = addDecorator(
-          convertToMethod(removeNullability(transformName(node, toCamelCase))),
-          createFieldDecorator(node, fieldDecoratorType, context),
+      const method = convertToMethod(node as any)
+      if (method) {
+        return addDecorator(
+          processParameters(
+            processReturnType(removeNullability(transformName(method, toCamelCase)), context),
+            parentType,
+            context,
+          ),
+          createFieldDecorator(method, fieldDecoratorType, context),
         )
-        if (ts.isMethodDeclaration(method)) return processParameters(method, parentType, context)
-        return method
-      } else if (ts.isMethodDeclaration(node) && ts.isIdentifier(node.name)) {
-        const method = addDecorator(
-          removeNullability(transformName(node, toCamelCase)),
-          createFieldDecorator(node, fieldDecoratorType, context),
-        )
-        if (ts.isMethodDeclaration(method)) return processParameters(method, parentType, context)
-        return method
       }
       return node
     },

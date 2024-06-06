@@ -135,19 +135,21 @@ export function addDecorator<
   }
 }
 
-export function convertToMethod(node: ts.PropertyDeclaration) {
+export function convertToMethod(node: ts.PropertyDeclaration | ts.MethodDeclaration) {
   const name = getName(node)
-  if (!node.type || !ts.isFunctionTypeNode(node.type)) return node
-  return factory.createMethodDeclaration(
-    undefined,
-    undefined,
-    factory.createIdentifier(name),
-    undefined,
-    undefined,
-    node.type.parameters,
-    node.type.type,
-    factory.createBlock([], true),
-  )
+  if (ts.isMethodDeclaration(node)) return node
+  if (ts.isPropertyDeclaration(node) && node.type && ts.isFunctionTypeNode(node.type)) {
+    return factory.createMethodDeclaration(
+      undefined,
+      undefined,
+      factory.createIdentifier(name),
+      undefined,
+      undefined,
+      node.type.parameters,
+      node.type.type,
+      factory.createBlock([], true),
+    )
+  }
 }
 
 export function addExport<T extends ts.ClassDeclaration | ts.PropertyDeclaration | undefined>(
@@ -310,58 +312,83 @@ export function isNullable(
     return !!node.questionToken
   }
   if (ts.isMethodDeclaration(node)) {
-    if (
-      node.type &&
-      ts.isTypeReferenceNode(node.type) &&
-      ts.isIdentifier(node.type?.typeName) &&
-      node.type?.typeName?.text === 'Promise' &&
-      node.type.typeArguments?.[0]
-    ) {
-      return (
-        ts.isUnionTypeNode(node.type.typeArguments[0]) &&
-        !!node.type.typeArguments[0].types.find(
-          item => ts.isLiteralTypeNode(item) && item.literal.kind === ts.SyntaxKind.NullKeyword,
-        )
-      )
-    }
-    if (node.type) {
-      return (
-        ts.isUnionTypeNode(node.type) &&
-        !!node.type.types.find(
-          item => ts.isLiteralTypeNode(item) && item.literal.kind === ts.SyntaxKind.NullKeyword,
-        )
-      )
-    }
-    return false
+    return !!getAllTypes(node.type).find(i => i === 'null' || i === 'undefined')
   }
   return config.nullableByDefault ? !node.exclamationToken : !!node.questionToken
 }
 
-export function toType(node: ts.TypeNode | undefined): string | undefined {
-  if (node && ts.isTypeReferenceNode(node) && ts.isIdentifier(node.typeName)) {
-    if (node?.typeName?.text === 'Promise' && node?.typeArguments?.[0]) {
-      return toType(node?.typeArguments?.[0])
-    }
-    return node?.typeName?.text
-  } else if (
-    node &&
-    ts.isArrayTypeNode(node) &&
-    ts.isTypeReferenceNode(node.elementType) &&
-    ts.isIdentifier(node.elementType.typeName)
+export function getAllTypes(
+  node:
+    | ts.TypeNode
+    | ts.LiteralExpression
+    | ts.NullLiteral
+    | ts.BooleanLiteral
+    | ts.PrefixUnaryExpression
+    | undefined,
+): string[] {
+  if (!node) return []
+  if (node.kind === ts.SyntaxKind.StringKeyword) return ['string']
+  if (node.kind === ts.SyntaxKind.NumberKeyword) return ['number']
+  if (node.kind === ts.SyntaxKind.BooleanKeyword) return ['boolean']
+  if (node.kind === ts.SyntaxKind.UndefinedKeyword) return ['undefined']
+  if (node.kind === ts.SyntaxKind.NullKeyword) return ['null']
+  if (
+    ts.isTypeReferenceNode(node) &&
+    ts.isIdentifier(node.typeName) &&
+    node.typeName.text === 'Promise' &&
+    node.typeArguments?.[0]
   ) {
-    return `[${node?.elementType.typeName?.text}]`
-  } else if (node && ts.isUnionTypeNode(node)) {
-    const nonNullType = node.types.find(
-      node => ts.isTypeReferenceNode(node) || ts.isArrayTypeNode(node),
-    )
-    return nonNullType ? toType(nonNullType) : undefined
+    return ['Promise', ...getAllTypes(node.typeArguments[0])]
   }
+  if (ts.isTypeReferenceNode(node) && ts.isIdentifier(node.typeName)) {
+    return [node.typeName.text]
+  }
+  if (ts.isUnionTypeNode(node)) {
+    return node.types.flatMap(getAllTypes)
+  }
+  if (ts.isLiteralTypeNode(node)) {
+    return getAllTypes(node.literal)
+  }
+  if (ts.isFunctionTypeNode(node)) {
+    return getAllTypes(node.type)
+  }
+  throw new Error(`parseType: Failed to process ${ts.SyntaxKind[node.kind]}`)
+}
+
+export function createType(...types: string[]): ts.TypeNode {
+  if (types.length > 1) {
+    return factory.createUnionTypeNode(types.map(type => createType(type)))
+  }
+  const [type] = types
+  switch (type) {
+    case 'string':
+      return factory.createKeywordTypeNode(ts.SyntaxKind.StringKeyword)
+    case 'number':
+      return factory.createKeywordTypeNode(ts.SyntaxKind.NumberKeyword)
+    case 'boolean':
+      return factory.createKeywordTypeNode(ts.SyntaxKind.BooleanKeyword)
+    case 'undefined':
+      return factory.createKeywordTypeNode(ts.SyntaxKind.UndefinedKeyword)
+    case 'null':
+      return factory.createLiteralTypeNode(factory.createNull())
+  }
+  if (!type) throw new Error('Type must be defined')
+  return factory.createTypeReferenceNode(factory.createIdentifier(type), undefined)
+}
+
+export function createPromiseType(...types: string[]) {
+  return factory.createTypeReferenceNode(factory.createIdentifier('Promise'), [
+    createType(...types),
+  ])
 }
 
 export function getType(node: ts.PropertyDeclaration | ts.MethodDeclaration) {
   const typeFromDecorator = getTypeFromDecorator(node, 'Field')
   if (typeFromDecorator) return typeFromDecorator
-  const type = toType(node.type)
+  const [type, secondType] = Array.from(new Set(getAllTypes(node.type))).filter(
+    i => !['null', 'undefined', 'Promise'].includes(i),
+  )
+  if (secondType) throw new Error('Return type can not be a union type.')
   if (type) return type
   if (getName(node) === 'id') return 'ID'
 }
