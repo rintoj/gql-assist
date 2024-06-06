@@ -13,28 +13,48 @@ describe('generateResolver', () => {
     const output = await generate(
       'user.resolver.ts',
       `
-        class UserResolver {
-          createdAt?: (parent: UserAPIType) => string
-        }
+        class UserResolver { }
       `,
     )
     expect(toParsedOutput(output)).toBe(
       toParsedOutput(`
-        import { Parent, ResolveField, Resolver } from '@nestjs/graphql'
+        import { Resolver } from '@nestjs/graphql'
 
-        @Resolver(() => User)
-        export class UserResolver implements FieldResolver<User, UserAPIType> {
-          @ResolveField({ nullable: true })
-          createdAt(
-            @Parent()
-            parent: UserAPIType,
-          ): string {}
-        }
+        @Resolver()
+        export class UserResolver {}
       `),
     )
   })
 
   test('should use the correct model name', async () => {
+    const output = await generate(
+      'user.resolver.ts',
+      `
+        @Resolver(() => UserModel)
+        class UserResolver {
+          createdAt(context): Date | null {
+
+          }
+        }
+      `,
+    )
+    expect(toParsedOutput(output)).toBe(
+      toParsedOutput(`
+        import { Context, Query, Resolver } from '@nestjs/graphql'
+
+        @Resolver(() => UserModel)
+        export class UserResolver {
+          @Query(() => Date, { nullable: true })
+          createdAt(
+            @Context()
+            context: GQLContext,
+          ): Date | null {}
+        }
+      `),
+    )
+  })
+
+  test('should use the correct typename name', async () => {
     const output = await generate(
       'user.resolver.ts',
       `
@@ -172,11 +192,11 @@ describe('generateResolver', () => {
         export class UserResolver implements FieldResolver<UserModel, UserAPIType> {
           @Query(() => User)
           user(
-            @Parent()
-            parent: UserAPIType,
-
             @Args('id')
             id: string,
+
+            @Parent()
+            parent: UserAPIType,
 
             @Context()
             context: GQLContext,
@@ -237,14 +257,14 @@ describe('generateResolver', () => {
         export class UserResolver implements FieldResolver<UserModel, UserAPIType> {
           @Mutation(() => User)
           user(
-            @Parent()
-            parent: UserAPIType,
-
             @Context()
             context: GQLContext,
 
             @Args('id')
             id: string,
+
+            @Parent()
+            parent: UserAPIType,
           ): User {}
         }
       `),
@@ -274,6 +294,34 @@ describe('generateResolver', () => {
             @Args('id', { nullable: true })
             id?: string,
           ): User | null {}
+        }
+      `),
+    )
+  })
+
+  test('should create query with Promise', async () => {
+    const output = await generate(
+      'user.resolver.ts',
+      `
+        class UserResolver implements FieldResolver<UserModel, UserAPIType> {
+          @Query()
+          user(id?: string): Promise<User | null> {
+
+          }
+        }
+      `,
+    )
+    expect(toParsedOutput(output)).toBe(
+      toParsedOutput(`
+        import { Args, Query, Resolver } from '@nestjs/graphql'
+
+        @Resolver(() => UserModel)
+        export class UserResolver implements FieldResolver<UserModel, UserAPIType> {
+          @Query(() => User, { nullable: true })
+          user(
+            @Args('id', { nullable: true })
+            id?: string,
+          ): Promise<User | null> {}
         }
       `),
     )

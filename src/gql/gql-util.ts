@@ -26,6 +26,37 @@ export function getCommentFromDecorator(node: ts.Node, name: string) {
   }
 }
 
+export function conditional<T>(
+  value: boolean | undefined,
+  ifTrue: T | ((...args: any[]) => T),
+  ifFalse: T | ((...args: any[]) => T),
+) {
+  if (value === true) return typeof ifTrue === 'function' ? (ifTrue as any)() : ifTrue
+  return typeof ifFalse === 'function' ? (ifFalse as any)() : ifFalse
+}
+
+export function hasImplementationByName(node: ts.ClassDeclaration, name: string) {
+  return !!getImplementationByName(node, name)
+}
+
+export function getImplementationByName(node: ts.ClassDeclaration, name: string) {
+  const heritageClause = node.heritageClauses?.find(
+    clause =>
+      !!clause.types.find(
+        type =>
+          ts.isExpressionWithTypeArguments(type) &&
+          ts.isIdentifier(type.expression) &&
+          type.expression.text === name,
+      ),
+  )
+  return heritageClause?.types.find(
+    type =>
+      ts.isExpressionWithTypeArguments(type) &&
+      ts.isIdentifier(type.expression) &&
+      type.expression.text === name,
+  )
+}
+
 export function getTypeFromDecorator(node: ts.Node, name: string) {
   const decorator = getDecorator(node, name)
   if (!decorator || !ts.isDecorator(decorator)) return
@@ -87,8 +118,10 @@ export function addDecorator<
     | ts.ClassDeclaration
     | ts.PropertyDeclaration
     | ts.MethodDeclaration
-    | ts.ParameterDeclaration,
+    | ts.ParameterDeclaration
+    | undefined,
 >(node: T, ...decorators: ts.Decorator[]): T {
+  if (!node) return node
   const names = decorators.map((d: any) => d.expression.expression.text)
   return {
     ...node,
@@ -117,7 +150,10 @@ export function convertToMethod(node: ts.PropertyDeclaration) {
   )
 }
 
-export function addExport(node: ts.ClassDeclaration | ts.PropertyDeclaration) {
+export function addExport<T extends ts.ClassDeclaration | ts.PropertyDeclaration | undefined>(
+  node: T,
+): T {
+  if (!node) return node
   return {
     ...node,
     modifiers: [...(node.modifiers ?? []), factory.createToken(ts.SyntaxKind.ExportKeyword)],
@@ -226,19 +262,25 @@ export function createContextDecorator() {
   )
 }
 
-export function createResolverDecorator(type: string, context: Context) {
+export function createResolverDecorator(type: string, addType: boolean, context: Context) {
   context.imports.push(createImport('@nestjs/graphql', 'Resolver'))
   return factory.createDecorator(
-    factory.createCallExpression(factory.createIdentifier('Resolver'), undefined, [
-      factory.createArrowFunction(
-        undefined,
-        undefined,
-        [],
-        undefined,
-        factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
-        factory.createIdentifier(type),
-      ),
-    ]),
+    factory.createCallExpression(
+      factory.createIdentifier('Resolver'),
+      undefined,
+      addType
+        ? [
+            factory.createArrowFunction(
+              undefined,
+              undefined,
+              [],
+              undefined,
+              factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
+              factory.createIdentifier(type),
+            ),
+          ]
+        : undefined,
+    ),
   )
 }
 
@@ -268,6 +310,20 @@ export function isNullable(
     return !!node.questionToken
   }
   if (ts.isMethodDeclaration(node)) {
+    if (
+      node.type &&
+      ts.isTypeReferenceNode(node.type) &&
+      ts.isIdentifier(node.type?.typeName) &&
+      node.type?.typeName?.text === 'Promise' &&
+      node.type.typeArguments?.[0]
+    ) {
+      return (
+        ts.isUnionTypeNode(node.type.typeArguments[0]) &&
+        !!node.type.typeArguments[0].types.find(
+          item => ts.isLiteralTypeNode(item) && item.literal.kind === ts.SyntaxKind.NullKeyword,
+        )
+      )
+    }
     if (node.type) {
       return (
         ts.isUnionTypeNode(node.type) &&
@@ -283,6 +339,9 @@ export function isNullable(
 
 export function toType(node: ts.TypeNode | undefined): string | undefined {
   if (node && ts.isTypeReferenceNode(node) && ts.isIdentifier(node.typeName)) {
+    if (node?.typeName?.text === 'Promise' && node?.typeArguments?.[0]) {
+      return toType(node?.typeArguments?.[0])
+    }
     return node?.typeName?.text
   } else if (
     node &&

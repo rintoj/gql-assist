@@ -20,7 +20,9 @@ import {
   getParameterType,
   getTypeFromDecorator,
   hasDecorator,
+  hasImplementationByName,
   hasParameter,
+  conditional,
   organizeImports,
   removeNullability,
   transformName,
@@ -32,31 +34,30 @@ function processParameters(
   parentType: string,
   context: Context,
 ): ts.MethodDeclaration {
-  let parentParam
-  const otherParams = toNonNullArray(
-    node.parameters.map(parameter => {
-      const name = getName(parameter)
-      if (name === 'parent') {
-        parentParam = addDecorator(
-          withDefaultType(parameter, createReferenceType(parentType)),
-          createParentDecorator(context),
-        )
-        return undefined
-      } else if (name === 'context') {
-        context.imports.push(createImport('@nestjs/graphql', 'Context'))
+  return {
+    ...node,
+    parameters: toNonNullArray(
+      node.parameters.map(parameter => {
+        const name = getName(parameter)
+        if (name === 'parent') {
+          return addDecorator(
+            withDefaultType(parameter, createReferenceType(parentType)),
+            createParentDecorator(context),
+          )
+        } else if (name === 'context') {
+          context.imports.push(createImport('@nestjs/graphql', 'Context'))
+          return addDecorator(
+            withDefaultType(parameter, createReferenceType('GQLContext')),
+            createContextDecorator(),
+          )
+        }
         return addDecorator(
-          withDefaultType(parameter, createReferenceType('GQLContext')),
-          createContextDecorator(),
+          withDefaultType(parameter, createStringType()),
+          createArgsDecorator(parameter, context),
         )
-      }
-      return addDecorator(
-        withDefaultType(parameter, createStringType()),
-        createArgsDecorator(parameter, context),
-      )
-    }),
-  )
-  const parameters = toNonNullArray([parentParam, ...otherParams]) as any
-  return { ...node, parameters }
+      }),
+    ) as any,
+  }
 }
 
 function addImplementsFieldResolver<T extends ts.ClassDeclaration>(
@@ -108,11 +109,12 @@ function getTypesFromFieldResolverImplementation(node: ts.ClassDeclaration) {
 
 function getTypes(node: ts.ClassDeclaration) {
   const { modelType, parentType } = getTypesFromFieldResolverImplementation(node)
+  const name = getName(node)
+    ?.trim()
+    ?.replace(/Resolver$/, '')
   return [
-    modelType ?? getTypeFromDecorator(node, 'Resolver') ?? getName(node)?.replace(/Resolver$/, ''),
-    parentType ??
-      getTypeNameFromParameters(node) ??
-      `${getName(node)?.replace(/Resolver$/, '')}Type`,
+    modelType ?? getTypeFromDecorator(node, 'Resolver') ?? name,
+    parentType ?? getTypeNameFromParameters(node),
   ]
 }
 
@@ -141,11 +143,17 @@ function getFieldDecoratorType(node: ts.Node) {
 
 function processClassDeclaration(classDeclaration: ts.ClassDeclaration, context: Context) {
   const [modelType, parentType] = getTypes(classDeclaration)
+  const typeFromDecorator = getTypeFromDecorator(classDeclaration, 'Resolver')
+  const hasFieldResolver = hasImplementationByName(classDeclaration, 'FieldResolver')
   return ts.visitEachChild(
     addExport(
       addDecorator(
-        addImplementsFieldResolver(classDeclaration, modelType, parentType),
-        createResolverDecorator(modelType, context),
+        conditional(
+          (hasFieldResolver || !!typeFromDecorator) && !!parentType,
+          () => addImplementsFieldResolver(classDeclaration, modelType, parentType),
+          classDeclaration,
+        ),
+        createResolverDecorator(modelType, hasFieldResolver || !!typeFromDecorator, context),
       ),
     ),
     node => {
