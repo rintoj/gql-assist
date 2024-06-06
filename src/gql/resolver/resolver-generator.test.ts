@@ -38,12 +38,15 @@ describe('generateResolver', () => {
     )
     expect(toParsedOutput(output)).toBe(
       toParsedOutput(`
-        import { Query, Resolver } from '@nestjs/graphql'
+        import { Parent, ResolveField, Resolver } from '@nestjs/graphql'
 
         @Resolver(() => UserModel)
         export class UserResolver {
-          @Query(() => User)
-          createdBy(): Promise<User> {}
+          @ResolveField(() => User)
+          createdBy(
+            @Parent()
+            parent: User,
+          ): Promise<User> {}
         }
       `),
     )

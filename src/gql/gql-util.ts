@@ -385,12 +385,14 @@ export function createPromiseType(...types: string[]) {
 export function getType(node: ts.PropertyDeclaration | ts.MethodDeclaration) {
   const typeFromDecorator = getTypeFromDecorator(node, 'Field')
   if (typeFromDecorator) return typeFromDecorator
+  if (getName(node) === 'id') return 'ID'
   const [type, secondType] = Array.from(new Set(getAllTypes(node.type))).filter(
     i => !['null', 'undefined', 'Promise'].includes(i),
   )
   if (secondType) throw new Error('Return type can not be a union type.')
+  if (type === 'string') return
+  if (type === 'number') return 'Int'
   if (type) return type
-  if (getName(node) === 'id') return 'ID'
 }
 
 export function addNullability<T extends ts.PropertyDeclaration | ts.MethodDeclaration>(
@@ -462,7 +464,7 @@ export function createFieldDecorator(
         factory.createIdentifier(type),
       ),
     )
-    if (type === 'ID') context.imports.push(createImport('@nestjs/graphql', 'ID'))
+    if (['ID', 'INT'].includes(type)) context.imports.push(createImport('@nestjs/graphql', type))
   }
 
   if (isNullable(node) || !!comment) {

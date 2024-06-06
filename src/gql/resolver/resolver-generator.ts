@@ -22,6 +22,7 @@ import {
   getAllTypes,
   getName,
   getParameterType,
+  getType,
   getTypeFromDecorator,
   hasDecorator,
   hasImplementationByName,
@@ -41,7 +42,23 @@ function processParameters(
     ...node,
     parameters: toNonNullArray(
       node.parameters.map(parameter => {
-        if (!!parameter.dotDotDotToken) return
+        if (!!parameter.dotDotDotToken) {
+          const type = getType(node)
+          return addDecorator(
+            factory.createParameterDeclaration(
+              undefined,
+              undefined,
+              factory.createIdentifier('parent'),
+              undefined,
+              factory.createTypeReferenceNode(
+                factory.createIdentifier(parentType ?? type ?? 'unknown'),
+                undefined,
+              ),
+              undefined,
+            ),
+            createParentDecorator(context),
+          )
+        }
         const name = getName(parameter)
         if (name === 'parent') {
           return addDecorator(
@@ -160,9 +177,8 @@ function getTypeNameFromParameters(node: ts.ClassDeclaration) {
 function getFieldDecoratorType(node: ts.Node) {
   if (
     hasDecorator(node, 'ResolveField') ||
-    ((ts.isFunctionTypeNode(node)
-      ? hasParameter(node.type, 'parent')
-      : hasParameter(node, 'parent')) &&
+    ((hasParameter(ts.isFunctionTypeNode(node) ? node.type : node, 'parent') ||
+      hasParameter(ts.isFunctionTypeNode(node) ? node.type : node, 'args')) &&
       !hasDecorator(node, 'Query') &&
       !hasDecorator(node, 'Mutation'))
   ) {
