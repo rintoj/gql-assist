@@ -3,7 +3,6 @@ import { writeFile } from 'fs-extra'
 import { reduceAsync } from 'tsds-tools'
 import ts from 'typescript'
 import { generateModel } from '../gql/model/model-generator'
-import { generateScalar } from '../gql/scalar/scalar-generator'
 import { generateResolver } from '../gql/resolver/resolver-generator'
 import { prettify, printTS, readAndParseTSFile } from '../util/ts-util'
 
@@ -11,7 +10,7 @@ interface GenerateProps {
   file: string
 }
 
-const plugins = [generateModel, generateScalar, generateResolver]
+const plugins = [generateModel, generateResolver]
 
 async function generate(sourceFile: ts.SourceFile) {
   return await reduceAsync(plugins, (sourceFile, runPlugin) => runPlugin(sourceFile), sourceFile)
