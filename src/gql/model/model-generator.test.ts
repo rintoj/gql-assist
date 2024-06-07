@@ -66,6 +66,36 @@ describe('generateModel', () => {
     )
   })
 
+  test('should generate a model with boolean property', async () => {
+    const output = await generate(
+      'user.model.ts',
+      `
+        class User {
+          id!: string
+          name?: string[]
+          isActive?: boolean
+        }
+      `,
+    )
+    expect(toParsedOutput(output)).toBe(
+      toParsedOutput(`
+        import { Field, ID, ObjectType } from '@nestjs/graphql'
+
+        @ObjectType()
+        class User {
+          @Field(() => ID)
+          id!: string
+
+          @Field(() => [String], { nullable: true })
+          name?: string[]
+
+          @Field({ nullable: true })
+          isActive?: boolean
+        }
+      `),
+    )
+  })
+
   test('should generate a model if has @ObjectType decorator', async () => {
     const output = await generate(
       'user.ts',

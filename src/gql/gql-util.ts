@@ -75,6 +75,10 @@ export function getTypeFromDecorator(node: ts.Node, name: string) {
   }
 }
 
+export function isAsync(node: ts.Node) {
+  return (node as any)?.modifiers?.some((i: any) => i.kind === SyntaxKind.AsyncKeyword)
+}
+
 export function hasDecorator(node: ts.Node, name: string) {
   return getDecorator(node, name) !== undefined
 }
@@ -136,7 +140,10 @@ export function addDecorator<
   }
 }
 
-export function convertToMethod(node: ts.PropertyDeclaration | ts.MethodDeclaration) {
+export function convertToMethod(
+  node: ts.PropertyDeclaration | ts.MethodDeclaration,
+  removeType?: boolean,
+) {
   const name = getName(node)
   if (ts.isMethodDeclaration(node)) return node
   if (ts.isPropertyDeclaration(node) && node.type && ts.isFunctionTypeNode(node.type)) {
@@ -147,7 +154,8 @@ export function convertToMethod(node: ts.PropertyDeclaration | ts.MethodDeclarat
       undefined,
       undefined,
       node.type.parameters,
-      node.type.type,
+      // removeType ? undefined : node.type.type,
+      undefined,
       factory.createBlock([], true),
     )
   }
@@ -385,9 +393,9 @@ export function getAllTypes(
   throw new Error(`parseType: Failed to process ${ts.SyntaxKind[node.kind]}`)
 }
 
-export function createType(...types: string[]): ts.TypeNode {
+export function createType(...types: string[]): ts.TypeNode | undefined {
   if (types.length > 1) {
-    return factory.createUnionTypeNode(types.map(type => createType(type)))
+    return factory.createUnionTypeNode(toNonNullArray(types.map(type => createType(type))))
   }
   const [type] = types
   switch (type) {
@@ -402,14 +410,13 @@ export function createType(...types: string[]): ts.TypeNode {
     case 'null':
       return factory.createLiteralTypeNode(factory.createNull())
   }
-  if (!type) throw new Error('Type must be defined')
-  return factory.createTypeReferenceNode(factory.createIdentifier(type), undefined)
+  if (type) return factory.createTypeReferenceNode(factory.createIdentifier(type), undefined)
 }
 
 export function createPromiseType(...types: string[]) {
-  return factory.createTypeReferenceNode(factory.createIdentifier('Promise'), [
-    createType(...types),
-  ])
+  const innerType = createType(...types)
+  if (!innerType) return
+  return factory.createTypeReferenceNode(factory.createIdentifier('Promise'), [innerType])
 }
 
 export function getType(node: ts.PropertyDeclaration | ts.MethodDeclaration) {
@@ -483,7 +490,7 @@ export function createFieldDecorator(
   context.imports.push(createImport('@nestjs/graphql', decoratorName))
   const comment = getComment(node) ?? getCommentFromDecorator(node, decoratorName)
   const type = getType(node) ?? getTypeFromDecorator(node, decoratorName)
-  if (type) {
+  if (type && !['string', 'boolean'].includes(type)) {
     argumentsArray.push(
       factory.createArrowFunction(
         undefined,

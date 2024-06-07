@@ -27,6 +27,7 @@ import {
   hasDecorator,
   hasImplementationByName,
   hasParameter,
+  isAsync,
   organizeImports,
   removeNullability,
   transformName,
@@ -99,7 +100,7 @@ function processReturnType(node: ts.MethodDeclaration, context: Context): ts.Met
   )
   const uniqueTypes = toNonNullArray(Array.from(new Set(types.flat())))
   const typesWithoutPromise = uniqueTypes.filter(i => i !== 'Promise')
-  const hasPromise = uniqueTypes.some(i => i === 'Promise')
+  const hasPromise = isAsync(node)
   return {
     ...node,
     type: hasPromise
@@ -205,16 +206,21 @@ function processClassDeclaration(classDeclaration: ts.ClassDeclaration, context:
     ),
     node => {
       const fieldDecoratorType = getFieldDecoratorType(node)
-      const method = convertToMethod(node as any)
-      if (method) {
-        return addDecorator(
-          processParameters(
-            processReturnType(removeNullability(transformName(method, toCamelCase)), context),
-            parentType,
-            context,
-          ),
-          createFieldDecorator(method, fieldDecoratorType, context),
-        )
+      if (
+        ts.isMethodDeclaration(node) ||
+        (ts.isPropertyDeclaration(node) && node.type && ts.isFunctionTypeNode(node.type))
+      ) {
+        const method = convertToMethod(node as any, ts.isPropertyDeclaration(node))
+        if (method) {
+          return addDecorator(
+            processParameters(
+              processReturnType(removeNullability(transformName(method, toCamelCase)), context),
+              parentType,
+              context,
+            ),
+            createFieldDecorator(method, fieldDecoratorType, context),
+          )
+        }
       }
       return node
     },

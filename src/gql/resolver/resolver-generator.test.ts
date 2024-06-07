@@ -46,7 +46,7 @@ describe('generateResolver', () => {
           createdBy(
             @Parent()
             parent: User,
-          ): Promise<User> {}
+          ): User {}
         }
       `),
     )
@@ -387,7 +387,7 @@ describe('generateResolver', () => {
     )
   })
 
-  test('should create query with Promise', async () => {
+  test('should create query without Promise if not async', async () => {
     const output = await generate(
       'user.resolver.ts',
       `
@@ -407,6 +407,34 @@ describe('generateResolver', () => {
         export class UserResolver implements FieldResolver<UserModel, UserAPIType> {
           @Query(() => User, { nullable: true })
           user(
+            @Args('id', { nullable: true })
+            id?: string,
+          ): User | null {}
+        }
+      `),
+    )
+  })
+
+  test.only('should create query with Promise if async', async () => {
+    const output = await generate(
+      'user.resolver.ts',
+      `
+        class UserResolver implements FieldResolver<UserModel, UserAPIType> {
+          @Query()
+          async user(id?: string): Promise<User | null> {
+
+          }
+        }
+      `,
+    )
+    expect(toParsedOutput(output)).toBe(
+      toParsedOutput(`
+        import { Args, Query, Resolver } from '@nestjs/graphql'
+
+        @Resolver(() => UserModel)
+        export class UserResolver implements FieldResolver<UserModel, UserAPIType> {
+          @Query(() => User, { nullable: true })
+          async user(
             @Args('id', { nullable: true })
             id?: string,
           ): Promise<User | null> {}
