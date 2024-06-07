@@ -54,4 +54,30 @@ describe('generateModel', () => {
       `),
     )
   })
+
+  test('should not register twice', async () => {
+    const output = await generate(
+      'user.enum.ts',
+      `
+       import { registerEnumType } from '@nestjs/graphql'
+
+        enum Status {
+          ACTIVE = 'ACTIVE',
+          DELETED = 'DELETED',
+        }
+        registerEnumType(Status, { name: 'Status' })
+      `,
+    )
+    expect(toParsedOutput(output)).toBe(
+      toParsedOutput(`
+        import { registerEnumType } from '@nestjs/graphql'
+
+        enum Status {
+          ACTIVE = 'ACTIVE',
+          DELETED = 'DELETED',
+        }
+        registerEnumType(Status, { name: 'Status' })
+      `),
+    )
+  })
 })

@@ -50,6 +50,14 @@ export async function generateEnum(sourceFile: ts.SourceFile): Promise<ts.Source
     sourceFile,
     node => {
       if (ts.isEnumDeclaration(node)) return processEnumDeclaration(node, context)
+      if (
+        ts.isExpressionStatement(node) &&
+        ts.isCallExpression(node.expression) &&
+        ts.isIdentifier(node.expression.expression) &&
+        node.expression.expression.text === 'registerEnumType'
+      ) {
+        return
+      }
       return node
     },
     undefined,
