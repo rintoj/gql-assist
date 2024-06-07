@@ -589,6 +589,12 @@ export function organizeImports(sourceFile: ts.SourceFile): ts.SourceFile {
     return statement
   })
 
+  const sortedFileNames = Object.keys(importStatements)
+    .filter(fromFile => !!importStatements[fromFile].size)
+    .map(from => ({ from, firstImport: Array.from(importStatements[from]).sort()[0] }))
+    .sort((a, b) => a.firstImport.localeCompare(b.firstImport))
+    .map(item => item.from)
+
   return {
     ...sourceFile,
     statements: [
@@ -596,10 +602,9 @@ export function organizeImports(sourceFile: ts.SourceFile): ts.SourceFile {
         .filter(fromFile => !importStatements[fromFile].size)
         .sort()
         .map(fromFile => createImport(fromFile, ...Array.from(importStatements[fromFile]).sort())),
-      ...Object.keys(importStatements)
-        .filter(fromFile => !!importStatements[fromFile].size)
-        .sort()
-        .map(fromFile => createImport(fromFile, ...Array.from(importStatements[fromFile]).sort())),
+      ...sortedFileNames.map(fromFile =>
+        createImport(fromFile, ...Array.from(importStatements[fromFile]).sort()),
+      ),
       ...sourceFile.statements.filter(statement => !ts.isImportDeclaration(statement)),
     ] as any,
   }
