@@ -36,6 +36,36 @@ describe('generateModel', () => {
     )
   })
 
+  test('should generate a model with array property', async () => {
+    const output = await generate(
+      'user.model.ts',
+      `
+        class User {
+          id!: string
+          name?: string[]
+          addresses?: Address[]
+        }
+      `,
+    )
+    expect(toParsedOutput(output)).toBe(
+      toParsedOutput(`
+        import { Field, ID, ObjectType } from '@nestjs/graphql'
+
+        @ObjectType()
+        class User {
+          @Field(() => ID)
+          id!: string
+
+          @Field(() => [String], { nullable: true })
+          name?: string[]
+
+          @Field(() => [Address], { nullable: true })
+          addresses?: Address[]
+        }
+      `),
+    )
+  })
+
   test('should generate a model if has @ObjectType decorator', async () => {
     const output = await generate(
       'user.ts',

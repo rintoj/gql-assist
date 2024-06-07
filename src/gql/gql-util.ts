@@ -1,3 +1,4 @@
+import { toClassName } from 'name-util'
 import { toNonNullArray } from 'tsds-tools'
 import ts, { ModifierLike, SyntaxKind, factory, isCallExpression, isIdentifier } from 'typescript'
 import { config } from '../config'
@@ -377,6 +378,9 @@ export function getAllTypes(
   }
   if (ts.isFunctionTypeNode(node)) {
     return getAllTypes(node.type)
+  }
+  if (ts.isArrayTypeNode(node)) {
+    return getAllTypes(node.elementType).map(i => `[${toClassName(i)}]`)
   }
   throw new Error(`parseType: Failed to process ${ts.SyntaxKind[node.kind]}`)
 }
