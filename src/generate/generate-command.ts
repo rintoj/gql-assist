@@ -2,6 +2,7 @@ import { command, input } from 'clifer'
 import { writeFile } from 'fs-extra'
 import { reduceAsync } from 'tsds-tools'
 import ts from 'typescript'
+import { generateEnum } from '../gql/enum/enum-generator'
 import { generateModel } from '../gql/model/model-generator'
 import { generateResolver } from '../gql/resolver/resolver-generator'
 import { prettify, printTS, readAndParseTSFile } from '../util/ts-util'
@@ -10,7 +11,7 @@ interface GenerateProps {
   file: string
 }
 
-const plugins = [generateModel, generateResolver]
+const plugins = [generateModel, generateResolver, generateEnum]
 
 async function generate(sourceFile: ts.SourceFile) {
   return await reduceAsync(plugins, (sourceFile, runPlugin) => runPlugin(sourceFile), sourceFile)
