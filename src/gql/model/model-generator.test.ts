@@ -153,6 +153,31 @@ describe('generateModel', () => {
     )
   })
 
+  test('should replace nullability always', async () => {
+    config.nullableByDefault = false
+    const output = await generate(
+      'user.ts',
+      `
+        @ObjectType()
+        class User {
+          @Field({ nullable: true })
+          bio!: string
+        }
+      `,
+    )
+    expect(toParsedOutput(output)).toBe(
+      toParsedOutput(`
+        import { Field, ObjectType } from '@nestjs/graphql'
+
+        @ObjectType()
+        class User {
+          @Field()
+          bio!: string
+        }
+      `),
+    )
+  })
+
   test('should organize imports', async () => {
     const output = await generate(
       'user.ts',

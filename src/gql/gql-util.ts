@@ -493,7 +493,8 @@ export function createFieldDecorator(
     if (['ID', 'INT'].includes(type)) context.imports.push(createImport('@nestjs/graphql', type))
   }
 
-  const isNull = isNullableFromDecorator(node) || isNullable(node)
+  const isNull =
+    decoratorName === 'Field' ? isNullable(node) : isNullableFromDecorator(node) || isNullable(node)
 
   if (isNull || !!comment) {
     argumentsArray.push(
