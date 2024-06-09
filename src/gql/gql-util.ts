@@ -604,9 +604,7 @@ export function organizeImports(sourceFile: ts.SourceFile): ts.SourceFile {
     sortedFileNameMap
       .filter(item => !item.from.startsWith('@') && !item.from.startsWith('.'))
       .sort(sortImport),
-    sortedFileNameMap
-      .filter(item => !item.from.startsWith('@') && item.from.startsWith('.'))
-      .sort(sortImport),
+    sortedFileNameMap.filter(item => item.from.startsWith('.')).sort(sortImport),
   ]
     .flat()
     .map(item => item.from)

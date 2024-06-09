@@ -42,11 +42,11 @@ describe('generateResolver', () => {
 
         @Resolver(() => UserModel)
         export class UserResolver {
-          @ResolveField(() => User)
+          @ResolveField()
           createdBy(
             @Parent()
-            parent: User,
-          ): User {}
+            parent: unknown,
+          ) {}
         }
       `),
     )
@@ -415,7 +415,7 @@ describe('generateResolver', () => {
     )
   })
 
-  test.only('should create query with Promise if async', async () => {
+  test('should create query with Promise if async', async () => {
     const output = await generate(
       'user.resolver.ts',
       `
