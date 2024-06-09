@@ -205,13 +205,13 @@ function processClassDeclaration(classDeclaration: ts.ClassDeclaration, context:
       ),
     ),
     node => {
-      const fieldDecoratorType = getFieldDecoratorType(node)
       if (
         ts.isMethodDeclaration(node) ||
         (ts.isPropertyDeclaration(node) && node.type && ts.isFunctionTypeNode(node.type))
       ) {
         const method = convertToMethod(node as any, ts.isPropertyDeclaration(node))
         if (method) {
+          const fieldDecoratorType = getFieldDecoratorType(method)
           return addDecorator(
             processParameters(
               processReturnType(removeNullability(transformName(method, toCamelCase)), context),

@@ -52,6 +52,36 @@ describe('generateResolver', () => {
     )
   })
 
+  test('should generate paginated model', async () => {
+    const output = await generate(
+      'user.resolver.ts',
+      `
+        @Resolver(() => UserModel)
+        class UserResolver {
+          @ResolveField()
+          findAll(context, page?: Page): Users { }
+        }
+      `,
+    )
+    expect(toParsedOutput(output)).toBe(
+      toParsedOutput(`
+        import { Args, Context, ResolveField, Resolver } from '@nestjs/graphql'
+
+        @Resolver(() => UserModel)
+        export class UserResolver {
+          @ResolveField(() => Users)
+          findAll(
+            @Context()
+            context: GQLContext,
+
+            @Args({ name: 'page', type: () => Page, nullable: true })
+            page?: Page,
+          ): Users {}
+        }
+      `),
+    )
+  })
+
   test('should use the correct model name', async () => {
     const output = await generate(
       'user.resolver.ts',
@@ -181,7 +211,7 @@ describe('generateResolver', () => {
     )
     expect(toParsedOutput(output)).toBe(
       toParsedOutput(`
-        import { Args, Context, Query, Resolver } from '@nestjs/graphql'
+        import { Args, Context, ID, Query, Resolver } from '@nestjs/graphql'
 
         @Resolver(() => UserModel)
         export class UserResolver implements FieldResolver<UserModel, UserAPIType> {
@@ -190,7 +220,7 @@ describe('generateResolver', () => {
             @Context()
             context: GQLContext,
 
-            @Args('id')
+            @Args({ name: 'id', type: () => ID })
             id: string,
           ): User | null {}
         }
@@ -212,13 +242,13 @@ describe('generateResolver', () => {
     )
     expect(toParsedOutput(output)).toBe(
       toParsedOutput(`
-        import { Args, Context, Parent, Query, Resolver } from '@nestjs/graphql'
+        import { Args, Context, ID, Parent, Query, Resolver } from '@nestjs/graphql'
 
         @Resolver(() => UserModel)
         export class UserResolver implements FieldResolver<UserModel, UserAPIType> {
           @Query(() => User)
           user(
-            @Args('id')
+            @Args({ name: 'id', type: () => ID })
             id: string,
 
             @Parent()
@@ -246,7 +276,7 @@ describe('generateResolver', () => {
     )
     expect(toParsedOutput(output)).toBe(
       toParsedOutput(`
-        import { Args, Context, Query, Resolver } from '@nestjs/graphql'
+        import { Args, Context, ID, Query, Resolver } from '@nestjs/graphql'
 
         @Resolver(() => UserModel)
         export class UserResolver implements FieldResolver<UserModel, UserAPIType> {
@@ -255,7 +285,7 @@ describe('generateResolver', () => {
             @Context()
             context: GQLContext,
 
-            @Args('id', { nullable: true })
+            @Args({ name: 'id', type: () => ID, nullable: true })
             id?: string,
           ): User | null {}
         }
@@ -277,7 +307,7 @@ describe('generateResolver', () => {
     )
     expect(toParsedOutput(output)).toBe(
       toParsedOutput(`
-        import { Args, Context, ResolveField, Resolver } from '@nestjs/graphql'
+        import { Args, Context, ID, ResolveField, Resolver } from '@nestjs/graphql'
 
         @Resolver(() => UserModel)
         export class UserResolver implements FieldResolver<UserModel, UserAPIType> {
@@ -286,7 +316,7 @@ describe('generateResolver', () => {
             @Context()
             context: GQLContext,
 
-            @Args('id', { nullable: true })
+            @Args({ name: 'id', type: () => ID, nullable: true })
             id?: string,
           ) {}
         }
@@ -308,7 +338,7 @@ describe('generateResolver', () => {
     )
     expect(toParsedOutput(output)).toBe(
       toParsedOutput(`
-        import { Args, Context, ResolveField, Resolver } from '@nestjs/graphql'
+        import { Args, Context, ID, ResolveField, Resolver } from '@nestjs/graphql'
 
         @Resolver(() => UserModel)
         export class UserResolver implements FieldResolver<UserModel, UserAPIType> {
@@ -317,7 +347,7 @@ describe('generateResolver', () => {
             @Context()
             context: GQLContext,
 
-            @Args('id', { nullable: true })
+            @Args({ name: 'id', type: () => ID, nullable: true })
             id?: string,
           ): User | null {}
         }
@@ -331,7 +361,7 @@ describe('generateResolver', () => {
       `
         class UserResolver implements FieldResolver<UserModel, UserAPIType> {
           @Mutation(() => User)
-          user(context, id, parent): User {
+          user(context, userId, parent): User {
 
           }
         }
@@ -348,8 +378,8 @@ describe('generateResolver', () => {
             @Context()
             context: GQLContext,
 
-            @Args('id')
-            id: string,
+            @Args('userId')
+            userId: string,
 
             @Parent()
             parent: UserAPIType,
@@ -365,7 +395,7 @@ describe('generateResolver', () => {
       `
         class UserResolver implements FieldResolver<UserModel, UserAPIType> {
           @Mutation()
-          createUser(id?: string): User | null {
+          createUser(userId?: string): User | null {
 
           }
         }
@@ -379,8 +409,8 @@ describe('generateResolver', () => {
         export class UserResolver implements FieldResolver<UserModel, UserAPIType> {
           @Mutation(() => User, { nullable: true })
           createUser(
-            @Args('id', { nullable: true })
-            id?: string,
+            @Args('userId', { nullable: true })
+            userId?: string,
           ): User | null {}
         }
       `),
@@ -393,7 +423,7 @@ describe('generateResolver', () => {
       `
         class UserResolver implements FieldResolver<UserModel, UserAPIType> {
           @Query()
-          user(id?: string): Promise<User | null> {
+          user(userId?: string): Promise<User | null> {
 
           }
         }
@@ -407,8 +437,8 @@ describe('generateResolver', () => {
         export class UserResolver implements FieldResolver<UserModel, UserAPIType> {
           @Query(() => User, { nullable: true })
           user(
-            @Args('id', { nullable: true })
-            id?: string,
+            @Args('userId', { nullable: true })
+            userId?: string,
           ): User | null {}
         }
       `),
@@ -421,7 +451,7 @@ describe('generateResolver', () => {
       `
         class UserResolver implements FieldResolver<UserModel, UserAPIType> {
           @Query()
-          async user(id?: string): Promise<User | null> {
+          async user(userId?: string): Promise<User | null> {
 
           }
         }
@@ -435,8 +465,8 @@ describe('generateResolver', () => {
         export class UserResolver implements FieldResolver<UserModel, UserAPIType> {
           @Query(() => User, { nullable: true })
           async user(
-            @Args('id', { nullable: true })
-            id?: string,
+            @Args('userId', { nullable: true })
+            userId?: string,
           ): Promise<User | null> {}
         }
       `),
