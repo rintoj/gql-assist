@@ -589,10 +589,26 @@ export function organizeImports(sourceFile: ts.SourceFile): ts.SourceFile {
     return statement
   })
 
-  const sortedFileNames = Object.keys(importStatements)
+  const sortedFileNameMap = Object.keys(importStatements)
     .filter(fromFile => !!importStatements[fromFile].size)
     .map(from => ({ from, firstImport: Array.from(importStatements[from]).sort()[0] }))
-    .sort((a, b) => a.firstImport.localeCompare(b.firstImport))
+
+  const sortImport = (a: any, b: any) => {
+    const value = a.from.localeCompare(b.from)
+    if (value === 0) return a.firstImport.localeCompare(b.firstImport)
+    return value
+  }
+
+  const sortedFileNames = [
+    sortedFileNameMap.filter(item => item.from.startsWith('@')).sort(sortImport),
+    sortedFileNameMap
+      .filter(item => !item.from.startsWith('@') && !item.from.startsWith('.'))
+      .sort(sortImport),
+    sortedFileNameMap
+      .filter(item => !item.from.startsWith('@') && item.from.startsWith('.'))
+      .sort(sortImport),
+  ]
+    .flat()
     .map(item => item.from)
 
   return {
