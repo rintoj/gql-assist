@@ -171,8 +171,12 @@ export function addExport<T extends ts.ClassDeclaration | ts.PropertyDeclaration
   }
 }
 
-export function createObjectTypeDecorator(node: ts.ClassDeclaration, context: Context) {
-  const comment = getComment(node) ?? getCommentFromDecorator(node, 'ObjectType')
+export function createObjectTypeDecorator(
+  node: ts.ClassDeclaration,
+  name: 'ObjectType' | 'InputType',
+  context: Context,
+) {
+  const comment = getComment(node) ?? getCommentFromDecorator(node, name)
   const argumentsArray: ts.Expression[] = []
   if (!!comment) {
     argumentsArray.push(
@@ -187,9 +191,9 @@ export function createObjectTypeDecorator(node: ts.ClassDeclaration, context: Co
       ),
     )
   }
-  context.imports.push(createImport('@nestjs/graphql', 'ObjectType'))
+  context.imports.push(createImport('@nestjs/graphql', name))
   return factory.createDecorator(
-    factory.createCallExpression(factory.createIdentifier('ObjectType'), undefined, argumentsArray),
+    factory.createCallExpression(factory.createIdentifier(name), undefined, argumentsArray),
   )
 }
 
