@@ -16,7 +16,7 @@ function processClassDeclaration(classDeclaration: ts.ClassDeclaration, context:
   return ts.visitEachChild(
     addDecorator(
       classDeclaration,
-      createObjectTypeDecorator(classDeclaration, 'ObjectType', context),
+      createObjectTypeDecorator(classDeclaration, 'InputType', context),
     ),
     node => {
       if (ts.isPropertyDeclaration(node) && ts.isIdentifier(node.name)) {
@@ -31,16 +31,16 @@ function processClassDeclaration(classDeclaration: ts.ClassDeclaration, context:
   )
 }
 
-export function isModel(sourceFile: ts.SourceFile) {
+export function isInput(sourceFile: ts.SourceFile) {
   const { fileName } = sourceFile
   return (
-    fileName.endsWith('.model.ts') ||
-    sourceFile.statements.some(statement => hasDecorator(statement, 'ObjectType'))
+    fileName.endsWith('.input.ts') ||
+    sourceFile.statements.some(statement => hasDecorator(statement, 'InputType'))
   )
 }
 
-export async function generateModel(sourceFile: ts.SourceFile): Promise<ts.SourceFile> {
-  if (!isModel(sourceFile)) return sourceFile
+export async function generateInput(sourceFile: ts.SourceFile): Promise<ts.SourceFile> {
+  if (!isInput(sourceFile)) return sourceFile
   const context = createContext()
   const updatedSourcefile = ts.visitEachChild(
     sourceFile,
