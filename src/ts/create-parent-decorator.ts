@@ -1,5 +1,5 @@
 import { factory } from 'typescript'
-import { Context } from '../gql/context'
+import { Context } from '../generator/context'
 import { createImport } from './create-import'
 
 export function createParentDecorator(context: Context) {

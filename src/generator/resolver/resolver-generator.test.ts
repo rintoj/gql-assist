@@ -1,5 +1,7 @@
+import { parseTSFile } from '../../ts/parse-ts'
+import { prettify } from '../../ts/prettify'
+import { printTS } from '../../ts/print-ts'
 import { toParsedOutput } from '../../util/test-util'
-import { parseTSFile, prettify, printTS } from '../../util/ts-util'
 import { generateResolver } from './resolver-generator'
 
 async function generate(fileName: string, content: string) {

@@ -2,11 +2,13 @@ import { command, input } from 'clifer'
 import { writeFile } from 'fs-extra'
 import { reduceAsync } from 'tsds-tools'
 import ts from 'typescript'
-import { generateEnum } from '../gql/enum/enum-generator'
-import { generateInput } from '../gql/input/input-generator'
-import { generateModel } from '../gql/model/model-generator'
-import { generateResolver } from '../gql/resolver/resolver-generator'
-import { prettify, printTS, readAndParseTSFile } from '../util/ts-util'
+import { generateEnum } from '../generator/enum/enum-generator'
+import { generateInput } from '../generator/input/input-generator'
+import { generateModel } from '../generator/model/model-generator'
+import { generateResolver } from '../generator/resolver/resolver-generator'
+import { readTSFile } from '../ts/parse-ts'
+import { prettify } from '../ts/prettify'
+import { printTS } from '../ts/print-ts'
 
 interface GenerateProps {
   file: string
@@ -19,7 +21,7 @@ export async function generate(sourceFile: ts.SourceFile) {
 }
 
 async function run({ file }: GenerateProps) {
-  const sourceFile = readAndParseTSFile(file)
+  const sourceFile = readTSFile(file)
   const output = await prettify(printTS(await generate(sourceFile), undefined))
   await writeFile(file, output)
 }

@@ -1,6 +1,8 @@
 import { toParsedOutput } from '../util/test-util'
-import { parseTS, prettify, printTS } from '../util/ts-util'
 import { organizeImports } from './organize-imports'
+import { parseTS } from './parse-ts'
+import { prettify } from './prettify'
+import { printTS } from './print-ts'
 
 describe('organizeImport', () => {
   test('to organize imports', async () => {

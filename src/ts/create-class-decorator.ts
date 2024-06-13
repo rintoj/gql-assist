@@ -1,5 +1,5 @@
 import ts from 'typescript'
-import { Context } from '../gql/context'
+import { Context } from '../generator/context'
 import { createImport } from './create-import'
 import { getComment } from './get-comment'
 import { getCommentFromDecorator } from './get-comment-from-decorator'

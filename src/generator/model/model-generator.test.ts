@@ -1,18 +1,20 @@
 import { config } from '../../config'
+import { parseTSFile } from '../../ts/parse-ts'
+import { prettify } from '../../ts/prettify'
+import { printTS } from '../../ts/print-ts'
 import { toParsedOutput } from '../../util/test-util'
-import { parseTSFile, prettify, printTS } from '../../util/ts-util'
-import { generateInput } from './input-generator'
+import { generateModel } from './model-generator'
 
 async function generate(fileName: string, content: string) {
   const sourceFile = parseTSFile(fileName, content)
-  const output = await generateInput(sourceFile)
+  const output = await generateModel(sourceFile)
   return prettify(printTS(output, undefined, { removeComments: true }))
 }
 
-describe('generateInput', () => {
+describe('generateModel', () => {
   test('should generate a model', async () => {
     const output = await generate(
-      'user.input.ts',
+      'user.model.ts',
       `
         class User {
           id!: string
@@ -22,9 +24,9 @@ describe('generateInput', () => {
     )
     expect(toParsedOutput(output)).toBe(
       toParsedOutput(`
-        import { Field, ID, InputType } from '@nestjs/graphql'
+        import { Field, ID, ObjectType } from '@nestjs/graphql'
 
-        @InputType()
+        @ObjectType()
         class User {
           @Field(() => ID)
           id!: string
@@ -38,7 +40,7 @@ describe('generateInput', () => {
 
   test('should generate a model with array property', async () => {
     const output = await generate(
-      'user.input.ts',
+      'user.model.ts',
       `
         class User {
           id!: string
@@ -49,9 +51,9 @@ describe('generateInput', () => {
     )
     expect(toParsedOutput(output)).toBe(
       toParsedOutput(`
-        import { Field, ID, InputType } from '@nestjs/graphql'
+        import { Field, ID, ObjectType } from '@nestjs/graphql'
 
-        @InputType()
+        @ObjectType()
         class User {
           @Field(() => ID)
           id!: string
@@ -68,7 +70,7 @@ describe('generateInput', () => {
 
   test('should generate a model with boolean property', async () => {
     const output = await generate(
-      'user.input.ts',
+      'user.model.ts',
       `
         class User {
           id!: string
@@ -79,9 +81,9 @@ describe('generateInput', () => {
     )
     expect(toParsedOutput(output)).toBe(
       toParsedOutput(`
-        import { Field, ID, InputType } from '@nestjs/graphql'
+        import { Field, ID, ObjectType } from '@nestjs/graphql'
 
-        @InputType()
+        @ObjectType()
         class User {
           @Field(() => ID)
           id!: string
@@ -96,11 +98,11 @@ describe('generateInput', () => {
     )
   })
 
-  test('should generate a model if has @InputType decorator', async () => {
+  test('should generate a model if has @ObjectType decorator', async () => {
     const output = await generate(
       'user.ts',
       `
-        @InputType()
+        @ObjectType()
         class User {
           id!: string
           name?: string
@@ -109,9 +111,9 @@ describe('generateInput', () => {
     )
     expect(toParsedOutput(output)).toBe(
       toParsedOutput(`
-        import { Field, ID, InputType } from '@nestjs/graphql'
+        import { Field, ID, ObjectType } from '@nestjs/graphql'
 
-        @InputType()
+        @ObjectType()
         class User {
           @Field(() => ID)
           id!: string
@@ -127,7 +129,7 @@ describe('generateInput', () => {
     const output = await generate(
       'user.ts',
       `
-        @InputType()
+        @ObjectType()
         class User {
           archivedOn?: Date
           joined_on?: Date
@@ -136,9 +138,9 @@ describe('generateInput', () => {
     )
     expect(toParsedOutput(output)).toBe(
       toParsedOutput(`
-        import { Field, InputType } from '@nestjs/graphql'
+        import { Field, ObjectType } from '@nestjs/graphql'
 
-        @InputType()
+        @ObjectType()
         class User {
           @Field(() => Date, { nullable: true })
           archivedOn?: Date
@@ -154,7 +156,7 @@ describe('generateInput', () => {
     const output = await generate(
       'user.ts',
       `
-        @InputType()
+        @ObjectType()
         class User {
           id!: string
           name: string
@@ -164,9 +166,9 @@ describe('generateInput', () => {
     )
     expect(toParsedOutput(output)).toBe(
       toParsedOutput(`
-        import { Field, ID, InputType } from '@nestjs/graphql'
+        import { Field, ID, ObjectType } from '@nestjs/graphql'
 
-        @InputType()
+        @ObjectType()
         class User {
           @Field(() => ID)
           id!: string
@@ -186,7 +188,7 @@ describe('generateInput', () => {
     const output = await generate(
       'user.ts',
       `
-        @InputType()
+        @ObjectType()
         class User {
           id!: string
           name: string
@@ -196,9 +198,9 @@ describe('generateInput', () => {
     )
     expect(toParsedOutput(output)).toBe(
       toParsedOutput(`
-        import { Field, ID, InputType } from '@nestjs/graphql'
+        import { Field, ID, ObjectType } from '@nestjs/graphql'
 
-        @InputType()
+        @ObjectType()
         class User {
           @Field(() => ID)
           id!: string
@@ -218,7 +220,7 @@ describe('generateInput', () => {
     const output = await generate(
       'user.ts',
       `
-        @InputType()
+        @ObjectType()
         class User {
           @Field({ nullable: true })
           bio!: string
@@ -227,9 +229,9 @@ describe('generateInput', () => {
     )
     expect(toParsedOutput(output)).toBe(
       toParsedOutput(`
-        import { Field, InputType } from '@nestjs/graphql'
+        import { Field, ObjectType } from '@nestjs/graphql'
 
-        @InputType()
+        @ObjectType()
         class User {
           @Field()
           bio!: string
@@ -244,7 +246,7 @@ describe('generateInput', () => {
       `
         import 'reflect-metadata'
 
-        @InputType()
+        @ObjectType()
         class User {
           id!: string
           name?: string
@@ -255,9 +257,9 @@ describe('generateInput', () => {
     expect(toParsedOutput(output)).toBe(
       toParsedOutput(`
         import 'reflect-metadata'
-        import { Field, ID, InputType } from '@nestjs/graphql'
+        import { Field, ID, ObjectType } from '@nestjs/graphql'
 
-        @InputType()
+        @ObjectType()
         class User {
           @Field(() => ID)
           id!: string
@@ -281,7 +283,7 @@ describe('generateInput', () => {
         /**
          * Defines a user
          */
-        @InputType()
+        @ObjectType()
         class User {
           /**
            * Unique identifier for the User
@@ -301,9 +303,9 @@ describe('generateInput', () => {
     expect(toParsedOutput(output)).toBe(
       toParsedOutput(`
         import 'reflect-metadata'
-        import { Field, ID, InputType } from '@nestjs/graphql'
+        import { Field, ID, ObjectType } from '@nestjs/graphql'
 
-        @InputType({ description: 'Defines a user' })
+        @ObjectType({ description: 'Defines a user' })
         class User {
           @Field(() => ID, { description: 'Unique identifier for the User' })
           id!: string
@@ -324,7 +326,7 @@ describe('generateInput', () => {
       `
         import 'reflect-metadata'
 
-        @InputType({ description: "Defines a user" })
+        @ObjectType({ description: "Defines a user" })
         class User {
           @Field(() => ID, { description: "Unique identifier for the User" })
           id!: string
@@ -338,9 +340,9 @@ describe('generateInput', () => {
     expect(toParsedOutput(output)).toBe(
       toParsedOutput(`
         import 'reflect-metadata'
-        import { Field, ID, InputType } from '@nestjs/graphql'
+        import { Field, ID, ObjectType } from '@nestjs/graphql'
 
-        @InputType({ description: 'Defines a user' })
+        @ObjectType({ description: 'Defines a user' })
         class User {
           @Field(() => ID, { description: 'Unique identifier for the User' })
           id!: string

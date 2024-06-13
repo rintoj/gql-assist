@@ -1,6 +1,6 @@
 import { toNonNullArray } from 'tsds-tools'
 import ts, { factory } from 'typescript'
-import { Context } from '../gql/context'
+import { Context } from '../generator/context'
 import { createImport } from './create-import'
 import { getName } from './get-name'
 import { getType, getTypeFromDecorator } from './get-type'

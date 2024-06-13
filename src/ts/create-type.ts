@@ -21,6 +21,11 @@ export function createType(...types: string[]): ts.TypeNode | undefined {
   if (type) return factory.createTypeReferenceNode(factory.createIdentifier(type), undefined)
 }
 
+export function createArrayType(...types: string[]) {
+  const type = createType(...types)
+  if (type) return ts.factory.createArrayTypeNode(type)
+}
+
 export function createReferenceType(name: string) {
   return factory.createTypeReferenceNode(factory.createIdentifier(name), undefined)
 }
