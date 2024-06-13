@@ -1,6 +1,9 @@
 import ts, { factory } from 'typescript'
+import { addImports } from '../../ts/add-imports'
+import { createImport } from '../../ts/create-import'
+import { getName } from '../../ts/get-name'
+import { organizeImports } from '../../ts/organize-imports'
 import { Context, createContext } from '../context'
-import { addImports, createImport, getName, organizeImports } from '../gql-util'
 
 function createRegisterEnum(node: ts.EnumDeclaration, context: Context) {
   const name = getName(node)
@@ -43,6 +46,8 @@ export function isEnum(sourceFile: ts.SourceFile) {
   return (
     fileName.endsWith('.enum.ts') ||
     fileName.endsWith('.input.ts') ||
+    fileName.endsWith('.model.ts') ||
+    fileName.endsWith('.resolver.ts') ||
     fileName.endsWith('.response.ts')
   )
 }

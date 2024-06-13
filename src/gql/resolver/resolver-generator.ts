@@ -1,38 +1,36 @@
 import { toCamelCase } from 'name-util'
 import { toNonNullArray } from 'tsds-tools'
-import ts, { SyntaxKind, factory, isClassDeclaration } from 'typescript'
-import { Context, createContext } from '../context'
+import ts, { factory, isClassDeclaration } from 'typescript'
+import { addDecorator } from '../../ts/add-decorator'
+import { addExport } from '../../ts/add-export'
+import { addImports } from '../../ts/add-imports'
+import { conditional } from '../../ts/conditional'
+import { convertToMethod } from '../../ts/convert-to-method'
+import { createArgsDecorator } from '../../ts/create-args-decorator'
+import { createContextDecorator } from '../../ts/create-context-decorator'
+import { createImport } from '../../ts/create-import'
+import { createParentDecorator } from '../../ts/create-parent-decorator'
+import { createPropertyOrMethodDecorator } from '../../ts/create-property-or-method-decorator'
+import { createResolverDecorator } from '../../ts/create-resolver-decorator'
 import {
-  addDecorator,
-  addExport,
-  addImports,
-  conditional,
-  convertToMethod,
-  createArgsDecorator,
-  createContextDecorator,
-  createFieldDecorator,
-  createImport,
-  createParentDecorator,
   createPromiseType,
   createReferenceType,
-  createResolverDecorator,
   createStringType,
   createType,
-  getAllParameters,
-  getAllTypes,
-  getName,
-  getParameterType,
-  getType,
-  getTypeFromDecorator,
-  hasDecorator,
-  hasImplementationByName,
-  hasParameter,
-  isAsync,
-  organizeImports,
-  removeNullability,
-  transformName,
-  withDefaultType,
-} from '../gql-util'
+} from '../../ts/create-type'
+import { getAllTypes } from '../../ts/get-all-types'
+import { hasImplementationByName } from '../../ts/get-comment-from-decorator'
+import { hasDecorator } from '../../ts/get-decorator'
+import { getName } from '../../ts/get-name'
+import { getAllParameters, hasParameter } from '../../ts/get-parameter'
+import { getParameterType } from '../../ts/get-parameter-by-type'
+import { getType, getTypeFromDecorator } from '../../ts/get-type'
+import { isAsync } from '../../ts/is-async'
+import { organizeImports } from '../../ts/organize-imports'
+import { removeNullability } from '../../ts/remove-nullability'
+import { transformName } from '../../ts/transform-name'
+import { withDefaultType } from '../../ts/with-default-type'
+import { Context, createContext } from '../context'
 
 function processParameters(
   node: ts.MethodDeclaration,
@@ -209,7 +207,7 @@ function processClassDeclaration(classDeclaration: ts.ClassDeclaration, context:
         ts.isMethodDeclaration(node) ||
         (ts.isPropertyDeclaration(node) && node.type && ts.isFunctionTypeNode(node.type))
       ) {
-        const method = convertToMethod(node as any, ts.isPropertyDeclaration(node))
+        const method = convertToMethod(node as any)
         if (method) {
           const fieldDecoratorType = getFieldDecoratorType(method)
           return addDecorator(
@@ -218,7 +216,7 @@ function processClassDeclaration(classDeclaration: ts.ClassDeclaration, context:
               parentType,
               context,
             ),
-            createFieldDecorator(method, fieldDecoratorType, context),
+            createPropertyOrMethodDecorator(method, fieldDecoratorType, context),
           )
         }
       }

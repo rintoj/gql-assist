@@ -3,8 +3,8 @@ import ts, { factory } from 'typescript'
 import { Context } from '../gql/context'
 import { createImport } from './create-import'
 import { getName } from './get-name'
-import { getType, isNullable } from './gql-util'
-import { getTypeFromDecorator } from './get-type-from-decorator'
+import { getType, getTypeFromDecorator } from './get-type'
+import { isNullable } from './is-nullable'
 
 export function createArgsDecorator(node: ts.ParameterDeclaration, context: Context) {
   context.imports.push(createImport('@nestjs/graphql', 'Args'))

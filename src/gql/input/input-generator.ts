@@ -1,28 +1,23 @@
 import { toCamelCase } from 'name-util'
 import ts, { isClassDeclaration } from 'typescript'
+import { addDecorator } from '../../ts/add-decorator'
+import { addImports } from '../../ts/add-imports'
+import { addNullability } from '../../ts/add-nullability'
+import { createClassDecorator } from '../../ts/create-class-decorator'
+import { createPropertyOrMethodDecorator } from '../../ts/create-property-or-method-decorator'
+import { hasDecorator } from '../../ts/get-decorator'
+import { organizeImports } from '../../ts/organize-imports'
+import { transformName } from '../../ts/transform-name'
 import { Context, createContext } from '../context'
-import {
-  addDecorator,
-  addImports,
-  addNullability,
-  createFieldDecorator,
-  createObjectTypeDecorator,
-  hasDecorator,
-  organizeImports,
-  transformName,
-} from '../gql-util'
 
 function processClassDeclaration(classDeclaration: ts.ClassDeclaration, context: Context) {
   return ts.visitEachChild(
-    addDecorator(
-      classDeclaration,
-      createObjectTypeDecorator(classDeclaration, 'InputType', context),
-    ),
+    addDecorator(classDeclaration, createClassDecorator(classDeclaration, 'InputType', context)),
     node => {
       if (ts.isPropertyDeclaration(node) && ts.isIdentifier(node.name)) {
         return addDecorator(
           addNullability(transformName(node, toCamelCase)),
-          createFieldDecorator(node, 'Field', context),
+          createPropertyOrMethodDecorator(node, 'Field', context),
         )
       }
       return node

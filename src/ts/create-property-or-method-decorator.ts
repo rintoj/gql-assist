@@ -7,7 +7,7 @@ import { getTypeFromDecorator, getType } from './get-type'
 import { isNullable } from './is-nullable'
 import { isNullableFromDecorator } from './is-nullable-from-decorator'
 
-export function createFieldDecorator(
+export function createPropertyOrMethodDecorator(
   node: ts.PropertyDeclaration | ts.MethodDeclaration,
   decoratorName: 'Query' | 'Mutation' | 'Field' | 'ResolveField',
   context: Context,
