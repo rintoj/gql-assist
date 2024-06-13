@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "gqlassist": ".bin/cli"
+    "gql-assist": ".bin/cli"
   },
   "private": false,
   "scripts": {

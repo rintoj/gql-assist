@@ -40,7 +40,11 @@ function processEnumDeclaration(node: ts.EnumDeclaration, context: Context) {
 
 export function isEnum(sourceFile: ts.SourceFile) {
   const { fileName } = sourceFile
-  return fileName.endsWith('.enum.ts')
+  return (
+    fileName.endsWith('.enum.ts') ||
+    fileName.endsWith('.input.ts') ||
+    fileName.endsWith('.response.ts')
+  )
 }
 
 export async function generateEnum(sourceFile: ts.SourceFile): Promise<ts.SourceFile> {

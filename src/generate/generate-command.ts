@@ -14,7 +14,7 @@ interface GenerateProps {
 
 const plugins = [generateModel, generateInput, generateResolver, generateEnum]
 
-async function generate(sourceFile: ts.SourceFile) {
+export async function generate(sourceFile: ts.SourceFile) {
   return await reduceAsync(plugins, (sourceFile, runPlugin) => runPlugin(sourceFile), sourceFile)
 }
 
