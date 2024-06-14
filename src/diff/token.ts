@@ -106,24 +106,3 @@ export class Token {
     )
   }
 }
-
-export function splitTokens(content: string) {
-  let line = 0
-  let position = 0
-  // const tokens = [...(content.match(/\s+|\S+/g) ?? [content])]
-  const tokens = content.split('\n').map(l => `${l}\n`)
-  return tokens.map((token, index) => {
-    const composed = new Token(
-      index,
-      new Range(new Position(line, position), new Position(line, position + token.length)),
-      token,
-    )
-    if (token.indexOf('\n') >= 0) {
-      line++
-      position = 0
-    } else {
-      position += token.length
-    }
-    return composed
-  })
-}

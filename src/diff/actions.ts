@@ -4,6 +4,7 @@ export enum EditActionType {
   INSERT = 'INSERT',
   REPLACE = 'REPLACE',
   DELETE = 'DELETE',
+  REPLACE_OLD = 'REPLACE_OLD',
 }
 
 export interface InsertAction {

@@ -1,4 +1,4 @@
-import { applyEdits, calculateEdit } from './calculate-edit'
+import { applyEditsByWord, calculateEditByWord } from './calculate-edit-by-word'
 
 describe('calculateEdit', () => {
   test('should generate insert actions', () => {
@@ -14,8 +14,8 @@ describe('calculateEdit', () => {
         id!: string
       }
     `)
-    const actions = calculateEdit(original, changed)
-    const edited = applyEdits(original, actions)
+    const actions = calculateEditByWord(original, changed)
+    const edited = applyEditsByWord(original, actions)
     expect(edited).toEqual(changed)
   })
 
@@ -33,8 +33,8 @@ describe('calculateEdit', () => {
         id!: string
       }
     `)
-    const actions = calculateEdit(original, changed)
-    const edited = applyEdits(original, actions)
+    const actions = calculateEditByWord(original, changed)
+    const edited = applyEditsByWord(original, actions)
     expect(edited).toEqual(changed)
   })
 
@@ -55,8 +55,8 @@ describe('calculateEdit', () => {
         id!: string
       }
     `)
-    const actions = calculateEdit(original, changed)
-    const edited = applyEdits(original, actions)
+    const actions = calculateEditByWord(original, changed)
+    const edited = applyEditsByWord(original, actions)
     expect(edited).toEqual(changed)
   })
 
@@ -77,9 +77,8 @@ describe('calculateEdit', () => {
         id!: string
       }
     `)
-    const actions = calculateEdit(original, changed)
-    const edited = applyEdits(original, actions)
-    console.log(edited)
+    const actions = calculateEditByWord(original, changed)
+    const edited = applyEditsByWord(original, actions)
     expect(edited).toEqual(changed)
   })
 
@@ -107,8 +106,8 @@ describe('calculateEdit', () => {
         email?: string
       }
     `)
-    const actions = calculateEdit(original, changed)
-    const edited = applyEdits(original, actions)
+    const actions = calculateEditByWord(original, changed)
+    const edited = applyEditsByWord(original, actions)
     expect(edited).toEqual(changed)
   })
 
@@ -129,8 +128,8 @@ describe('calculateEdit', () => {
       // This is a test
       interface Post {}
     `)
-    const actions = calculateEdit(original, changed)
-    const edited = applyEdits(original, actions)
+    const actions = calculateEditByWord(original, changed)
+    const edited = applyEditsByWord(original, actions)
     expect(edited).toEqual(changed)
   })
 
@@ -150,8 +149,8 @@ describe('calculateEdit', () => {
         name?: string
       }
     `)
-    const actions = calculateEdit(original, changed)
-    const edited = applyEdits(original, actions)
+    const actions = calculateEditByWord(original, changed)
+    const edited = applyEditsByWord(original, actions)
     expect(edited).toEqual(changed)
   })
 })

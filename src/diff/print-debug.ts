@@ -1,6 +1,10 @@
-import { green, red, yellow } from 'chalk'
+import { green, red, gray, yellow } from 'chalk'
 import { EditAction, EditActionType } from './actions'
 import { Position, Token } from './token'
+import { toArrayByProperty, toNonNullArray } from 'tsds-tools'
+
+const NEW_LINE_SYMBOL = '⏎'
+const SEPARATOR_SYMBOL = ''
 
 function colorize(text: string, actionType?: EditActionType) {
   switch (actionType) {
@@ -10,6 +14,8 @@ function colorize(text: string, actionType?: EditActionType) {
       return yellow(`\x1b[4m${text}\x1b[24m`)
     case EditActionType.DELETE:
       return red(`\x1b[9m${text}\x1b[29m`)
+    case EditActionType.REPLACE_OLD:
+      return gray(`\x1b[9m${text}\x1b[29m`)
   }
   return text
 }
@@ -28,7 +34,7 @@ function colorizeHeader(text: string, actionType?: EditActionType) {
 
 function toSeparator(showNewLine?: boolean) {
   if (!showNewLine) return ''
-  return '__SEPARATOR__'.padEnd(toLine(1, '').length + 1)
+  return SEPARATOR_SYMBOL
 }
 
 function toIndex(index: number) {
@@ -39,9 +45,7 @@ function toText(text: string) {
   return text
     .split('\n')
     .map(i => i)
-    .join('⏎')
-    .split('__SEPARATOR__')
-    .join('\n'.padEnd(13))
+    .join(NEW_LINE_SYMBOL)
 }
 
 function toPosition(position?: Position) {
@@ -72,7 +76,7 @@ function toLineText(
     return [
       summary,
       [
-        colorize(text, EditActionType.DELETE),
+        colorize(text, EditActionType.REPLACE_OLD),
         colorize(otherAction.token.text, otherAction.type),
       ].join(''),
     ].join(toSeparator(summary.trim() !== ''))
@@ -110,19 +114,30 @@ function toDivider(length = 80) {
     .join('')
 }
 
+function toChanges(actions: EditAction[], originalTokens: Token[]) {
+  const tokensByLineNumber = Object.values(
+    toArrayByProperty(
+      originalTokens.map(t => ({ ...t, lineNumber: t.range.start.line })),
+      'lineNumber',
+    ),
+  ) as any as Token[][]
+  return toNonNullArray(
+    tokensByLineNumber.flatMap((tokens, index) => {
+      const text = tokens
+        .map(token => {
+          const insertActions = insertActionsByIndex(actions, token.index)
+          const otherAction = otherActionsByIndex(actions, token.index)
+          return toLineText(token.text, insertActions, otherAction)
+        })
+        .join('')
+      return toLine(index, text, tokens[0])
+    }),
+  )
+}
+
 export function printDebugInfo(actions: EditAction[], originalTokens: Token[]) {
   const actionText = toActions(actions)
   const divider = toDivider()
-  const changes = originalTokens.flatMap((token, index) =>
-    toLine(
-      index,
-      toLineText(
-        token.text,
-        insertActionsByIndex(actions, index),
-        otherActionsByIndex(actions, index),
-      ),
-      token,
-    ),
-  )
+  const changes = toChanges(actions, originalTokens)
   console.log([divider, ...actionText, divider, ...changes, divider].join('\n'))
 }
