@@ -1,6 +1,6 @@
 import { green, red, yellow } from 'chalk'
 import { EditAction, EditActionType } from './actions'
-import { Token } from './token'
+import { Position, Token } from './token'
 
 function colorize(text: string, actionType?: EditActionType) {
   switch (actionType) {
@@ -28,15 +28,34 @@ function colorizeHeader(text: string, actionType?: EditActionType) {
 
 function toSeparator(showNewLine?: boolean) {
   if (!showNewLine) return ''
-  return '\n'.padEnd(toLine(1, '').length + 1)
+  return '__SEPARATOR__'.padEnd(toLine(1, '').length + 1)
 }
 
 function toIndex(index: number) {
   return `${index}`.padStart(3)
 }
 
-function toLine(index: number, text: string, actionType?: EditActionType) {
-  return `${toIndex(index)}: ${text}`
+function toText(text: string) {
+  return text
+    .split('\n')
+    .map(i => i)
+    .join('⏎')
+    .split('__SEPARATOR__')
+    .join('\n'.padEnd(13))
+}
+
+function toPosition(position?: Position) {
+  if (!position) return ''.padStart(6)
+  return `${position.line}:${position.character}`
+}
+
+function toRange(token?: Token) {
+  if (!token) return ''.padStart(12)
+  return `${toPosition(token.range.start)}-${toPosition(token.range.end)}`.padStart(12)
+}
+
+function toLine(index: number, text: string, token?: Token) {
+  return `${toRange(token)}${toIndex(index)}: ${toText(text)}`
 }
 
 function toLineText(
@@ -80,7 +99,7 @@ function toActions(actions: EditAction[]) {
     .reverse()
     .map(
       action =>
-        `${colorizeHeader(action.type.toString().padStart(7), action.type)} => ${toIndex(action.token.index)}: ${action.token.text}`,
+        `${colorizeHeader(action.type.toString().padStart(7), action.type)} ${toRange(action.token)} => ${toIndex(action.token.index)}: ${toText(action.token.text)}`,
     )
 }
 
@@ -94,10 +113,15 @@ function toDivider(length = 80) {
 export function printDebugInfo(actions: EditAction[], originalTokens: Token[]) {
   const actionText = toActions(actions)
   const divider = toDivider()
-  const changes = originalTokens.flatMap((l, i) =>
+  const changes = originalTokens.flatMap((token, index) =>
     toLine(
-      i,
-      toLineText(l.text, insertActionsByIndex(actions, i), otherActionsByIndex(actions, i)),
+      index,
+      toLineText(
+        token.text,
+        insertActionsByIndex(actions, index),
+        otherActionsByIndex(actions, index),
+      ),
+      token,
     ),
   )
   console.log([divider, ...actionText, divider, ...changes, divider].join('\n'))

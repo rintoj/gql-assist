@@ -159,6 +159,6 @@ describe('calculateEdit', () => {
 function trim(text: string) {
   return text
     .split('\n')
-    .map(i => i.replace(/^      /g, ''))
+    .map(i => i.replace(/^    /g, ''))
     .join('\n')
 }

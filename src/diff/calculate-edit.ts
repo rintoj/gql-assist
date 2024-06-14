@@ -1,9 +1,9 @@
-import minimumEditDistance from 'minimum-edit-distance'
+import minEditDistance from 'minimum-edit-distance'
 import { EditAction, EditActionType, createDelete, createInsert, createReplace } from './actions'
 import { printDebugInfo } from './print-debug'
 import { Token, splitTokens } from './token'
 
-const { diff, reconstruct } = minimumEditDistance
+const { diff } = minEditDistance
 
 function parseTrace(traces: string[], originalToken: Token[]) {
   let index = originalToken.length
@@ -55,5 +55,5 @@ export function applyEdits(content: string, actions: EditAction[]) {
         break
     }
   }
-  return tokens.map(t => t.text).join('\n')
+  return tokens.map(t => t.text.split('\n')[0]).join('\n')
 }
