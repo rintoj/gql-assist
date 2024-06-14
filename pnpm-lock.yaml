@@ -20,6 +20,9 @@ importers:
       graphql:
         specifier: ^16.8.2
         version: 16.8.2
+      minimum-edit-distance:
+        specifier: ^1.1.7
+        version: 1.1.7
       name-util:
         specifier: ^1.3.0
         version: 1.3.0
@@ -1943,6 +1946,9 @@ packages:
 
   minimist@1.2.8:
     resolution: {integrity: sha512-2yyAR8qBkN3YuheJanUpWC5U3bb5osDywNB8RzDVlDwDHbocAJveqqj1u8+SVD7jkWT4yvsHCpWqqWqAxb0zCA==}
+
+  minimum-edit-distance@1.1.7:
+    resolution: {integrity: sha512-GgOMtnNP4Tb7ZWVsVCp6FQ5UHYGT/+W4qsprc8K0+hFFrOta0kjdkKx+Oy7xsLIeF1H4MiTFgZfu7Hebddm5cA==}
 
   minipass@7.1.2:
     resolution: {integrity: sha512-qOOzS1cBTWYF4BH8fVePDBOO9iptMnGUEZwNc/cMWnTV2nVLZ7VoNWEPHkYczZA0pdoA7dl6e7FL659nX9S2aw==}
@@ -5184,6 +5190,8 @@ snapshots:
       brace-expansion: 2.0.1
 
   minimist@1.2.8: {}
+
+  minimum-edit-distance@1.1.7: {}
 
   minipass@7.1.2: {}
 
