@@ -13,11 +13,15 @@ describe('organizeImport', () => {
       import { Shipment } from './shipment.model'
       import { ShipmentType, TransactionStatus } from './shipment.type'
       import { Context, Parent, ResolveField, Resolver } from '@nestjs/graphql'
+      import gql from 'graphql'
+      import * as ts from 'typescript'
     `)
     const code = await prettify(printTS(organizeImports(sourceFile)))
     expect(toParsedOutput(code)).toEqual(
       toParsedOutput(`
       import { Context, Parent, ResolveField, Resolver } from '@nestjs/graphql'
+      import gql from 'graphql'
+      import * as ts from 'typescript'
       import { FieldResolver } from '../../common/field-resolver-type'
       import { GQLContext } from '../../context'
       import { ReturnService } from '../return/return.service'
