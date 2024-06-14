@@ -1,0 +1,74 @@
+scalar DateTime
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+}
+
+type Tweet {
+  id: ID!
+  content: String!
+  author: User!
+  mentions: [User]
+}
+
+type User {
+  id: ID!
+  name: String
+  email: String
+  isRegistered: Boolean
+  numberOfFollowers: Int
+  status: UserStatus
+  follower(id: ID!): User
+  followers(limit: Int): [User]!
+  createdAt: DateTime
+  updatedAt: DateTime
+  photo: Image
+}
+
+input RegisterUserInput {
+  name: String!
+  email: String!
+}
+
+type Query {
+  me: User
+  user(id: ID!): User
+  users(next: String): [User]!
+  tweet(id: ID!): Tweet
+  followers(id: ID!, limit: Int): [User]!
+  myNotifications: [Notification]!
+}
+
+type Mutation {
+  registerUser(input: RegisterUserInput!): User!
+  setUserStatus(id: ID!, status: UserStatus!): User!
+  signIn: User!
+}
+
+type Subscription {
+  onUserChange(id: ID!): User!
+}
+
+enum ImageSize {
+  SMALL
+  NORMAL
+  LARGE
+}
+
+type Image {
+  url(size: ImageSize): String!
+}
+
+type FollowNotification {
+  id: ID!
+  user: User!
+  following: Boolean!
+}
+
+type TweetNotification {
+  id: ID!
+  tweet: Tweet!
+}
+
+union Notification = FollowNotification | TweetNotification

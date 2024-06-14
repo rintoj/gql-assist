@@ -1,3 +1,6 @@
+export * from './diff'
+export * from './generator'
+
 import { cli, runCli } from 'clifer'
 import generate from './generate/generate-command'
 import create from './create/create-command'
