@@ -1,24 +1,20 @@
 import * as gql from 'graphql'
 import { toCamelCase, toClassName, toDashedName } from 'name-util'
-import { Options, format } from 'prettier'
-import { ById } from 'tsds-tools'
+import { toNonNullArray } from 'tsds-tools'
 import * as ts from 'typescript'
 import { createEnum } from '../../ts/create-enum'
 import { createGraphQLQuery } from '../../ts/create-graphql-query'
+import { createDefaultImport, createImport } from '../../ts/create-import'
 import { createInterface } from '../../ts/create-interface'
 import { createUnion } from '../../ts/create-union'
 import { findNode } from '../../ts/find-node'
-import { parseTS } from '../../ts/parse-ts'
 import { printTS } from '../../ts/print-ts'
-import { reduceToFlatArray } from '../../util/common'
+import { updateStatements } from '../../ts/update-statements'
+import { Context } from '../context'
 import { GQLObjectType, GQLType, extractGQLTypes } from './extract-gql-types'
 import { fixGQLRequest } from './fix-gql-request'
 import { parseSchema } from './graphql-util'
-
-interface Context {
-  imports: ById<string[]>
-  packageName: string
-}
+import { addEmptyLineBefore } from '../../ts/add-new-line'
 
 function createQueryHook({
   hookName,
@@ -380,10 +376,7 @@ function generateHookForOperation(
       }
     })
 
-    const imports =
-      context.imports[context.packageName] ?? (context.imports[context.packageName] = [])
-    imports.push(optionsName)
-    imports.push(reactHookName)
+    context.imports.push(createImport(context.gqlLibrary, optionsName, reactHookName))
 
     const hookStatement =
       def.operation === 'query'
@@ -417,103 +410,21 @@ function generateHookForOperation(
   return []
 }
 
-function sortImportsByFilename(import1: ts.ImportDeclaration, import2: ts.ImportDeclaration) {
-  return (import1.moduleSpecifier as ts.StringLiteral).text.localeCompare(
-    (import2.moduleSpecifier as ts.StringLiteral).text,
-  )
-}
-
-const hooks = ['useQuery', 'useMutation', 'useSubscription']
-
-function identifyLibrary(sourceFile: ts.SourceFile) {
-  const imports = sourceFile.statements.find((s): s is ts.ImportDeclaration =>
-    ts.isImportDeclaration(s) &&
-    s.importClause?.namedBindings &&
-    ts.isNamedImports(s.importClause?.namedBindings)
-      ? !!s.importClause?.namedBindings?.elements.find(e =>
-          hooks.includes(e.name.escapedText ?? ''),
-        )
-      : false,
-  )
-  return imports?.moduleSpecifier && ts.isStringLiteral(imports?.moduleSpecifier)
-    ? imports?.moduleSpecifier.text
-    : undefined
-}
-
-interface GenerateGQLHookOptions {
-  prettierOptions?: Options
-  packageName: string
-}
-
 export async function generateGQLHook(
   schema: gql.DocumentNode,
-  tsContent: string,
-  options: GenerateGQLHookOptions = { packageName: '@apollo/client' },
-): Promise<string> {
-  const sourceFile = parseTS(tsContent)
+  sourceFile: ts.SourceFile,
+  context: Context,
+): Promise<ts.SourceFile> {
   const request = extractGQL(sourceFile)
   const fixedQuery = fixGQLRequest(schema, request.gql)
   const requestDoc = parseSchema(fixedQuery)
-  const context = { imports: {}, packageName: identifyLibrary(sourceFile) ?? options.packageName }
 
-  const statements: ts.Statement[] = reduceToFlatArray(
-    requestDoc.definitions as gql.DefinitionNode[],
-    def => generateHookForOperation(schema, def, request.variable, context),
-  ) as any
-
-  const imports = createTSContent(
-    [createImportStatement('gql', 'graphql-tag'), ...createNamedImports(context.imports)].sort(
-      sortImportsByFilename,
+  const statements = toNonNullArray([
+    addEmptyLineBefore(createGraphQLQuery(fixedQuery, request.variable)),
+    ...requestDoc.definitions.flatMap(def =>
+      generateHookForOperation(schema, def, request.variable, context),
     ),
-    { blankLinesBetweenStatements: false },
-  )
-
-  const content = createTSContent(
-    [createGraphQLQuery(fixedQuery, request.variable), ...statements],
-    {
-      blankLinesBetweenStatements: true,
-    },
-  )
-
-  return format([imports, content].join('\n\n'), options.prettierOptions)
-}
-
-// TODO: To remove
-function createImportStatement(clause: string, file: string) {
-  return ts.factory.createImportDeclaration(
-    undefined,
-    ts.factory.createImportClause(false, ts.factory.createIdentifier(clause), undefined),
-    ts.factory.createStringLiteral(file),
-  )
-}
-
-// TODO: To remove
-function createNamedImports(imports: ById<string[]>) {
-  return Object.keys(imports).map((fileName: string) => {
-    const uniqueImports = Object.values(
-      Object.fromEntries((imports as any)[fileName].map((imp: string) => [imp, imp])),
-    )
-    return createNamedImportStatement(uniqueImports, fileName)
-  })
-}
-
-// TODO: To remove
-function createNamedImportStatement(imports: string[], file: string) {
-  return ts.factory.createImportDeclaration(
-    undefined,
-    ts.factory.createImportClause(
-      false,
-      undefined,
-      ts.factory.createNamedImports(
-        imports.map(importItem =>
-          ts.factory.createImportSpecifier(
-            false,
-            undefined,
-            ts.factory.createIdentifier(importItem),
-          ),
-        ),
-      ),
-    ),
-    ts.factory.createStringLiteral(file),
-  )
+  ])
+  context.imports.push(createDefaultImport('graphql-tag', 'gql'))
+  return updateStatements(sourceFile, statements)
 }

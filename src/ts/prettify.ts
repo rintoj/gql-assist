@@ -1,5 +1,4 @@
 import ts, {
-  addSyntheticLeadingComment,
   createPrinter,
   createSourceFile,
   EmitHint,
@@ -14,6 +13,7 @@ import ts, {
 import * as fs from 'fs-extra'
 import { resolve } from 'path'
 import { format } from 'prettier'
+import { addEmptyLineBefore, EMPTY_LINE } from './add-new-line'
 
 function sanitizePetterOptions(options: Record<string, string>) {
   return Object.keys(options)
@@ -67,8 +67,6 @@ function getPrettierOptions() {
 
 const prettierOptions = getPrettierOptions()
 
-const COMMENT = '__AUTO_GENERATED_EMPTY_LINE__'
-
 const printerOptions: ts.PrinterOptions = {
   newLine: ts.NewLineKind.LineFeed,
   omitTrailingSemicolon: false,
@@ -86,14 +84,14 @@ export function prettify(code: string) {
         case SyntaxKind.EnumDeclaration:
         case SyntaxKind.ExportKeyword:
         case SyntaxKind.MethodDeclaration:
-          return addSyntheticLeadingComment(node, SyntaxKind.SingleLineCommentTrivia, COMMENT, true)
+          return addEmptyLineBefore(node)
         default:
           return node
       }
     },
   })
     .printNode(EmitHint.Unspecified, node, node)
-    .replace(new RegExp(`\\/\\/${COMMENT}`, 'g'), '')
+    .replace(new RegExp(`\\/\\/${EMPTY_LINE}`, 'g'), '')
     .replace(new RegExp(`^function`, 'g'), '\nfunction')
     .replace(new RegExp(`^declare function`, 'g'), '\ndeclare function')
   return format(formattedCode, prettierOptions)

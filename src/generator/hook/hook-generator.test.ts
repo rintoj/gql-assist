@@ -1,13 +1,19 @@
-import { readFileSync } from 'fs-extra'
+import { parseTSFile } from '../../ts/parse-ts'
+import { prettify } from '../../ts/prettify'
+import { printTS } from '../../ts/print-ts'
 import { toParsedOutput } from '../../util/test-util'
-import { generateGQLHook } from './generate-gql-hook'
 import { loadSchema } from './graphql-util'
+import { GenerateHookOptions, generateHook } from './hook-generator'
 
 const schema = loadSchema('test/schema.gql')
-const prettierOptions = { ...JSON.parse(readFileSync('.prettierrc', 'utf8')), parser: 'typescript' }
-const generateGQLHookOptions = { prettierOptions, packageName: '@apollo/client' }
 
-describe('generateGQLHook', () => {
+async function generate(fileName: string, content: string, options?: GenerateHookOptions) {
+  const sourceFile = parseTSFile(fileName, content)
+  const output = await generateHook(sourceFile, schema, options)
+  return prettify(printTS(output, undefined))
+}
+
+describe('generateHook', () => {
   test('should generate query and its types', async () => {
     const query = `
       import gql from 'graphql-tag'
@@ -20,7 +26,7 @@ describe('generateGQLHook', () => {
         }
       \`
     `
-    const hook = await generateGQLHook(schema, query, generateGQLHookOptions)
+    const hook = await generate('use-query.gql.ts', query)
     expect(toParsedOutput(hook)).toEqual(
       toParsedOutput(`
         import { QueryHookOptions, useQuery } from '@apollo/client'
@@ -71,7 +77,7 @@ describe('generateGQLHook', () => {
         }
       \`
     `
-    const hook = await generateGQLHook(schema, query, generateGQLHookOptions)
+    const hook = await generate('use-query.gql.ts', query)
     expect(toParsedOutput(hook)).toEqual(
       toParsedOutput(`
         import { QueryHookOptions, useQuery } from '@apollo/client'
@@ -125,11 +131,11 @@ describe('generateGQLHook', () => {
         }
       \`
     `
-    const hook = await generateGQLHook(schema, query, generateGQLHookOptions)
+    const hook = await generate('use-query.gql.ts', query)
     expect(toParsedOutput(hook)).toEqual(
       toParsedOutput(`
-        import { QueryHookOptions, useQuery } from '../my-client'
         import gql from 'graphql-tag'
+        import { QueryHookOptions, useQuery } from '../my-client'
 
         const query = gql\`
           query fetchUser($id: ID!) {
@@ -178,11 +184,11 @@ describe('generateGQLHook', () => {
         }
       \`
     `
-    const hook = await generateGQLHook(schema, query, { prettierOptions, packageName: 'y-package' })
+    const hook = await generate('query.gql.ts', query, { gqlLibrary: 'y-package' })
     expect(toParsedOutput(hook)).toEqual(
       toParsedOutput(`
-      import gql from 'graphql-tag'
-      import { QueryHookOptions, useQuery } from 'y-package'
+        import gql from 'graphql-tag'
+        import { QueryHookOptions, useQuery } from 'y-package'
 
         const query = gql\`
           query fetchUser($id: ID!) {
@@ -235,7 +241,7 @@ describe('generateGQLHook', () => {
         }
       \`
     `
-    const hook = await generateGQLHook(schema, query, generateGQLHookOptions)
+    const hook = await generate('use-query.gql.ts', query)
     expect(toParsedOutput(hook)).toEqual(
       toParsedOutput(`
         import { QueryHookOptions, useQuery } from '@apollo/client'
@@ -300,7 +306,7 @@ describe('generateGQLHook', () => {
         }
       \`
     `
-    const hook = await generateGQLHook(schema, query, generateGQLHookOptions)
+    const hook = await generate('use-query.gql.ts', query)
     expect(toParsedOutput(hook)).toEqual(
       toParsedOutput(`
         import { QueryHookOptions, useQuery } from '@apollo/client'
@@ -355,7 +361,7 @@ describe('generateGQLHook', () => {
         }
       \`
     `
-    const hook = await generateGQLHook(schema, query, generateGQLHookOptions)
+    const hook = await generate('use-query.gql.ts', query)
     expect(toParsedOutput(hook)).toEqual(
       toParsedOutput(`
         import { QueryHookOptions, useQuery } from '@apollo/client'
@@ -416,7 +422,7 @@ describe('generateGQLHook', () => {
         }
       \`
     `
-    const hook = await generateGQLHook(schema, query, generateGQLHookOptions)
+    const hook = await generate('use-query.gql.ts', query)
     expect(toParsedOutput(hook)).toEqual(
       toParsedOutput(`import { QueryHookOptions, useQuery } from '@apollo/client'
       import gql from 'graphql-tag'
@@ -475,7 +481,7 @@ describe('generateGQLHook', () => {
         }
       \`
     `
-    const hook = await generateGQLHook(schema, query, generateGQLHookOptions)
+    const hook = await generate('use-query.gql.ts', query)
     expect(toParsedOutput(hook)).toEqual(
       toParsedOutput(`
         import { QueryHookOptions, useQuery } from '@apollo/client'
@@ -532,7 +538,7 @@ describe('generateGQLHook', () => {
         }
       \`
     `
-    const hook = await generateGQLHook(schema, query, generateGQLHookOptions)
+    const hook = await generate('use-query.gql.ts', query)
     expect(toParsedOutput(hook)).toEqual(
       toParsedOutput(`
         import { MutationHookOptions, useMutation } from '@apollo/client'
@@ -589,7 +595,7 @@ describe('generateGQLHook', () => {
         }
       \`
     `
-    const hook = await generateGQLHook(schema, query, generateGQLHookOptions)
+    const hook = await generate('use-query.gql.ts', query)
     expect(toParsedOutput(hook)).toEqual(
       toParsedOutput(`
         import { SubscriptionHookOptions, useSubscription } from '@apollo/client'
@@ -652,7 +658,7 @@ describe('generateGQLHook', () => {
         }
       \`
     `
-    const hook = await generateGQLHook(schema, query, generateGQLHookOptions)
+    const hook = await generate('use-query.gql.ts', query)
     expect(toParsedOutput(hook)).toEqual(
       toParsedOutput(`
         import { QueryHookOptions, useQuery } from '@apollo/client'
@@ -739,7 +745,7 @@ describe('generateGQLHook', () => {
         }
       \`
     `
-    const hook = await generateGQLHook(schema, query, generateGQLHookOptions)
+    const hook = await generate('use-query.gql.ts', query)
     expect(toParsedOutput(hook)).toEqual(
       toParsedOutput(`
         import { QueryHookOptions, useQuery } from '@apollo/client'
@@ -787,7 +793,7 @@ describe('generateGQLHook', () => {
         }
       \`
     `
-    const hook = await generateGQLHook(schema, query, generateGQLHookOptions)
+    const hook = await generate('use-query.gql.ts', query)
     expect(toParsedOutput(hook)).toEqual(
       toParsedOutput(`
         import { LazyQueryHookOptions, useLazyQuery } from '@apollo/client'
@@ -833,7 +839,7 @@ describe('generateGQLHook', () => {
         }
       \`
     `
-    const hook = await generateGQLHook(schema, query, generateGQLHookOptions)
+    const hook = await generate('use-query.gql.ts', query)
     expect(toParsedOutput(hook)).toEqual(
       toParsedOutput(`
         import { LazyQueryHookOptions, useLazyQuery } from '@apollo/client'
@@ -885,7 +891,7 @@ describe('generateGQLHook', () => {
         }
       \`
     `
-    const hook = await generateGQLHook(schema, query, generateGQLHookOptions)
+    const hook = await generate('use-query.gql.ts', query)
     expect(toParsedOutput(hook)).toEqual(
       toParsedOutput(`
         import { MutationHookOptions, useMutation } from '@apollo/client'
@@ -947,7 +953,7 @@ describe('generateGQLHook', () => {
         }
       \`
     `
-    const hook = await generateGQLHook(schema, query, generateGQLHookOptions)
+    const hook = await generate('use-query.gql.ts', query)
     expect(toParsedOutput(hook)).toEqual(
       toParsedOutput(`
         import { QueryHookOptions, useQuery } from '@apollo/client'
