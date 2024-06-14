@@ -9,6 +9,7 @@ import { hasDecorator } from '../../ts/get-decorator'
 import { organizeImports } from '../../ts/organize-imports'
 import { transformName } from '../../ts/transform-name'
 import { Context, createContext } from '../context'
+import { GQLAssistConfig } from '../../config'
 
 function processClassDeclaration(classDeclaration: ts.ClassDeclaration, context: Context) {
   return ts.visitEachChild(
@@ -16,7 +17,10 @@ function processClassDeclaration(classDeclaration: ts.ClassDeclaration, context:
     node => {
       if (ts.isPropertyDeclaration(node) && ts.isIdentifier(node.name)) {
         return addDecorator(
-          addNullability(transformName(node, toCamelCase)),
+          addNullability(
+            transformName(node, toCamelCase),
+            context.config.behaviour.nullableByDefault,
+          ),
           createPropertyOrMethodDecorator(node, 'Field', context),
         )
       }
@@ -26,17 +30,27 @@ function processClassDeclaration(classDeclaration: ts.ClassDeclaration, context:
   )
 }
 
-export function isModel(sourceFile: ts.SourceFile) {
+export function isModel(sourceFile: ts.SourceFile, config: GQLAssistConfig): boolean {
   const { fileName } = sourceFile
+  if (!config.model.enable) return false
   return (
-    fileName.endsWith('.model.ts') ||
+    !!config?.model?.fileExtensions?.find(i => fileName.endsWith(i)) ||
     sourceFile.statements.some(statement => hasDecorator(statement, 'ObjectType'))
   )
 }
 
-export async function generateModel(sourceFile: ts.SourceFile): Promise<ts.SourceFile> {
-  if (!isModel(sourceFile)) return sourceFile
-  const context = createContext()
+export function isResponse(sourceFile: ts.SourceFile, config: GQLAssistConfig): boolean {
+  const { fileName } = sourceFile
+  if (!config.response.enable) return false
+  return !!config?.response?.fileExtensions?.find(i => fileName.endsWith(i))
+}
+
+export async function generateModel(
+  sourceFile: ts.SourceFile,
+  config: GQLAssistConfig,
+): Promise<ts.SourceFile> {
+  if (!isModel(sourceFile, config) && !isResponse(sourceFile, config)) return sourceFile
+  const context = createContext({ config })
   const updatedSourcefile = ts.visitEachChild(
     sourceFile,
     node => {

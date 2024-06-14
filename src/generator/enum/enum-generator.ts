@@ -4,10 +4,11 @@ import { createImport } from '../../ts/create-import'
 import { getName } from '../../ts/get-name'
 import { organizeImports } from '../../ts/organize-imports'
 import { Context, createContext } from '../context'
+import { GQLAssistConfig } from '../../config'
 
 function createRegisterEnum(node: ts.EnumDeclaration, context: Context) {
   const name = getName(node)
-  context.imports.push(createImport('@nestjs/graphql', 'registerEnumType'))
+  context.imports.push(createImport(context.config.behaviour.serverLibrary, 'registerEnumType'))
   return factory.createExpressionStatement(
     factory.createCallExpression(factory.createIdentifier('registerEnumType'), undefined, [
       factory.createIdentifier(name),
@@ -41,20 +42,18 @@ function processEnumDeclaration(node: ts.EnumDeclaration, context: Context) {
   ]
 }
 
-export function isEnum(sourceFile: ts.SourceFile) {
+export function isEnum(sourceFile: ts.SourceFile, config: GQLAssistConfig) {
   const { fileName } = sourceFile
-  return (
-    fileName.endsWith('.enum.ts') ||
-    fileName.endsWith('.input.ts') ||
-    fileName.endsWith('.model.ts') ||
-    fileName.endsWith('.resolver.ts') ||
-    fileName.endsWith('.response.ts')
-  )
+  if (!config.enum.enable) return false
+  return !!config?.enum?.fileExtensions?.find(i => fileName.endsWith(i))
 }
 
-export async function generateEnum(sourceFile: ts.SourceFile): Promise<ts.SourceFile> {
-  if (!isEnum(sourceFile)) return sourceFile
-  const context = createContext()
+export async function generateEnum(
+  sourceFile: ts.SourceFile,
+  config: GQLAssistConfig,
+): Promise<ts.SourceFile> {
+  if (!isEnum(sourceFile, config)) return sourceFile
+  const context = createContext({ config })
   const updatedSourcefile = ts.visitEachChild(
     sourceFile,
     node => {

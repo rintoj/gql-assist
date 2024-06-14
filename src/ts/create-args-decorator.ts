@@ -7,9 +7,10 @@ import { getType, getTypeFromDecorator } from './get-type'
 import { isNullable } from './is-nullable'
 
 export function createArgsDecorator(node: ts.ParameterDeclaration, context: Context) {
-  context.imports.push(createImport('@nestjs/graphql', 'Args'))
+  context.imports.push(createImport(context.config.behaviour.serverLibrary, 'Args'))
   const name = getName(node)
-  const type = getType(node) ?? getTypeFromDecorator(node, 'Args')
+  const type =
+    getType(node, context.config.behaviour.defaultNumberType) ?? getTypeFromDecorator(node, 'Args')
   const argumentsArray: ts.Expression[] = []
   if (type && !['string', 'boolean'].includes(type)) {
     argumentsArray.push(
@@ -30,7 +31,7 @@ export function createArgsDecorator(node: ts.ParameterDeclaration, context: Cont
               factory.createIdentifier(type),
             ),
           ),
-          isNullable(node)
+          isNullable(node, context.config.behaviour.nullableByDefault)
             ? factory.createPropertyAssignment(
                 factory.createIdentifier('nullable'),
                 factory.createTrue(),
@@ -41,7 +42,7 @@ export function createArgsDecorator(node: ts.ParameterDeclaration, context: Cont
     )
   } else {
     argumentsArray.push(factory.createStringLiteral(name))
-    if (isNullable(node)) {
+    if (isNullable(node, context.config.behaviour.nullableByDefault)) {
       argumentsArray.push(
         factory.createObjectLiteralExpression(
           [
@@ -56,7 +57,7 @@ export function createArgsDecorator(node: ts.ParameterDeclaration, context: Cont
     }
   }
   if (type && ['ID', 'INT'].includes(type)) {
-    context.imports.push(createImport('@nestjs/graphql', type))
+    context.imports.push(createImport(context.config.behaviour.serverLibrary, type))
   }
   return factory.createDecorator(
     factory.createCallExpression(factory.createIdentifier('Args'), undefined, argumentsArray),

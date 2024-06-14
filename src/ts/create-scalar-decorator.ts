@@ -3,7 +3,7 @@ import { Context } from '../gql/context'
 import { createImport } from './create-import'
 
 export function createScalarDecorator(node: ts.ClassDeclaration, context: Context) {
-  context.imports.push(createImport('@nestjs/graphql', 'Scalar'))
+  context.imports.push(createImport(context.config.behaviour.serverLibrary, 'Scalar'))
   const name = node.name && ts.isIdentifier(node.name) ? node.name.text : ''
   const argumentsArray: ts.Expression[] = [
     factory.createStringLiteral(name),

@@ -1,6 +1,7 @@
 import { toCamelCase } from 'name-util'
 import { toNonNullArray } from 'tsds-tools'
 import ts, { factory, isClassDeclaration } from 'typescript'
+import { GQLAssistConfig } from '../../config'
 import { addDecorator } from '../../ts/add-decorator'
 import { addExport } from '../../ts/add-export'
 import { addImports } from '../../ts/add-imports'
@@ -42,7 +43,7 @@ function processParameters(
     parameters: toNonNullArray(
       node.parameters.map(parameter => {
         if (!!parameter.dotDotDotToken) {
-          const type = getType(node)
+          const type = getType(node, context.config.behaviour.defaultNumberType)
           return addDecorator(
             factory.createParameterDeclaration(
               undefined,
@@ -65,7 +66,7 @@ function processParameters(
             createParentDecorator(context),
           )
         } else if (name === 'context') {
-          context.imports.push(createImport('@nestjs/graphql', 'Context'))
+          context.imports.push(createImport(context.config.behaviour.serverLibrary, 'Context'))
           return addDecorator(
             withDefaultType(parameter, createReferenceType('GQLContext')),
             createContextDecorator(),
@@ -226,17 +227,21 @@ function processClassDeclaration(classDeclaration: ts.ClassDeclaration, context:
   )
 }
 
-export function isResolver(sourceFile: ts.SourceFile) {
+export function isResolver(sourceFile: ts.SourceFile, config: GQLAssistConfig) {
   const { fileName } = sourceFile
+  if (!config.resolver.enable) return false
   return (
-    fileName.endsWith('.resolver.ts') ||
+    !!config?.resolver?.fileExtensions?.find(i => fileName.endsWith(i)) ||
     sourceFile.statements.some(statement => hasDecorator(statement, 'Resolver'))
   )
 }
 
-export async function generateResolver(sourceFile: ts.SourceFile): Promise<ts.SourceFile> {
-  if (!isResolver(sourceFile)) return sourceFile
-  const context = createContext()
+export async function generateResolver(
+  sourceFile: ts.SourceFile,
+  config: GQLAssistConfig,
+): Promise<ts.SourceFile> {
+  if (!isResolver(sourceFile, config)) return sourceFile
+  const context = createContext({ config })
   const updatedSourcefile = ts.visitEachChild(
     sourceFile,
     node => {

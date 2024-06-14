@@ -3,8 +3,9 @@ import { isNullable } from './is-nullable'
 
 export function addNullability<T extends ts.PropertyDeclaration | ts.MethodDeclaration>(
   node: T,
+  nullableByDefault: boolean,
 ): T {
-  return isNullable(node)
+  return isNullable(node, nullableByDefault)
     ? {
         ...node,
         questionToken: ts.factory.createToken(ts.SyntaxKind.QuestionToken),

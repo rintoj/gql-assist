@@ -1,13 +1,13 @@
-import { config } from '../../config'
+import { GQLAssistConfig, config } from '../../config'
 import { parseTSFile } from '../../ts/parse-ts'
 import { prettify } from '../../ts/prettify'
 import { printTS } from '../../ts/print-ts'
 import { toParsedOutput } from '../../util/test-util'
 import { generateModel } from './model-generator'
 
-async function generate(fileName: string, content: string) {
+async function generate(fileName: string, content: string, initialConfig?: GQLAssistConfig) {
   const sourceFile = parseTSFile(fileName, content)
-  const output = await generateModel(sourceFile)
+  const output = await generateModel(sourceFile, initialConfig ?? config)
   return prettify(printTS(output, undefined, { removeComments: true }))
 }
 
@@ -33,6 +33,116 @@ describe('generateModel', () => {
 
           @Field({ nullable: true })
           name?: string
+        }
+      `),
+    )
+  })
+
+  test('should generate a numeric field as Int by default', async () => {
+    const output = await generate(
+      'user.model.ts',
+      `
+        class User {
+          id!: string
+          followers?: number
+        }
+      `,
+    )
+    expect(toParsedOutput(output)).toBe(
+      toParsedOutput(`
+        import { Field, ID, Int, ObjectType } from '@nestjs/graphql'
+
+        @ObjectType()
+        class User {
+          @Field(() => ID)
+          id!: string
+
+          @Field(() => Int, { nullable: true })
+          followers?: number
+        }
+      `),
+    )
+  })
+
+  test('should respect configured numeric type', async () => {
+    const output = await generate(
+      'user.model.ts',
+      `
+        class User {
+          id!: string
+
+          @Field(() => Float, { nullable: true })
+          followers?: number
+        }
+      `,
+    )
+    expect(toParsedOutput(output)).toBe(
+      toParsedOutput(`
+        import { Field, Float, ID, ObjectType } from '@nestjs/graphql'
+
+        @ObjectType()
+        class User {
+          @Field(() => ID)
+          id!: string
+
+          @Field(() => Float, { nullable: true })
+          followers?: number
+        }
+      `),
+    )
+  })
+
+  test('should generate a numeric field as Float if configured so', async () => {
+    const output = await generate(
+      'user.model.ts',
+      `
+        class User {
+          id!: string
+          followers?: number
+        }
+      `,
+      { ...config, behaviour: { ...config.behaviour, defaultNumberType: 'Float' } },
+    )
+    expect(toParsedOutput(output)).toBe(
+      toParsedOutput(`
+        import { Field, Float, ID, ObjectType } from '@nestjs/graphql'
+
+        @ObjectType()
+        class User {
+          @Field(() => ID)
+          id!: string
+
+          @Field(() => Float, { nullable: true })
+          followers?: number
+        }
+      `),
+    )
+  })
+
+  test('should respect configured numeric type', async () => {
+    const output = await generate(
+      'user.model.ts',
+      `
+        class User {
+          id!: string
+
+          @Field(() => Int, { nullable: true })
+          followers?: number
+        }
+      `,
+      { ...config, behaviour: { ...config.behaviour, defaultNumberType: 'Float' } },
+    )
+    expect(toParsedOutput(output)).toBe(
+      toParsedOutput(`
+        import { Field, ID, Int, ObjectType } from '@nestjs/graphql'
+
+        @ObjectType()
+        class User {
+          @Field(() => ID)
+          id!: string
+
+          @Field(() => Int, { nullable: true })
+          followers?: number
         }
       `),
     )
@@ -184,7 +294,7 @@ describe('generateModel', () => {
   })
 
   test('should infer nullability by question mark', async () => {
-    config.nullableByDefault = false
+    config.behaviour.nullableByDefault = false
     const output = await generate(
       'user.ts',
       `
@@ -216,7 +326,7 @@ describe('generateModel', () => {
   })
 
   test('should replace nullability always', async () => {
-    config.nullableByDefault = false
+    config.behaviour.nullableByDefault = false
     const output = await generate(
       'user.ts',
       `
@@ -352,6 +462,156 @@ describe('generateModel', () => {
 
           @Field(() => Organization, { nullable: true })
           org?: Organization
+        }
+      `),
+    )
+  })
+
+  test('should not generate if not enabled', async () => {
+    const output = await generate(
+      'user.model.ts',
+      `
+        class User {
+          id!: string
+          name?: string
+        }
+      `,
+      { ...config, model: { ...config.model, enable: false } },
+    )
+    expect(toParsedOutput(output)).toBe(
+      toParsedOutput(`
+        class User {
+          id!: string
+          name?: string
+        }
+      `),
+    )
+  })
+
+  test('should not generate if file extension does not match', async () => {
+    const output = await generate(
+      'user.model.ts',
+      `
+        class User {
+          id!: string
+          name?: string
+        }
+      `,
+      { ...config, model: { ...config.model, fileExtensions: ['-model.ts'] } },
+    )
+    expect(toParsedOutput(output)).toBe(
+      toParsedOutput(`
+        class User {
+          id!: string
+          name?: string
+        }
+      `),
+    )
+  })
+
+  test('should not generate if file extension does not match default config', async () => {
+    const output = await generate(
+      'user-model.ts',
+      `
+        class User {
+          id!: string
+          name?: string
+        }
+      `,
+    )
+    expect(toParsedOutput(output)).toBe(
+      toParsedOutput(`
+        class User {
+          id!: string
+          name?: string
+        }
+      `),
+    )
+  })
+
+  test('should generate a response model', async () => {
+    const output = await generate(
+      'user.response.ts',
+      `
+        class User {
+          id!: string
+          name?: string
+        }
+      `,
+    )
+    expect(toParsedOutput(output)).toBe(
+      toParsedOutput(`
+        import { Field, ID, ObjectType } from '@nestjs/graphql'
+
+        @ObjectType()
+        class User {
+          @Field(() => ID)
+          id!: string
+
+          @Field({ nullable: true })
+          name?: string
+        }
+      `),
+    )
+  })
+
+  test('should not generate response if not enabled', async () => {
+    const output = await generate(
+      'user.response.ts',
+      `
+        class User {
+          id!: string
+          name?: string
+        }
+      `,
+      { ...config, response: { ...config.response, enable: false } },
+    )
+    expect(toParsedOutput(output)).toBe(
+      toParsedOutput(`
+        class User {
+          id!: string
+          name?: string
+        }
+      `),
+    )
+  })
+
+  test('should not generate response if extension does not match', async () => {
+    const output = await generate(
+      'user.response.ts',
+      `
+        class User {
+          id!: string
+          name?: string
+        }
+      `,
+      { ...config, response: { ...config.response, fileExtensions: ['-response.ts'] } },
+    )
+    expect(toParsedOutput(output)).toBe(
+      toParsedOutput(`
+        class User {
+          id!: string
+          name?: string
+        }
+      `),
+    )
+  })
+
+  test('should not generate response if extension does not match default config', async () => {
+    const output = await generate(
+      'user-response.ts',
+      `
+        class User {
+          id!: string
+          name?: string
+        }
+      `,
+    )
+    expect(toParsedOutput(output)).toBe(
+      toParsedOutput(`
+        class User {
+          id!: string
+          name?: string
         }
       `),
     )

@@ -1,15 +1,16 @@
+import { GQLAssistConfig, config } from '../../config'
 import { parseTSFile } from '../../ts/parse-ts'
 import { prettify } from '../../ts/prettify'
 import { printTS } from '../../ts/print-ts'
 import { toParsedOutput } from '../../util/test-util'
 import { loadSchema } from './graphql-util'
-import { GenerateHookOptions, generateHook } from './hook-generator'
+import { generateHook } from './hook-generator'
 
 const schema = loadSchema('test/schema.gql')
 
-async function generate(fileName: string, content: string, options?: GenerateHookOptions) {
+async function generate(fileName: string, content: string, inlineConfig?: GQLAssistConfig) {
   const sourceFile = parseTSFile(fileName, content)
-  const output = await generateHook(sourceFile, schema, options)
+  const output = await generateHook(sourceFile, schema, inlineConfig ?? config)
   return prettify(printTS(output, undefined))
 }
 
@@ -131,7 +132,10 @@ describe('generateHook', () => {
         }
       \`
     `
-    const hook = await generate('use-query.gql.ts', query)
+    const hook = await generate('use-query.gql.ts', query, {
+      ...config,
+      reactHook: { ...config.reactHook, library: '../my-client' },
+    })
     expect(toParsedOutput(hook)).toEqual(
       toParsedOutput(`
         import gql from 'graphql-tag'
@@ -184,7 +188,10 @@ describe('generateHook', () => {
         }
       \`
     `
-    const hook = await generate('query.gql.ts', query, { gqlLibrary: 'y-package' })
+    const hook = await generate('query.gql.ts', query, {
+      ...config,
+      reactHook: { ...config.reactHook, library: 'y-package' },
+    })
     expect(toParsedOutput(hook)).toEqual(
       toParsedOutput(`
         import gql from 'graphql-tag'
@@ -1041,6 +1048,96 @@ describe('generateHook', () => {
             ...options,
           })
         }
+    `),
+    )
+  })
+
+  test('should not generate if not enabled', async () => {
+    const query = `
+      import gql from 'graphql-tag'
+
+      const query = gql\`
+        query {
+          user {
+            name
+          }
+        }
+      \`
+    `
+    const hook = await generate('use-query.gql.ts', query, {
+      ...config,
+      reactHook: { ...config.reactHook, enable: false },
+    })
+    expect(toParsedOutput(hook)).toEqual(
+      toParsedOutput(`
+      import gql from 'graphql-tag'
+
+      const query = gql\`
+        query {
+          user {
+            name
+          }
+        }
+      \`
+    `),
+    )
+  })
+
+  test('should not generate if files extension does not match', async () => {
+    const query = `
+      import gql from 'graphql-tag'
+
+      const query = gql\`
+        query {
+          user {
+            name
+          }
+        }
+      \`
+    `
+    const hook = await generate('use-query.gql.ts', query, {
+      ...config,
+      reactHook: { ...config.reactHook, fileExtensions: ['user-query.ts'] },
+    })
+    expect(toParsedOutput(hook)).toEqual(
+      toParsedOutput(`
+      import gql from 'graphql-tag'
+
+      const query = gql\`
+        query {
+          user {
+            name
+          }
+        }
+      \`
+    `),
+    )
+  })
+
+  test('should not generate if files extension does not match default', async () => {
+    const query = `
+      import gql from 'graphql-tag'
+
+      const query = gql\`
+        query {
+          user {
+            name
+          }
+        }
+      \`
+    `
+    const hook = await generate('use-query.ts', query)
+    expect(toParsedOutput(hook)).toEqual(
+      toParsedOutput(`
+      import gql from 'graphql-tag'
+
+      const query = gql\`
+        query {
+          user {
+            name
+          }
+        }
+      \`
     `),
     )
   })

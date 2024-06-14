@@ -13,9 +13,11 @@ export function createPropertyOrMethodDecorator(
   context: Context,
 ) {
   const argumentsArray: ts.Expression[] = []
-  context.imports.push(createImport('@nestjs/graphql', decoratorName))
+  context.imports.push(createImport(context.config.behaviour.serverLibrary, decoratorName))
   const comment = getComment(node) ?? getCommentFromDecorator(node, decoratorName)
-  const type = getType(node) ?? getTypeFromDecorator(node, decoratorName)
+  const type =
+    getType(node, context.config.behaviour.defaultNumberType) ??
+    getTypeFromDecorator(node, decoratorName)
   if (type && !['string', 'boolean'].includes(type)) {
     argumentsArray.push(
       factory.createArrowFunction(
@@ -27,11 +29,15 @@ export function createPropertyOrMethodDecorator(
         factory.createIdentifier(type),
       ),
     )
-    if (['ID', 'INT'].includes(type)) context.imports.push(createImport('@nestjs/graphql', type))
+    if (['ID', 'Int', 'Float'].includes(type))
+      context.imports.push(createImport(context.config.behaviour.serverLibrary, type))
   }
 
   const isNull =
-    decoratorName === 'Field' ? isNullable(node) : isNullableFromDecorator(node) || isNullable(node)
+    decoratorName === 'Field'
+      ? isNullable(node, context.config.behaviour.nullableByDefault)
+      : isNullableFromDecorator(node) ||
+        isNullable(node, context.config.behaviour.nullableByDefault)
 
   if (isNull || !!comment) {
     argumentsArray.push(

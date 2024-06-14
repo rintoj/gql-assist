@@ -1,12 +1,13 @@
+import { GQLAssistConfig, config } from '../../config'
 import { parseTSFile } from '../../ts/parse-ts'
 import { prettify } from '../../ts/prettify'
 import { printTS } from '../../ts/print-ts'
 import { toParsedOutput } from '../../util/test-util'
 import { generateResolver } from './resolver-generator'
 
-async function generate(fileName: string, content: string) {
+async function generate(fileName: string, content: string, initialConfig?: GQLAssistConfig) {
   const sourceFile = parseTSFile(fileName, content)
-  const output = await generateResolver(sourceFile)
+  const output = await generateResolver(sourceFile, initialConfig ?? config)
   return prettify(printTS(output, undefined, { removeComments: true }))
 }
 
@@ -471,6 +472,50 @@ describe('generateResolver', () => {
             userId?: string,
           ): Promise<User | null> {}
         }
+      `),
+    )
+  })
+
+  test('should not generate if not enabled', async () => {
+    const output = await generate(
+      'user.resolver.ts',
+      `
+        class UserResolver { }
+      `,
+      { ...config, resolver: { ...config.resolver, enable: false } },
+    )
+    expect(toParsedOutput(output)).toBe(
+      toParsedOutput(`
+        class UserResolver {}
+      `),
+    )
+  })
+
+  test('should not generate if file extension does not match', async () => {
+    const output = await generate(
+      'user.resolver.ts',
+      `
+        class UserResolver { }
+      `,
+      { ...config, resolver: { ...config.resolver, fileExtensions: ['-resolver.ts'] } },
+    )
+    expect(toParsedOutput(output)).toBe(
+      toParsedOutput(`
+        class UserResolver {}
+      `),
+    )
+  })
+
+  test('should not generate if file extension does not match default config', async () => {
+    const output = await generate(
+      'user-resolver.ts',
+      `
+        class UserResolver { }
+      `,
+    )
+    expect(toParsedOutput(output)).toBe(
+      toParsedOutput(`
+        class UserResolver {}
       `),
     )
   })

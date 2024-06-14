@@ -5,25 +5,21 @@ import { generateGQLHook } from './generate-gql-hook'
 import { identifyLibrary } from './identify-graphql-library'
 import { addImports } from '../../ts/add-imports'
 import { organizeImports } from '../../ts/organize-imports'
+import { GQLAssistConfig } from '../../config'
 
-export interface GenerateHookOptions {
-  gqlLibrary?: string
-}
-
-export function isHook(sourceFile: ts.SourceFile) {
+export function isHook(sourceFile: ts.SourceFile, config: GQLAssistConfig) {
   const { fileName } = sourceFile
-  return fileName.endsWith('.gql.ts')
+  if (!config.reactHook.enable) return false
+  return !!config?.reactHook?.fileExtensions?.find(i => fileName.endsWith(i))
 }
 
 export async function generateHook(
   sourceFile: ts.SourceFile,
   schema: DocumentNode,
-  options?: GenerateHookOptions,
+  config: GQLAssistConfig,
 ): Promise<ts.SourceFile> {
-  if (!isHook(sourceFile)) return sourceFile
-  const context = createContext({
-    gqlLibrary: options?.gqlLibrary ?? identifyLibrary(sourceFile),
-  })
+  if (!isHook(sourceFile, config)) return sourceFile
+  const context = createContext({ config })
   const updatedSourcefile = await generateGQLHook(schema, sourceFile, context)
   return organizeImports(addImports(updatedSourcefile, context.imports))
 }

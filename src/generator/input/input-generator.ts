@@ -1,5 +1,6 @@
 import { toCamelCase } from 'name-util'
 import ts, { isClassDeclaration } from 'typescript'
+import { GQLAssistConfig } from '../../config'
 import { addDecorator } from '../../ts/add-decorator'
 import { addImports } from '../../ts/add-imports'
 import { addNullability } from '../../ts/add-nullability'
@@ -16,7 +17,10 @@ function processClassDeclaration(classDeclaration: ts.ClassDeclaration, context:
     node => {
       if (ts.isPropertyDeclaration(node) && ts.isIdentifier(node.name)) {
         return addDecorator(
-          addNullability(transformName(node, toCamelCase)),
+          addNullability(
+            transformName(node, toCamelCase),
+            context.config.behaviour.nullableByDefault,
+          ),
           createPropertyOrMethodDecorator(node, 'Field', context),
         )
       }
@@ -26,17 +30,21 @@ function processClassDeclaration(classDeclaration: ts.ClassDeclaration, context:
   )
 }
 
-export function isInput(sourceFile: ts.SourceFile) {
+export function isInput(sourceFile: ts.SourceFile, config: GQLAssistConfig) {
   const { fileName } = sourceFile
+  if (!config.input.enable) return false
   return (
-    fileName.endsWith('.input.ts') ||
+    !!config?.input?.fileExtensions?.find(i => fileName.endsWith(i)) ||
     sourceFile.statements.some(statement => hasDecorator(statement, 'InputType'))
   )
 }
 
-export async function generateInput(sourceFile: ts.SourceFile): Promise<ts.SourceFile> {
-  if (!isInput(sourceFile)) return sourceFile
-  const context = createContext()
+export async function generateInput(
+  sourceFile: ts.SourceFile,
+  config: GQLAssistConfig,
+): Promise<ts.SourceFile> {
+  if (!isInput(sourceFile, config)) return sourceFile
+  const context = createContext({ config })
   const updatedSourcefile = ts.visitEachChild(
     sourceFile,
     node => {

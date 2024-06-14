@@ -1,14 +1,15 @@
 import ts from 'typescript'
+import { GQLAssistConfig, config } from '../config'
 
 export interface Context {
+  config: GQLAssistConfig
   imports: ts.ImportDeclaration[]
-  gqlLibrary: string
 }
 
 export function createContext(context?: Partial<Context>) {
   return {
+    config,
+    imports: [],
     ...context,
-    imports: context?.imports ?? [],
-    gqlLibrary: context?.gqlLibrary ?? '@apollo/client',
   }
 }

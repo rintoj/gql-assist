@@ -1,12 +1,60 @@
 import { resolve } from 'path'
 import * as fs from 'fs-extra'
 
+export type ServerLibrary = '@nestjs/graphql' | 'type-graphql'
+export type NumericType = 'Int' | 'Float'
+
 export interface GQLAssistConfig {
-  nullableByDefault: boolean
+  behaviour: {
+    nullableByDefault: boolean
+    defaultNumberType: NumericType
+    serverLibrary: ServerLibrary
+  }
+  model: {
+    enable: boolean
+    fileExtensions: string[]
+  }
+  resolver: {
+    enable: boolean
+    fileExtensions: string[]
+  }
+  input: {
+    enable: boolean
+    fileExtensions: string[]
+  }
+  response: {
+    enable: boolean
+    fileExtensions: string[]
+  }
+  enum: {
+    enable: boolean
+    fileExtensions: string[]
+  }
+  reactHook: {
+    enable: boolean
+    library: string
+    schema: string[]
+    fileExtensions: string[]
+  }
 }
 
 const DEFAULT_CONFIG: GQLAssistConfig = {
-  nullableByDefault: true,
+  behaviour: {
+    nullableByDefault: true,
+    defaultNumberType: 'Int',
+    serverLibrary: '@nestjs/graphql',
+  },
+  model: { enable: true, fileExtensions: ['.model.ts'] },
+  resolver: { enable: true, fileExtensions: ['.resolver.ts'] },
+  input: { enable: true, fileExtensions: ['.input.ts'] },
+  response: { enable: true, fileExtensions: ['.response.ts'] },
+  enum: { enable: true, fileExtensions: ['.enum.ts', '.model.ts', '.input.ts', '.response.ts'] },
+  reactHook: {
+    enable: true,
+    fileExtensions: ['.gql.ts'],
+    schema: ['schema.gql', 'schema.graphql'],
+    library: '@apollo/client',
+  },
 }
 
 const configNames = ['.gql-assist', '.gql-assist.json', 'gql-assist.json']

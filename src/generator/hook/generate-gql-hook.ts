@@ -376,7 +376,7 @@ function generateHookForOperation(
       }
     })
 
-    context.imports.push(createImport(context.gqlLibrary, optionsName, reactHookName))
+    context.imports.push(createImport(context.config.reactHook.library, optionsName, reactHookName))
 
     const hookStatement =
       def.operation === 'query'

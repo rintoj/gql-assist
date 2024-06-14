@@ -1,4 +1,5 @@
 import ts from 'typescript'
+import { NumericType } from '../config'
 import { getAllTypes } from './get-all-types'
 import { getDecorator } from './get-decorator'
 import { getName } from './get-name'
@@ -22,6 +23,7 @@ export function getTypeFromDecorator(node: ts.Node, name: string) {
 
 export function getType(
   node: ts.PropertyDeclaration | ts.ParameterDeclaration | ts.MethodDeclaration,
+  defaultNumericType: NumericType,
 ) {
   const typeFromDecorator = getTypeFromDecorator(node, 'Field')
   if (typeFromDecorator) return typeFromDecorator
@@ -31,6 +33,6 @@ export function getType(
   )
   if (secondType) throw new Error('Return type can not be a union type.')
   if (type === 'string') return
-  if (type === 'number') return 'Int'
+  if (type === 'number') return defaultNumericType
   if (type) return type
 }

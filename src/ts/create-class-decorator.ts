@@ -24,7 +24,7 @@ export function createClassDecorator(
       ),
     )
   }
-  context.imports.push(createImport('@nestjs/graphql', name))
+  context.imports.push(createImport(context.config.behaviour.serverLibrary, name))
   return ts.factory.createDecorator(
     ts.factory.createCallExpression(ts.factory.createIdentifier(name), undefined, argumentsArray),
   )

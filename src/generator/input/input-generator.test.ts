@@ -1,13 +1,13 @@
-import { config } from '../../config'
+import { GQLAssistConfig, config } from '../../config'
 import { parseTSFile } from '../../ts/parse-ts'
 import { prettify } from '../../ts/prettify'
 import { printTS } from '../../ts/print-ts'
 import { toParsedOutput } from '../../util/test-util'
 import { generateInput } from './input-generator'
 
-async function generate(fileName: string, content: string) {
+async function generate(fileName: string, content: string, initialConfig?: GQLAssistConfig) {
   const sourceFile = parseTSFile(fileName, content)
-  const output = await generateInput(sourceFile)
+  const output = await generateInput(sourceFile, initialConfig ?? config)
   return prettify(printTS(output, undefined, { removeComments: true }))
 }
 
@@ -184,7 +184,7 @@ describe('generateInput', () => {
   })
 
   test('should infer nullability by question mark', async () => {
-    config.nullableByDefault = false
+    config.behaviour.nullableByDefault = false
     const output = await generate(
       'user.ts',
       `
@@ -216,7 +216,7 @@ describe('generateInput', () => {
   })
 
   test('should replace nullability always', async () => {
-    config.nullableByDefault = false
+    config.behaviour.nullableByDefault = false
     const output = await generate(
       'user.ts',
       `
@@ -352,6 +352,68 @@ describe('generateInput', () => {
 
           @Field(() => Organization, { nullable: true })
           org?: Organization
+        }
+      `),
+    )
+  })
+
+  test('should not generate if not enabled', async () => {
+    const output = await generate(
+      'user.input.ts',
+      `
+        class User {
+          id!: string
+          name?: string
+        }
+      `,
+      { ...config, input: { ...config.input, enable: false } },
+    )
+    expect(toParsedOutput(output)).toBe(
+      toParsedOutput(`
+        class User {
+          id!: string
+          name?: string
+        }
+      `),
+    )
+  })
+
+  test('should not generate if file extension does not match', async () => {
+    const output = await generate(
+      'user.input.ts',
+      `
+        class User {
+          id!: string
+          name?: string
+        }
+      `,
+      { ...config, input: { ...config.input, fileExtensions: ['-input.ts'] } },
+    )
+    expect(toParsedOutput(output)).toBe(
+      toParsedOutput(`
+        class User {
+          id!: string
+          name?: string
+        }
+      `),
+    )
+  })
+
+  test('should not generate if file extension does not match default config', async () => {
+    const output = await generate(
+      'user-input.ts',
+      `
+        class User {
+          id!: string
+          name?: string
+        }
+      `,
+    )
+    expect(toParsedOutput(output)).toBe(
+      toParsedOutput(`
+        class User {
+          id!: string
+          name?: string
         }
       `),
     )
