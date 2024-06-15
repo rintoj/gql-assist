@@ -84,6 +84,7 @@ export function prettify(code: string) {
         case SyntaxKind.EnumDeclaration:
         case SyntaxKind.ExportKeyword:
         case SyntaxKind.MethodDeclaration:
+        case SyntaxKind.VariableStatement:
           return addEmptyLineBefore(node)
         default:
           return node

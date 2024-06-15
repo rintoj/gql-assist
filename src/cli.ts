@@ -1,3 +1,4 @@
+import { red } from 'chalk'
 import { cli, runCli } from 'clifer'
 import create from './create/create-command'
 import generate from './generate/generate-command'

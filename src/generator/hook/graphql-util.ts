@@ -1,7 +1,11 @@
-import { readFileSync } from 'fs-extra'
+import { sync } from 'fast-glob'
+import { existsSync, readFileSync } from 'fs-extra'
 import * as gql from 'graphql'
 import { DocumentNode } from 'graphql'
 import { toClassName } from 'name-util'
+import { resolve } from 'path'
+import { toNonNullArray } from 'tsds-tools'
+import { GQLAssistConfig } from '../../config'
 import { required } from '../../util/common'
 
 export enum ScalarToJSType {
@@ -20,6 +24,33 @@ export function parseSchema(content: string) {
 
 export function isScalarType(type: string) {
   return !!(ScalarToJSType as any)[type]
+}
+
+function schemaGlobPattern(config: GQLAssistConfig) {
+  const defaultPattern = toNonNullArray([...config.reactHook.schema].flat())
+  if (!defaultPattern.length) return undefined
+  if (defaultPattern.length === 1) return `**/*${defaultPattern[0]}`
+  return `**/*{${defaultPattern.join(',')}}`
+}
+
+export function resolveSchemaFile(
+  file: string | undefined,
+  folders: string[],
+  config: GQLAssistConfig,
+  ignore?: string,
+) {
+  const pattern = schemaGlobPattern(config)
+  return folders
+    .flatMap(folder => {
+      if (file) return resolve(folder, file)
+      return sync(`${folder}/${pattern}`, { onlyFiles: true, ignore: ignore?.split(',') })
+    })
+    .find(path => {
+      if (ignore && ignore?.split(',').some(ignorePath => path.search(`/${ignorePath}/`) >= 0)) {
+        return false
+      }
+      return existsSync(path)
+    })
 }
 
 export function loadSchema(file: string) {
