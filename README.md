@@ -172,19 +172,22 @@ export enum UserStatus {
 registerEnumType(UserStatus, { name: 'UserStatus' })
 ```
 
-## Run
+# Command: gql-assist
 
-# gql-assist
-
-Assists in generating models, resolvers, field resolvers, and GraphQL types efficiently.
+GQL Assist is a powerful tool designed to streamline the development of GraphQL APIs in a NestJS
+environment. By automatically converting TypeScript classes, resolvers, and enums into their
+corresponding GraphQL definitions, GQL Assist significantly reduces the amount of boilerplate code
+you need to write.
 
 ```sh
 
-gql-assist   <generate> [--help] [--doc] [--version]
+gql-assist   <generate|create> [--help] [--doc] [--version]
 
 COMMANDS
 
-generate
+generate    GraphQL Assist converts GraphQL queries, mutations or subscriptions
+
+create      Create a module
 
 COMMON
 
@@ -198,13 +201,65 @@ COMMON
 
 ## gql-assist generate
 
+GraphQL Assist converts GraphQL queries, mutations or subscriptions
+
 ```sh
 
-gql-assist generate   <file>
+gql-assist generate   <hook|decorator>
+
+COMMANDS
+
+hook        GraphQL Assist converts GraphQL queries into TypeScript code compatible with @apollo/client
+            or similar library, making query writing for Apollo Client easier and less error-prone.
+
+decorator   Automatically converts TypeScript classes, resolvers, methods, and enums to their
+            respective NestJS GraphQL or Type GraphQL counterparts with appropriate decorators.
+
+```
+
+> ### gql-assist generate hook
+>
+> GraphQL Assist converts GraphQL queries into TypeScript code compatible with @apollo/client or
+> similar library, making query writing for Apollo Client easier and less error-prone.
+>
+> ```sh
+>
+> gql-assist generate hook   --schema=<string> --file=<string>
+>
+> OPTIONS
+>
+> --schema=<string>   [Required] Schema file
+>
+> --file=<string>     [Required] The source file to inspect and generate
+>
+> ```
+>
+> ### gql-assist generate decorator
+>
+> Automatically converts TypeScript classes, resolvers, methods, and enums to their respective
+> NestJS GraphQL or Type GraphQL counterparts with appropriate decorators.
+>
+> ```sh
+>
+> gql-assist generate decorator   --file=<string>
+>
+> OPTIONS
+>
+> --file=<string>   [Required] The source file to inspect and generate
+>
+> ```
+
+## gql-assist create
+
+Create a module
+
+```sh
+
+gql-assist create   <name>
 
 ARGUMENTS
 
-file        The source file to inspect and generate
+name        Name of the module
 
 ```
 
