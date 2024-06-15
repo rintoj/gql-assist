@@ -1,7 +1,7 @@
 {
   "name": "gql-assist",
   "version": "1.0.0",
-  "description": "",
+  "description": "GQL Assist is a powerful tool designed to streamline the development of GraphQL APIs in a NestJS & React environment",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {

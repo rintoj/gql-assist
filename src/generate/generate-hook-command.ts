@@ -1,3 +1,4 @@
+import { grey, yellow } from 'chalk'
 import { CliExpectedError, command, input } from 'clifer'
 import { toNonNullArray } from 'tsds-tools'
 import ts from 'typescript'
@@ -21,13 +22,13 @@ function defaultGlobPattern() {
 }
 
 async function run(props: Props) {
-  const schemaFile = resolveSchemaFile(props.schema, [process.cwd()], config, props.ignore)
+  const schemaFile = resolveSchemaFile(props.schema, [process.cwd()], config)
   if (!schemaFile) {
     throw new CliExpectedError(
       'No schema file was found in this project. Provide "--schema" as an option to continue',
     )
   }
-  console.log('Using schema file: ' + schemaFile)
+  console.log(grey('Using schema file: ') + yellow(schemaFile) + '\n')
   const schema = loadSchema(schemaFile)
   await processTypeScriptFiles(
     { ...props, defaultPattern: defaultGlobPattern() },
