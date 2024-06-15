@@ -1,3 +1,5 @@
+export * from './config'
+export * from './diagnostic'
 export * from './diff'
 export * from './generate'
 export * from './generator'

@@ -270,7 +270,9 @@ function createSubscriptionHook({
 
 function createTSContent(
   statements: ts.Statement[],
-  options?: { blankLinesBetweenStatements: boolean },
+  options?: {
+    blankLinesBetweenStatements: boolean
+  },
 ) {
   return statements
     .map(statement => printTS(statement as any))

@@ -3,13 +3,7 @@ import { basename } from 'path'
 import ts from 'typescript'
 
 export function parseTSFile(filePath: string, content = '') {
-  return ts.createSourceFile(
-    basename(filePath),
-    content,
-    ts.ScriptTarget.Latest,
-    true,
-    ts.ScriptKind.TSX,
-  )
+  return ts.createSourceFile(filePath, content, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX)
 }
 
 export function readTSFile(filePath: string) {
