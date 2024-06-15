@@ -32,6 +32,10 @@ GQL Assist provides several key functionalities:
 
 ## Usage
 
+```sh
+npx gql-assist generate decorator
+```
+
 ### Models
 
 For GQL Assist to recognize and convert a TypeScript class into a GraphQL ObjectType, it should be
@@ -172,7 +176,72 @@ export enum UserStatus {
 registerEnumType(UserStatus, { name: 'UserStatus' })
 ```
 
-# Command: gql-assist
+### React Hook
+
+GraphQL Assist can also help you with writing queries for graphql client by converting GraphQL
+queries into TypeScript code compatible with `@apollo/client`. With GraphQL Assist, writing GraphQL
+queries for Apollo Client becomes easier and less error-prone, allowing you to focus more on
+building your application.
+
+```sh
+npx gql-assist generate hook
+```
+
+#### Example
+
+Given the following GraphQL query:
+
+```ts
+import gql from 'graphql-tag'
+
+const query = gql`
+  query {
+    user {
+      name
+    }
+  }
+```
+
+GraphQL Assist will look at the schema and convert it to the following on save:
+
+```ts
+import { QueryHookOptions, useQuery } from '@apollo/client'
+import gql from 'graphql-tag'
+
+const query = gql`
+  query fetchUser($id: ID!) {
+    user(id: $id) {
+      name
+    }
+  }
+`
+
+export interface RequestType {
+  id: string | undefined
+}
+
+export interface QueryType {
+  user?: UserType
+}
+
+export interface UserType {
+  name?: string
+  __typename?: 'User'
+}
+
+export function useUserQuery(
+  request: RequestType,
+  options?: QueryHookOptions<QueryType, RequestType>,
+) {
+  return useQuery<QueryType, RequestType>(query, {
+    variables: request,
+    skip: !request.id,
+    ...options,
+  })
+}
+```
+
+## Command: gql-assist
 
 GQL Assist is a powerful tool designed to streamline the development of GraphQL APIs in a NestJS
 environment. By automatically converting TypeScript classes, resolvers, and enums into their
@@ -209,11 +278,13 @@ gql-assist generate   <hook|decorator>
 
 COMMANDS
 
-hook        GraphQL Assist converts GraphQL queries into TypeScript code compatible with @apollo/client
-            or similar library, making query writing for Apollo Client easier and less error-prone.
+hook        GraphQL Assist converts GraphQL queries into TypeScript code compatible
+            with @apollo/client or similar library, making query writing for
+            Apollo Client easier and less error-prone.
 
-decorator   Automatically converts TypeScript classes, resolvers, methods, and enums to their
-            respective NestJS GraphQL or Type GraphQL counterparts with appropriate decorators.
+decorator   Automatically converts TypeScript classes, resolvers, methods,
+            and enums to their respective NestJS GraphQL or Type GraphQL counterparts
+            with appropriate decorators.
 
 ```
 
@@ -224,13 +295,18 @@ decorator   Automatically converts TypeScript classes, resolvers, methods, and e
 >
 > ```sh
 >
-> gql-assist generate hook   --schema=<string> --file=<string>
+> gql-assist generate hook   [--schema=<string>] [--file=<string>] [--pattern=<string>]
+>                            [--ignore=<string>]
 >
 > OPTIONS
 >
-> --schema=<string>   [Required] Schema file
+> --schema=<string>    Schema file
 >
-> --file=<string>     [Required] The source file to inspect and generate
+> --file=<string>      The source file to inspect and generate
+>
+> --pattern=<string>   Pattern to identify the files to process
+>
+> --ignore=<string>    Folders to ignore
 >
 > ```
 >
@@ -241,11 +317,15 @@ decorator   Automatically converts TypeScript classes, resolvers, methods, and e
 >
 > ```sh
 >
-> gql-assist generate decorator   --file=<string>
+> gql-assist generate decorator   [--file=<string>] [--pattern=<string>] [--ignore=<string>]
 >
 > OPTIONS
 >
-> --file=<string>   [Required] The source file to inspect and generate
+> --file=<string>      The source file to inspect and generate
+>
+> --pattern=<string>   Pattern to identify the files to process
+>
+> --ignore=<string>    Folders to ignore
 >
 > ```
 
