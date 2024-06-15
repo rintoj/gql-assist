@@ -9,7 +9,7 @@ import {
   getFieldType,
   getGQLNodeLocationRange,
   getTypeDefinition,
-} from '../qgl'
+} from '../gql'
 import { getGQLContent, getGraphQLQueryVariable } from '../ts'
 import { getTSNodeLocationRange } from '../ts/get-ts-node-location-range'
 import { Diagnostic, DiagnosticSeverity } from './diagnostic-type'

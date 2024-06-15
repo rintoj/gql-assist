@@ -1,5 +1,7 @@
+export * from './extract-type-def'
 export * from './get-field-from-type'
 export * from './get-field-type'
 export * from './get-gql-node-location-range'
+export * from './get-source-code'
 export * from './get-type-definition'
 export * from './gql-context'

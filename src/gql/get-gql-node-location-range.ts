@@ -15,8 +15,8 @@ export function getGQLNodeLocationRange(node: gql.ASTNode, offset?: Position) {
       loc.startToken.column + (offset?.character ?? 0) - 1,
     ),
     new Position(
-      loc.startToken.line + (offset?.line ?? 0) - 1,
-      loc.startToken.column + loc.end - loc.start + (offset?.character ?? 0) - 1,
+      loc.endToken.line + (offset?.line ?? 0) - 1,
+      loc.endToken.column + loc.end - loc.start + (offset?.character ?? 0) - 1,
     ),
   )
 }
