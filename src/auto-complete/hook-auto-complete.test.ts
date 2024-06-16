@@ -8,9 +8,11 @@ const schema = parseSchema(`
   type User {
     id: ID!
     name: String
+    address: Address
   }
 
   type Address {
+    id: String
     address: String
     city: City
   }
@@ -52,19 +54,18 @@ describe('diagnoseReactHook', () => {
 const query = gql\`
   query {
     me {
-      fullName
+      name
     }
     user {
       id
-      test
+      name
       address {
-        city
+         id
       }
     }
   }
-\`
-`,
-      new Position(11, 10),
+\``,
+      new Position(11, 1),
     )
     console.log(JSON.stringify(output, null, 2))
     expect(output).toEqual([

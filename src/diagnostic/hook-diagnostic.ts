@@ -5,7 +5,7 @@ import { GQLAssistConfig } from '../config'
 import {
   GraphQLContext,
   createGraphQLContext,
-  getFieldFromTypeDefinition,
+  getFieldDefinitionFromParent,
   getFieldType,
   getGQLNodeLocationRange,
   getTypeDefinition,
@@ -26,11 +26,11 @@ function getAvailableFieldNamesString(node: gql.ObjectTypeDefinitionNode) {
 
 function validateSelectionSet(node: gql.SelectionSetNode, context: GraphQLContext) {
   const { parent } = context
-  if (!parent) throw new Error('Missing parent')
+  if (!parent) return
   for (const selection of node.selections) {
     if (selection.kind === gql.Kind.FIELD) {
       const fieldName = selection.name.value
-      const field = getFieldFromTypeDefinition(parent, fieldName)
+      const field = getFieldDefinitionFromParent(parent, fieldName)
 
       if (!field) {
         context.diagnostics.push({

@@ -2,7 +2,7 @@ import * as gql from 'graphql'
 import { ById } from 'tsds-tools'
 
 // Function to determine if a type is a scalar type
-const scalarTypes = ['Int', 'Float', 'String', 'Boolean', 'ID']
+const scalarTypes = ['Int', 'Float', 'String', 'Boolean', 'ID', 'Date']
 
 function isScalar(type: string) {
   return scalarTypes.includes(type)
@@ -10,6 +10,8 @@ function isScalar(type: string) {
 // Function to extract type definitions
 
 export interface FieldDef {
+  objectName: string
+  fieldName: string
   type: string
   isArray?: boolean
   isRequired?: boolean
@@ -53,6 +55,8 @@ export function extractTypeDefinitions(schema: gql.DocumentNode) {
         isScalarType = isScalar(typeName)
 
         typeDefs[objectName][fieldName] = {
+          objectName,
+          fieldName,
           type: typeName,
           isArray,
           isRequired,

@@ -1,34 +1,17 @@
 import * as gql from 'graphql'
 import { toClassName } from 'name-util'
-import { toNonNullArray } from 'tsds-tools'
+import { ById, toNonNullArray } from 'tsds-tools'
 import ts from 'typescript'
 import { GQLAssistConfig } from '../config'
 import { Position } from '../diff'
-import { getFieldFromTypeDefinition, getFieldType, getTypeDefinition } from '../gql'
+import { FieldDef, extractTypeDefinitions } from '../gql'
 import { getGQLNodeLocationRange } from '../gql/get-gql-node-location-range'
 import { isPositionWithInRange } from '../position'
 import { getGQLContent, getGraphQLQueryVariable, getTSNodeLocationRange } from '../ts'
 
-function getParents(
-  path: (string | number)[],
-  ancestors: (gql.ASTNode | readonly gql.ASTNode[])[],
-) {
-  return toNonNullArray(
-    path.map((i, index) => (/\d+/.test(`${i}`) ? ancestors[index]?.[i] : undefined)),
-  )
-}
-
-function resolveParentType(parents: gql.ASTNode[], schema: gql.DocumentNode) {
-  return parents.reduce((parentType: gql.ObjectTypeDefinitionNode | undefined, parent) => {
-    if (parent.kind === gql.Kind.OPERATION_DEFINITION) {
-      return getTypeDefinition(schema, toClassName(parent.operation))
-    }
-    if (parent.kind === gql.Kind.FIELD && parentType) {
-      const field = getFieldFromTypeDefinition(parentType, parent.name.value)
-      return field ? getFieldType(schema, field) : undefined
-    }
-    return parentType
-  }, undefined)
+function isInRange(node: gql.ASTNode, position: Position, offset?: Position) {
+  const nodeRange = getGQLNodeLocationRange(node, offset)
+  return isPositionWithInRange(position, nodeRange)
 }
 
 export function autoCompleteHook(
@@ -36,32 +19,56 @@ export function autoCompleteHook(
   position: Position,
   schema: gql.DocumentNode,
   config: GQLAssistConfig,
-): string[] {
+) {
   const variable = getGraphQLQueryVariable(sourceFile)
-  if (!variable) return []
+  if (!variable) return
 
   const range = getTSNodeLocationRange(variable, sourceFile)
-  if (!isPositionWithInRange(position, range)) return []
+  if (!isPositionWithInRange(position, range)) return
 
   const graphQLQueryString = getGQLContent(variable)
-  if (!graphQLQueryString || graphQLQueryString?.trim() === '') return []
+  if (!graphQLQueryString || graphQLQueryString?.trim() === '') return
 
   const offset = new Position(range.start.line, 0)
+  const schemaDef = extractTypeDefinitions(schema)
 
   try {
     const document = gql.parse(graphQLQueryString)
-    let definition: gql.ObjectTypeDefinitionNode | undefined
+
+    let possibleParent: ById<FieldDef> | undefined
+    let parent: ById<FieldDef> | undefined
+    let fields: string[] | undefined
     gql.visit(document, {
-      Field: (node, key, parent, path, ancestors) => {
-        const nodeRange = getGQLNodeLocationRange(node, offset)
-        if (isPositionWithInRange(position, nodeRange)) {
-          const parents = getParents([...path], [...ancestors])
-          definition = resolveParentType(parents, schema) ?? definition
+      OperationDefinition(node) {
+        if (isInRange(node, position, offset)) {
+          possibleParent = schemaDef[toClassName(node.operation)]
+        }
+      },
+
+      Field(node) {
+        if (isInRange(node, position, offset)) {
+          const type = parent?.[node.name.value]?.type
+          console.log(node.name.value, parent, type)
+          possibleParent = type ? schemaDef[type] : undefined
+        }
+      },
+
+      SelectionSet(node) {
+        if (isInRange(node, position, offset)) {
+          fields = toNonNullArray(
+            node.selections.map(s => (s.kind === gql.Kind.FIELD ? s.name.value : undefined)),
+          )
+          parent = possibleParent
         }
       },
     })
-    return definition?.fields?.map(i => i.name.value) ?? []
+    if (!fields) return parent
+    if (parent) {
+      return Object.keys(parent)
+        .filter(key => !(fields ?? []).includes(key))
+        .reduce((a, i) => ({ ...a, [i]: possibleParent?.[i] }), {})
+    }
   } catch (e) {
-    return []
+    console.error(e)
   }
 }
