@@ -33,12 +33,15 @@ function validateSelectionSet(node: gql.SelectionSetNode, context: GraphQLContex
       const field = getFieldDefinitionFromParent(parent, fieldName)
 
       if (!field) {
+        const range = getGQLNodeLocationRange(selection, context.offset)
         context.diagnostics.push({
           fileName: context.sourceFile.fileName,
-          range: getGQLNodeLocationRange(selection, context.offset),
+          range,
           severity: DiagnosticSeverity.Error,
-          message: `Property '${fieldName}' does not exist on type 'type ${parent.name.value}'. Location: '${context.path.join('.')}'. Available fields are ${getAvailableFieldNamesString(parent)}`,
-          code: selection.loc?.source.body.substring(selection.loc.start, selection.loc.end),
+          message: `Location: '${context.path.join('.')}' - Property '${fieldName}' does not exist on type 'type ${parent.name.value}'. Available fields are ${getAvailableFieldNamesString(parent)}`,
+          code: [context.sourceFile.fileName, range.start.line + 1, range.start.character + 1].join(
+            ':',
+          ),
         })
       } else if (selection.selectionSet) {
         const nextParent = getFieldType(context.schema, field)
@@ -47,6 +50,8 @@ function validateSelectionSet(node: gql.SelectionSetNode, context: GraphQLContex
           createGraphQLContext(context, fieldName, nextParent),
         )
       }
+    } else {
+      console.warn('Did not process', selection.kind)
     }
   }
 }

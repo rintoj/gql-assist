@@ -48,7 +48,6 @@ export function autoCompleteHook(
       Field(node) {
         if (isInRange(node, position, offset)) {
           const type = parent?.[node.name.value]?.type
-          console.log(node.name.value, parent, type)
           possibleParent = type ? schemaDef[type] : undefined
         }
       },
