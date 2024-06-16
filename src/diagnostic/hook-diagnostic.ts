@@ -1,5 +1,6 @@
 import * as gql from 'graphql'
 import { toClassName } from 'name-util'
+import plural from 'pluralize'
 import ts from 'typescript'
 import { GQLAssistConfig } from '../config'
 import {
@@ -13,15 +14,97 @@ import {
 import { getGQLContent, getGraphQLQueryVariable } from '../ts'
 import { getTSNodeLocationRange } from '../ts/get-ts-node-location-range'
 import { Diagnostic, DiagnosticSeverity } from './diagnostic-type'
-import { basename } from 'path'
 
 function getAvailableFieldNames(node: gql.ObjectTypeDefinitionNode) {
   return node.fields?.map(field => field.name.value) ?? []
 }
 
+function toQuotedItemsWithAnd(items: string[]) {
+  const preprocessed = items.map(name => `'${name}'`)
+  if (preprocessed.length === 0) return ''
+  if (preprocessed.length === 1) return preprocessed[0]
+  return [preprocessed.slice(0, -1).join(', ').trim(), preprocessed.slice(-1)[0].trim()].join(
+    ' and ',
+  )
+}
+
 function getAvailableFieldNamesString(node: gql.ObjectTypeDefinitionNode) {
-  const fieldNames = getAvailableFieldNames(node).map(name => `'${name}'`)
-  return [fieldNames.slice(0, -1).join(', '), fieldNames.slice(-1)[0]].join(' and ')
+  const fieldNames = getAvailableFieldNames(node)
+  return toQuotedItemsWithAnd(fieldNames)
+}
+
+function checkForInvalidField(
+  field: gql.FieldDefinitionNode | undefined,
+  selection: gql.FieldNode,
+  context: GraphQLContext,
+) {
+  if (field) return
+  const { parent } = context
+  if (!parent) return
+  const fieldName = selection.name.value
+  const range = getGQLNodeLocationRange(selection, context.offset)
+  context.diagnostics.push({
+    fileName: context.sourceFile.fileName,
+    range,
+    severity: DiagnosticSeverity.Error,
+    message: `'${context.path.join('.')}' - Property '${fieldName}' does not exist on type 'type ${parent.name.value}'. Available fields are ${getAvailableFieldNamesString(parent)}.`,
+    code: [context.sourceFile.fileName, range.start.line + 1, range.start.character + 1].join(':'),
+  })
+}
+
+function checkForMissingArguments(
+  field: gql.FieldDefinitionNode | undefined,
+  selection: gql.FieldNode,
+  context: GraphQLContext,
+) {
+  if (!field) return
+  const { parent } = context
+  if (!parent) return
+  const fieldName = selection.name.value
+  const existingArguments = selection.arguments?.map(arg => arg.name.value) ?? []
+  const requiredArguments =
+    field.arguments?.filter(arg => arg.type.kind === gql.Kind.NON_NULL_TYPE) ?? []
+  const missingArguments = requiredArguments.filter(
+    argument => !existingArguments.includes(argument.name.value),
+  )
+  const missingArgumentNames = missingArguments.map(arg => arg.name.value)
+
+  if (missingArguments.length === 0) return
+  const range = getGQLNodeLocationRange(parent, context.offset)
+  context.diagnostics.push({
+    fileName: context.sourceFile.fileName,
+    range,
+    severity: DiagnosticSeverity.Error,
+    message: `'${context.path.join('.')}.${fieldName}' - Missing required ${plural('argument', missingArguments.length)} ${toQuotedItemsWithAnd(missingArgumentNames)}.`,
+    code: [context.sourceFile.fileName, range.start.line + 1, range.start.character + 1].join(':'),
+  })
+}
+
+function checkForInvalidArguments(
+  field: gql.FieldDefinitionNode | undefined,
+  selection: gql.FieldNode,
+  context: GraphQLContext,
+) {
+  if (!field) return
+  const { parent } = context
+  if (!parent) return
+  const fieldName = selection.name.value
+  const allArgumentNames = field.arguments?.map(arg => arg.name.value) ?? []
+  const invalidArguments =
+    selection.arguments?.filter(argument => !allArgumentNames.includes(argument.name.value)) ?? []
+  if (invalidArguments.length === 0) return
+  for (const argument of invalidArguments) {
+    const range = getGQLNodeLocationRange(argument, context.offset)
+    context.diagnostics.push({
+      fileName: context.sourceFile.fileName,
+      range,
+      severity: DiagnosticSeverity.Error,
+      message: `'${context.path.join('.')}.${fieldName}' - Invalid argument '${argument.name.value}'. Valid ${plural('argument', allArgumentNames.length)} ${plural('are', allArgumentNames.length)} ${toQuotedItemsWithAnd(allArgumentNames)}.`,
+      code: [context.sourceFile.fileName, range.start.line + 1, range.start.character + 1].join(
+        ':',
+      ),
+    })
+  }
 }
 
 function validateSelectionSet(node: gql.SelectionSetNode, context: GraphQLContext) {
@@ -31,19 +114,10 @@ function validateSelectionSet(node: gql.SelectionSetNode, context: GraphQLContex
     if (selection.kind === gql.Kind.FIELD) {
       const fieldName = selection.name.value
       const field = getFieldDefinitionFromParent(parent, fieldName)
-
-      if (!field) {
-        const range = getGQLNodeLocationRange(selection, context.offset)
-        context.diagnostics.push({
-          fileName: context.sourceFile.fileName,
-          range,
-          severity: DiagnosticSeverity.Error,
-          message: `Location: '${context.path.join('.')}' - Property '${fieldName}' does not exist on type 'type ${parent.name.value}'. Available fields are ${getAvailableFieldNamesString(parent)}`,
-          code: [context.sourceFile.fileName, range.start.line + 1, range.start.character + 1].join(
-            ':',
-          ),
-        })
-      } else if (selection.selectionSet) {
+      checkForInvalidField(field, selection, context)
+      checkForMissingArguments(field, selection, context)
+      checkForInvalidArguments(field, selection, context)
+      if (field && selection.selectionSet) {
         const nextParent = getFieldType(context.schema, field)
         validateSelectionSet(
           selection.selectionSet,

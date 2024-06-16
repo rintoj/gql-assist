@@ -34,7 +34,7 @@ describe('diagnoseReactHook', () => {
 
 const query = gql\`
   query {
-    user {
+    user(id: $id) {
       id
       test
     }
