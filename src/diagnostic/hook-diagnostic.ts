@@ -3,6 +3,7 @@ import { toClassName } from 'name-util'
 import plural from 'pluralize'
 import ts from 'typescript'
 import { GQLAssistConfig } from '../config'
+import { Position, Range } from '../diff'
 import {
   GraphQLContext,
   createGraphQLContext,
@@ -33,6 +34,16 @@ function getAvailableFieldNamesString(node: gql.ObjectTypeDefinitionNode) {
   return toQuotedItemsWithAnd(fieldNames)
 }
 
+function addError(range: Range, message: string, context: GraphQLContext) {
+  context.diagnostics.push({
+    fileName: context.sourceFile.fileName,
+    range,
+    severity: DiagnosticSeverity.Error,
+    message,
+    code: [context.sourceFile.fileName, range.start.line + 1, range.start.character + 1].join(':'),
+  })
+}
+
 function checkForInvalidField(
   field: gql.FieldDefinitionNode | undefined,
   selection: gql.FieldNode,
@@ -43,13 +54,11 @@ function checkForInvalidField(
   if (!parent) return
   const fieldName = selection.name.value
   const range = getGQLNodeLocationRange(selection, context.offset)
-  context.diagnostics.push({
-    fileName: context.sourceFile.fileName,
+  addError(
     range,
-    severity: DiagnosticSeverity.Error,
-    message: `'${context.path.join('.')}' - Property '${fieldName}' does not exist on type 'type ${parent.name.value}'. Available fields are ${getAvailableFieldNamesString(parent)}.`,
-    code: [context.sourceFile.fileName, range.start.line + 1, range.start.character + 1].join(':'),
-  })
+    `'${context.path.join('.')}' - Property '${fieldName}' does not exist on type 'type ${parent.name.value}'. Available fields are ${getAvailableFieldNamesString(parent)}.`,
+    context,
+  )
 }
 
 function checkForMissingArguments(
@@ -71,13 +80,11 @@ function checkForMissingArguments(
 
   if (missingArguments.length === 0) return
   const range = getGQLNodeLocationRange(parent, context.offset)
-  context.diagnostics.push({
-    fileName: context.sourceFile.fileName,
+  addError(
     range,
-    severity: DiagnosticSeverity.Error,
-    message: `'${context.path.join('.')}.${fieldName}' - Missing required ${plural('argument', missingArguments.length)} ${toQuotedItemsWithAnd(missingArgumentNames)}.`,
-    code: [context.sourceFile.fileName, range.start.line + 1, range.start.character + 1].join(':'),
-  })
+    `'${context.path.join('.')}.${fieldName}' - Missing required ${plural('argument', missingArguments.length)} ${toQuotedItemsWithAnd(missingArgumentNames)}.`,
+    context,
+  )
 }
 
 function checkForInvalidArguments(
@@ -95,15 +102,11 @@ function checkForInvalidArguments(
   if (invalidArguments.length === 0) return
   for (const argument of invalidArguments) {
     const range = getGQLNodeLocationRange(argument, context.offset)
-    context.diagnostics.push({
-      fileName: context.sourceFile.fileName,
+    addError(
       range,
-      severity: DiagnosticSeverity.Error,
-      message: `'${context.path.join('.')}.${fieldName}' - Invalid argument '${argument.name.value}'. Valid ${plural('argument', allArgumentNames.length)} ${plural('are', allArgumentNames.length)} ${toQuotedItemsWithAnd(allArgumentNames)}.`,
-      code: [context.sourceFile.fileName, range.start.line + 1, range.start.character + 1].join(
-        ':',
-      ),
-    })
+      `'${context.path.join('.')}.${fieldName}' - Invalid argument '${argument.name.value}'. Valid ${plural('argument', allArgumentNames.length)} ${plural('are', allArgumentNames.length)} ${toQuotedItemsWithAnd(allArgumentNames)}.`,
+      context,
+    )
   }
 }
 
@@ -144,15 +147,8 @@ export function diagnoseReactHook(
   if (!graphQLQueryString || graphQLQueryString?.trim() === '') return []
 
   const variableRange = getTSNodeLocationRange(variable, sourceFile)
-  const context = createGraphQLContext(
-    {
-      sourceFile,
-      schema,
-      config,
-      offset: { ...variableRange.start, character: 0 } as any,
-    },
-    undefined,
-  )
+  const offset = new Position(variableRange.start.line, 0)
+  const context = createGraphQLContext({ sourceFile, schema, config, offset }, undefined)
 
   try {
     const document = gql.parse(graphQLQueryString)
@@ -166,14 +162,23 @@ export function diagnoseReactHook(
       }
     }
   } catch (e) {
-    // Report syntax error
-    context.diagnostics.push({
-      fileName: sourceFile.fileName,
-      range: getTSNodeLocationRange(variable, sourceFile),
-      severity: DiagnosticSeverity.Error,
-      message: e.message,
-      code: variable.getFullText(),
-    })
+    if (e instanceof gql.GraphQLError && e.nodes) {
+      for (const node of e.nodes) {
+        const range = getGQLNodeLocationRange(node, offset)
+        addError(range, e.message, context)
+      }
+    } else if (e instanceof gql.GraphQLError && e.locations) {
+      for (const location of e.locations) {
+        const range = new Range(
+          new Position(location.line + offset.line - 1, location.column - 1),
+          new Position(location.line + offset.line - 1, location.column),
+        )
+        addError(range, e.message, context)
+      }
+    } else {
+      const range = getTSNodeLocationRange(variable, sourceFile)
+      addError(range, e.message, context)
+    }
   }
   return context.diagnostics
 }
