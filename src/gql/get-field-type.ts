@@ -14,5 +14,6 @@ export function resolveAbsoluteFieldType(node: gql.TypeNode) {
 export function getFieldType(documentNode: gql.DocumentNode, field: gql.FieldDefinitionNode) {
   const name = resolveAbsoluteFieldType(field.type)
   if (!name) return undefined
+  console.log(name)
   return getTypeDefinition(documentNode, name)
 }

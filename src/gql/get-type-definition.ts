@@ -5,5 +5,8 @@ export function getTypeDefinition(documentNode: gql.DocumentNode, typeName: stri
     if (definition.kind === gql.Kind.OBJECT_TYPE_DEFINITION && definition.name.value === typeName) {
       return definition
     }
+    if (definition.kind === gql.Kind.UNION_TYPE_DEFINITION && definition.name.value === typeName) {
+      return definition
+    }
   }
 }

@@ -53,6 +53,7 @@ type Reply implements Post {
 type Retweet implements Post {
   id: ID!
   originalTweet: Tweet!
+  content: String!
   author: User!
   createdAt: DateTime!
   likeCount: Int!

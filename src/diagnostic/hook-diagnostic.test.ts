@@ -1,6 +1,6 @@
 import { resolve } from 'path'
 import { GQLAssistConfig, config } from '../config'
-import { loadSchema, parseSchema } from '../generator/hook/graphql-util'
+import { loadSchema } from '../generator/hook/graphql-util'
 import { parseTSFile } from '../ts/parse-ts'
 import { diagnoseReactHook } from './hook-diagnostic'
 
@@ -75,7 +75,7 @@ describe('diagnoseReactHook', () => {
     expect(output).toMatchObject([
       {
         code: 'use-hook.gql.ts:4:9',
-        message: `Query: Property 'invalid' does not exist on type 'type Query'. Available fields are 'me', 'feed', 'user', 'tweetsByUser', 'followers' and 'following'.`,
+        message: `Cannot query field \"invalid\" on type \"Query\".`,
       },
     ])
   })
@@ -89,7 +89,7 @@ describe('diagnoseReactHook', () => {
     expect(output).toMatchObject([
       {
         code: 'use-hook.gql.ts:4:9',
-        message: `Query.me: Field 'me' is of 'type User' therefore must have a selection of subfields. Did you mean 'me { ... }'?`,
+        message: `Field \"me\" of type \"User\" must have a selection of subfields. Did you mean \"me { ... }\"?`,
       },
     ])
   })
@@ -106,8 +106,28 @@ describe('diagnoseReactHook', () => {
     `)
     expect(output).toMatchObject([
       {
-        code: 'use-hook.gql.ts:5:11',
-        message: `Query.me.id: Field 'id' is of type 'ID' therefore must not have a selection of subfields.`,
+        code: 'use-hook.gql.ts:5:14',
+        message: `Field \"id\" must not have a selection since type \"ID!\" has no subfields.`,
+      },
+    ])
+  })
+
+  test('should generate error for union types', async () => {
+    const output = await diagnose(`
+      query {
+        feed {
+          items {
+            ... on Test {
+              id
+            }
+          }
+        }
+      }
+    `)
+    expect(output).toMatchObject([
+      {
+        code: 'use-hook.gql.ts:6:20',
+        message: `Unknown type \"Test\". Did you mean \"Post\" or \"Tweet\"?`,
       },
     ])
   })

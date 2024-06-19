@@ -41,7 +41,7 @@ export function resolveSchemaFile(
 
 export function loadSchema(file: string) {
   const content = readFileSync(file, 'utf8')
-  return parseSchema(content)
+  return gql.buildSchema(content)
 }
 
 export function findObjectType(schema: DocumentNode, type: string) {
