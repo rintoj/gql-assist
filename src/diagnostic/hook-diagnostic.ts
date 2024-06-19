@@ -11,6 +11,7 @@ import {
   getFieldType,
   getGQLNodeLocationRange,
   getTypeDefinition,
+  resolveAbsoluteFieldType,
 } from '../gql'
 import { getGQLContent, getGraphQLQueryVariable } from '../ts'
 import { getTSNodeLocationRange } from '../ts/get-ts-node-location-range'
@@ -56,7 +57,7 @@ function checkForInvalidField(
   const range = getGQLNodeLocationRange(selection, context.offset)
   addError(
     range,
-    `'${context.path.join('.')}' - Property '${fieldName}' does not exist on type 'type ${parent.name.value}'. Available fields are ${getAvailableFieldNamesString(parent)}.`,
+    `${context.path.join('.')}: Property '${fieldName}' does not exist on type 'type ${parent.name.value}'. Available fields are ${getAvailableFieldNamesString(parent)}.`,
     context,
   )
 }
@@ -82,7 +83,7 @@ function checkForMissingArguments(
   const range = getGQLNodeLocationRange(parent, context.offset)
   addError(
     range,
-    `'${context.path.join('.')}.${fieldName}' - Missing required ${plural('argument', missingArguments.length)} ${toQuotedItemsWithAnd(missingArgumentNames)}.`,
+    `${context.path.join('.')}.${fieldName}: Missing required ${plural('argument', missingArguments.length)} ${toQuotedItemsWithAnd(missingArgumentNames)}.`,
     context,
   )
 }
@@ -104,7 +105,36 @@ function checkForInvalidArguments(
     const range = getGQLNodeLocationRange(argument, context.offset)
     addError(
       range,
-      `'${context.path.join('.')}.${fieldName}' - Invalid argument '${argument.name.value}'. Valid ${plural('argument', allArgumentNames.length)} ${plural('are', allArgumentNames.length)} ${toQuotedItemsWithAnd(allArgumentNames)}.`,
+      `${context.path.join('.')}.${fieldName}: Invalid argument '${argument.name.value}'. Valid ${plural('argument', allArgumentNames.length)} ${plural('are', allArgumentNames.length)} ${toQuotedItemsWithAnd(allArgumentNames)}.`,
+      context,
+    )
+  }
+}
+
+function checkForMissingSelectionSet(
+  field: gql.FieldDefinitionNode | undefined,
+  selection: gql.FieldNode,
+  context: GraphQLContext,
+) {
+  if (!field) return
+  const { parent } = context
+  if (!parent) return
+  const type = getFieldType(context.schema, field)
+  if (!selection.selectionSet && type) {
+    const range = getGQLNodeLocationRange(selection, context.offset)
+    const fieldName = selection.name.value
+    addError(
+      range,
+      `${context.path.join('.')}.${fieldName}: Field '${fieldName}' is of 'type ${type.name.value}' therefore must have a selection of subfields. Did you mean '${fieldName} { ... }'?`,
+      context,
+    )
+  }
+  if (selection.selectionSet && !type) {
+    const range = getGQLNodeLocationRange(selection, context.offset)
+    const fieldName = selection.name.value
+    addError(
+      range,
+      `${context.path.join('.')}.${fieldName}: Field '${fieldName}' is of type '${resolveAbsoluteFieldType(field.type)}' therefore must not have a selection of subfields.`,
       context,
     )
   }
@@ -120,6 +150,7 @@ function validateSelectionSet(node: gql.SelectionSetNode, context: GraphQLContex
       checkForInvalidField(field, selection, context)
       checkForMissingArguments(field, selection, context)
       checkForInvalidArguments(field, selection, context)
+      checkForMissingSelectionSet(field, selection, context)
       if (field && selection.selectionSet) {
         const nextParent = getFieldType(context.schema, field)
         validateSelectionSet(
@@ -157,7 +188,7 @@ export function diagnoseReactHook(
         const parent = getTypeDefinition(context.schema, toClassName(def.operation))
         validateSelectionSet(
           def.selectionSet,
-          createGraphQLContext(context, def.name?.value ?? def.operation, parent),
+          createGraphQLContext(context, def.name?.value ?? toClassName(def.operation), parent),
         )
       }
     }
