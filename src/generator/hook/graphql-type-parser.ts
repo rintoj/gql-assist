@@ -274,8 +274,9 @@ export class GraphQLTypeParser {
       },
       InlineFragment(node) {
         const name = node.typeCondition?.name.value
-        if (!name)
+        if (!name) {
           throw new gql.GraphQLError(`Inline fragment is missing a name`, { nodes: [node] })
+        }
         return parser.collect(name, node)
       },
       enter(node) {
