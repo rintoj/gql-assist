@@ -1,5 +1,5 @@
 import * as gql from 'graphql'
-import { toClassName } from 'name-util'
+import { toCamelCase, toClassName } from 'name-util'
 import { ById } from 'tsds-tools'
 import {
   createArgumentDefinition,
@@ -43,18 +43,6 @@ export class GraphQLTypeParser {
     return this
   }
 
-  private setArgument(name: string, value: any, node: gql.ASTNode | undefined | null) {
-    const key = [...this.path, name].join('.')
-    if (this.argumentMap[key]) {
-      throw new gql.GraphQLError(
-        `This document seems to have a duplicate argument path that GraphQL can not identify at '${key}'`,
-        { nodes: node ? [node] : undefined },
-      )
-    }
-    this.argumentMap[key] = value
-    return this
-  }
-
   private setField(
     name: string,
     fieldName: string,
@@ -62,7 +50,8 @@ export class GraphQLTypeParser {
     includeTypeName: boolean,
   ) {
     this.typeMap[name] =
-      this.typeMap[name] ?? !includeTypeName
+      this.typeMap[name] ??
+      (!includeTypeName
         ? {}
         : {
             __typename: {
@@ -72,7 +61,7 @@ export class GraphQLTypeParser {
               isArray: false,
               orUndefined: false,
             },
-          }
+          })
     this.typeMap[name][fieldName] = config
   }
 
@@ -91,10 +80,29 @@ export class GraphQLTypeParser {
     return {
       name: field.name,
       type: this.resolveFieldType(field),
-      isNullable: !isArgument && gql.isNullableType(field.type),
+      isNullable: gql.isNullableType(field.type),
       orUndefined: isArgument,
       isArray: gql.isListType(gql.getNullableType(field.type)),
     }
+  }
+
+  private toEnumFieldConfig(field: gql.GraphQLEnumValue): FieldDefinition {
+    return {
+      name: field.name.name,
+      type: gql.Kind.ENUM_VALUE_DEFINITION,
+    }
+  }
+
+  private setArgument(path: string[], node: gql.GraphQLArgument) {
+    let name = toCamelCase([path[0], node.name].join('.'))
+    let index = 1
+    while (this.argumentMap[name] && index <= path.length) {
+      name = [path[0], toCamelCase([...path.slice(-index++), node.name].join('-'))].join('.')
+    }
+    const nodeName = name.replace(path[0] + '.', '')
+    const updatedNode = { ...node, name: nodeName }
+    this.argumentMap[name] = updatedNode
+    return updatedNode
   }
 
   /**
@@ -197,7 +205,7 @@ export class GraphQLTypeParser {
         ?.filter(selection => selection.kind === gql.Kind.FIELD)
         ?.map((selection: any) => selection.name.value) ?? []
 
-    return selectors.join('-and-')
+    return toCamelCase(selectors.join('-and-'))
   }
 
   private push() {
@@ -216,14 +224,20 @@ export class GraphQLTypeParser {
   private collect(name: string, node: gql.FieldNode | gql.InlineFragmentNode) {
     const parent = this.parent()
     const field = parent?.getFields?.()?.[name]
-    if (!field?.type) return this // This error will be captured by linter
     this.setField(this.toClassType(parent), name, this.toFieldConfig(field), this.path.length > 1)
+    if (gql.isEnumType(field.type)) {
+      field.type.getValues().forEach(value => {
+        this.setField(this.toClassType(parent) + `.${name}`, this.toEnumFieldConfig(value), false)
+      })
+    }
     this.setParent(name, gql.getNamedType(field?.type), node)
     if (node.kind === gql.Kind.FIELD) {
-      field.args.map(a => this.setArgument([name, a.name].join('.'), a, a.astNode))
+      const updated = field.args.map(a => this.setArgument([...this.path, name], a))
       return updateArguments(
         node,
-        field.args.map(arg => createInputValueDefinition(arg.name)),
+        updated.map(arg =>
+          createInputValueDefinition(arg.astNode?.name.value ?? arg.name, arg.name),
+        ),
       )
     }
     return node
@@ -271,6 +285,9 @@ export class GraphQLTypeParser {
       },
       Field(node) {
         return parser.collect(node.name.value, node)
+      },
+      EnumValue(node) {
+        console.log(node)
       },
       InlineFragment(node) {
         const name = node.typeCondition?.name.value

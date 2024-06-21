@@ -2,16 +2,11 @@ import * as gql from 'graphql'
 import ts from 'typescript'
 import { GQLAssistConfig } from '../config'
 import { Position, Range } from '../diff'
-import {
-  GraphQLContext,
-  createGraphQLContext,
-  fixGraphQLString,
-  getGQLNodeLocationRange,
-} from '../gql'
+import { GraphQLContext, createGraphQLContext, getGQLNodeLocationRange } from '../gql'
 import { getGQLContent, getGraphQLQueryVariable, getTSNodeLocationRange } from '../ts'
 import { Diagnostic, DiagnosticSeverity } from './diagnostic-type'
 
-function toError(error: gql.GraphQLError, context: GraphQLContext) {
+function toError(error: gql.GraphQLError, context: Pick<GraphQLContext, 'offset' | 'sourceFile'>) {
   const lineOffset = context?.offset?.line ?? 0
   if (!error.nodes?.length) {
     const { line, column } = error.locations?.[0] ?? { line: 1, column: 1 }
@@ -44,6 +39,20 @@ function toError(error: gql.GraphQLError, context: GraphQLContext) {
   })
 }
 
+export function diagnoseGraphQLQuery(
+  query: string,
+  schema: gql.GraphQLSchema,
+  context: Pick<GraphQLContext, 'offset' | 'sourceFile'>,
+): Diagnostic[] {
+  try {
+    const document = gql.parse(query)
+    const result = gql.validate(schema, document)
+    return result.flatMap(error => toError(error, context))
+  } catch (e) {
+    return [toError(e, context)].flat()
+  }
+}
+
 export function diagnoseReactHook(
   sourceFile: ts.SourceFile,
   schema: gql.GraphQLSchema,
@@ -56,11 +65,5 @@ export function diagnoseReactHook(
   const variableRange = getTSNodeLocationRange(variable, sourceFile)
   const offset = new Position(variableRange.start.line, 0)
   const context = createGraphQLContext({ sourceFile, schema, config, offset }, undefined)
-  try {
-    const document = gql.parse(graphQLQueryString)
-    const result = gql.validate(schema, document)
-    return result.flatMap(error => toError(error, context))
-  } catch (e) {
-    return [toError(e, context)].flat()
-  }
+  return diagnoseGraphQLQuery(graphQLQueryString, schema, context)
 }

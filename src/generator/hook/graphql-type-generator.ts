@@ -117,11 +117,11 @@ function createSkip(requiredVariables: string[]) {
 export function createGraphQLHook(document: gql.DocumentNode, variable: ts.VariableDeclaration) {
   const def = getDefinition(document)
   const defName = def.name?.value ?? ''
-  const hookName = toCamelCase(`${defName}-${def.operation}`)
+  const hookName = toCamelCase(`${defName}`)
   const functionName = toCamelCase(`use-${hookName}`)
   const inputs = def.variableDefinitions ?? []
   const gqlVariableName = variable.name.getText()
-  const variableType = toClassName(`${defName}-${def.operation}-variables`)
+  const variableType = 'Variables'
   const responseType = toClassName(`${hookName}`)
   const requiredVariables = inputs
     .filter(input => input.type.kind === gql.Kind.NON_NULL_TYPE)
