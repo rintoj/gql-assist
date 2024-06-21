@@ -44,7 +44,7 @@ export function loadSchema(file: string) {
   return gql.buildSchema(content)
 }
 
-export function findObjectType(schema: DocumentNode, type: string) {
+export function findObjectType(schema: gql.GraphQLSchema, type: string) {
   const def = schema.definitions.find(
     def => def.kind === gql.Kind.OBJECT_TYPE_DEFINITION && def.name.value === type,
   ) as gql.ObjectTypeDefinitionNode

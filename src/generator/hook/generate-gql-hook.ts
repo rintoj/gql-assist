@@ -2,6 +2,7 @@ import * as gql from 'graphql'
 import { toCamelCase, toClassName, toDashedName } from 'name-util'
 import { toNonNullArray } from 'tsds-tools'
 import * as ts from 'typescript'
+import { addEmptyLineBefore } from '../../ts/add-new-line'
 import { createEnum } from '../../ts/create-enum'
 import { createGraphQLQuery } from '../../ts/create-graphql-query'
 import { createDefaultImport, createImport } from '../../ts/create-import'
@@ -14,7 +15,6 @@ import { Context } from '../context'
 import { GQLObjectType, GQLType, extractGQLTypes } from './extract-gql-types'
 import { fixGQLRequest } from './fix-gql-request'
 import { parseSchema } from './graphql-util'
-import { addEmptyLineBefore } from '../../ts/add-new-line'
 
 function createQueryHook({
   hookName,
@@ -413,7 +413,7 @@ function generateHookForOperation(
 }
 
 export async function generateGQLHook(
-  schema: gql.DocumentNode,
+  schema: gql.GraphQLSchema,
   sourceFile: ts.SourceFile,
   context: Context,
 ): Promise<ts.SourceFile> {

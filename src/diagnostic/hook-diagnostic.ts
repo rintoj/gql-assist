@@ -2,7 +2,12 @@ import * as gql from 'graphql'
 import ts from 'typescript'
 import { GQLAssistConfig } from '../config'
 import { Position, Range } from '../diff'
-import { GraphQLContext, createGraphQLContext, getGQLNodeLocationRange } from '../gql'
+import {
+  GraphQLContext,
+  createGraphQLContext,
+  fixGraphQLString,
+  getGQLNodeLocationRange,
+} from '../gql'
 import { getGQLContent, getGraphQLQueryVariable, getTSNodeLocationRange } from '../ts'
 import { Diagnostic, DiagnosticSeverity } from './diagnostic-type'
 

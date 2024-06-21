@@ -12,7 +12,7 @@ export function createGraphQLQuery(query: string, variableName = 'query') {
           ts.factory.createTaggedTemplateExpression(
             ts.factory.createIdentifier('gql'),
             undefined,
-            ts.factory.createNoSubstitutionTemplateLiteral(query),
+            ts.factory.createNoSubstitutionTemplateLiteral(query, query),
           ),
         ),
       ],

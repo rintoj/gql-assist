@@ -15,7 +15,7 @@ async function generate(fileName: string, content: string, inlineConfig?: GQLAss
 }
 
 describe('generateHook', () => {
-  test('should generate query and its types', async () => {
+  test.only('should generate query and its types', async () => {
     const query = `
       import gql from 'graphql-tag'
 
@@ -28,39 +28,40 @@ describe('generateHook', () => {
       \`
     `
     const hook = await generate('use-query.gql.ts', query)
+    console.log(hook)
     expect(toParsedOutput(hook)).toEqual(
       toParsedOutput(`
         import { QueryHookOptions, useQuery } from '@apollo/client'
         import gql from 'graphql-tag'
 
         const query = gql\`
-          query fetchUser($id: ID!) {
+          query user($id: ID!) {
             user(id: $id) {
               name
             }
           }
         \`
 
-        export interface RequestType {
+        export interface UserQuery {
+          user?: User
+        }
+
+        export interface User {
+					__typename?: 'User'
+          name?: string
+        }
+
+        export interface UserQueryVariables {
           id: string | undefined
         }
 
-        export interface QueryType {
-          user?: UserType
-        }
-
-        export interface UserType {
-          name?: string
-					__typename?: 'User'
-        }
-
         export function useUserQuery(
-          request: RequestType,
-          options?: QueryHookOptions<QueryType, RequestType>,
+          variables: UserQueryVariables,
+          options?: QueryHookOptions<UserQuery, UserQueryVariables>,
         ) {
-          return useQuery<QueryType, RequestType>(query, {
-            variables: request,
-            skip: !request.id,
+          return useQuery<UserQuery, UserQueryVariables>(query, {
+            variables,
+            skip: !variables.id,
             ...options,
           })
         }

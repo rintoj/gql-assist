@@ -136,7 +136,7 @@ function toVariableDefinitions(context: Context): Array<gql.VariableDefinitionNo
   return uniqueVariables.map(inputValueDefToVariableDef)
 }
 
-function parseOperationDef(schema: DocumentNode, def: gql.DefinitionNode) {
+function parseOperationDef(schema: gql.GraphQLSchema, def: gql.DefinitionNode) {
   if (def.kind === gql.Kind.OPERATION_DEFINITION) {
     const type = def.operation
     const context = { schema, path: [], variables: [] }
@@ -157,7 +157,7 @@ function parseOperationDef(schema: DocumentNode, def: gql.DefinitionNode) {
   return def
 }
 
-export function fixGQLRequest(schema: DocumentNode, query: string) {
+export function fixGQLRequest(schema: gql.GraphQLSchema, query: string) {
   const newQuery = gql.parse(query).definitions.map(def => parseOperationDef(schema, def))
   return newQuery.map(q => gql.print(q as any)).join('\n')
 }
