@@ -32,15 +32,14 @@ describe('generateHook', () => {
       \`
     `
     const { hook, errors } = await generate('use-query.gql.ts', query)
-    console.log(hook)
     expect(toParsedOutput(hook)).toEqual(
       toParsedOutput(`
         import { QueryHookOptions, useQuery } from '@apollo/client'
         import gql from 'graphql-tag'
 
         const query = gql\`
-          query userQuery($userId: ID!) {
-            user(id: $userId) {
+          query userQuery($id: ID!) {
+            user(id: $id) {
               name
             }
           }
@@ -75,7 +74,7 @@ describe('generateHook', () => {
     expect(errors).toEqual([])
   })
 
-  test.skip('should generate query and its types without gql', async () => {
+  test('should generate query and its types without gql', async () => {
     const query = `
       const query = \`
         query {
@@ -93,7 +92,7 @@ describe('generateHook', () => {
         import gql from 'graphql-tag'
 
         const query = gql\`
-          query user($id: ID!) {
+          query userQuery($id: ID!) {
             user(id: $id) {
               name
             }
@@ -102,22 +101,23 @@ describe('generateHook', () => {
 
         export interface UserQuery {
           user?: User
+					__typename?: 'Query'
         }
 
         export interface User {
-					__typename?: 'User'
           name?: string
+					__typename?: 'User'
         }
 
-        export interface UserQueryVariables {
+        export interface Variables {
           id: string | undefined
         }
 
         export function useUserQuery(
-          variables: UserQueryVariables,
-          options?: QueryHookOptions<UserQuery, UserQueryVariables>,
+          variables: Variables,
+          options?: QueryHookOptions<UserQuery, Variables>,
         ) {
-          return useQuery<UserQuery, UserQueryVariables>(query, {
+          return useQuery<UserQuery, Variables>(query, {
             variables,
             skip: !variables.id,
             ...options,
@@ -127,7 +127,7 @@ describe('generateHook', () => {
     )
   })
 
-  test.skip('should preserve the client used', async () => {
+  test('should preserve the client used', async () => {
     const query = `
       import { QueryHookOptions, useQuery } from '../my-client'
       import gql from 'graphql-tag'
@@ -151,7 +151,7 @@ describe('generateHook', () => {
         import { QueryHookOptions, useQuery } from '../my-client'
 
         const query = gql\`
-          query user($id: ID!) {
+          query userQuery($id: ID!) {
             user(id: $id) {
               name
             }
@@ -160,22 +160,23 @@ describe('generateHook', () => {
 
         export interface UserQuery {
           user?: User
+					__typename?: 'Query'
         }
 
         export interface User {
-					__typename?: 'User'
           name?: string
+					__typename?: 'User'
         }
 
-        export interface UserQueryVariables {
+        export interface Variables {
           id: string | undefined
         }
 
         export function useUserQuery(
-          variables: UserQueryVariables,
-          options?: QueryHookOptions<UserQuery, UserQueryVariables>,
+          variables: Variables,
+          options?: QueryHookOptions<UserQuery, Variables>,
         ) {
-          return useQuery<UserQuery, UserQueryVariables>(query, {
+          return useQuery<UserQuery, Variables>(query, {
             variables,
             skip: !variables.id,
             ...options,
@@ -185,7 +186,7 @@ describe('generateHook', () => {
     )
   })
 
-  test.skip('should generate query with custom package and sort imports', async () => {
+  test('should generate query with custom package and sort imports', async () => {
     const query = `
       import gql from 'graphql-tag'
 
@@ -208,7 +209,7 @@ describe('generateHook', () => {
         import { QueryHookOptions, useQuery } from 'y-package'
 
         const query = gql\`
-          query user($id: ID!) {
+          query userQuery($id: ID!) {
             user(id: $id) {
               name
             }
@@ -217,22 +218,23 @@ describe('generateHook', () => {
 
         export interface UserQuery {
           user?: User
+					__typename?: 'Query'
         }
 
         export interface User {
-					__typename?: 'User'
           name?: string
+					__typename?: 'User'
         }
 
-        export interface UserQueryVariables {
+        export interface Variables {
           id: string | undefined
         }
 
         export function useUserQuery(
-          variables: UserQueryVariables,
-          options?: QueryHookOptions<UserQuery, UserQueryVariables>,
+          variables: Variables,
+          options?: QueryHookOptions<UserQuery, Variables>,
         ) {
-          return useQuery<UserQuery, UserQueryVariables>(query, {
+          return useQuery<UserQuery, Variables>(query, {
             variables,
             skip: !variables.id,
             ...options,
@@ -242,7 +244,7 @@ describe('generateHook', () => {
     )
   })
 
-  test.skip('should generate query and its types with batched query', async () => {
+  test('should generate query and its types with batched query', async () => {
     const query = `
       import gql from 'graphql-tag'
 
@@ -266,7 +268,7 @@ describe('generateHook', () => {
         import gql from 'graphql-tag'
 
         const query = gql\`
-          query userAndTweet($id: ID!, $tweetId: ID!) {
+          query userAndTweetQuery($id: ID!, $tweetId: ID!) {
             user(id: $id) {
               name
             }
@@ -280,29 +282,30 @@ describe('generateHook', () => {
         export interface UserAndTweetQuery {
           user?: User
           tweet?: Tweet
+					__typename?: 'Query'
         }
 
         export interface User {
-					__typename?: 'User'
           name?: string
+					__typename?: 'User'
         }
 
         export interface Tweet {
-					__typename?: 'Tweet'
           id: string
           content: string
+					__typename?: 'Tweet'
         }
 
-        export interface UserAndTweetQueryVariables {
+        export interface Variables {
           id: string | undefined
           tweetId: string | undefined
         }
 
         export function useUserAndTweetQuery(
-          variables: UserAndTweetQueryVariables,
-          options?: QueryHookOptions<UserAndTweetQuery, UserAndTweetQueryVariables>,
+          variables: Variables,
+          options?: QueryHookOptions<UserAndTweetQuery, Variables>,
         ) {
-          return useQuery<UserAndTweetQuery, UserAndTweetQueryVariables>(query, {
+          return useQuery<UserAndTweetQuery, Variables>(query, {
             variables,
             skip: !variables.id || !variables.tweetId,
             ...options,
@@ -312,7 +315,7 @@ describe('generateHook', () => {
     )
   })
 
-  test.skip('should generate query and its types with batched query and multiple inputs', async () => {
+  test('should generate query and its types with batched query and multiple inputs', async () => {
     const query = `
       import gql from 'graphql-tag'
 
@@ -326,13 +329,14 @@ describe('generateHook', () => {
     `
     const { hook, errors } = await generate('use-query.gql.ts', query)
     expect(errors).toEqual([])
+    console.log(hook)
     expect(toParsedOutput(hook)).toEqual(
       toParsedOutput(`
         import { QueryHookOptions, useQuery } from '@apollo/client'
         import gql from 'graphql-tag'
 
         const query = gql\`
-          query followers($id: ID!, $limit: Int) {
+          query followersQuery($id: ID!, $limit: Int) {
             followers(id: $id, limit: $limit) {
               name
             }
@@ -341,23 +345,24 @@ describe('generateHook', () => {
 
         export interface FollowersQuery {
           followers: User[]
+					__typename?: 'Query'
         }
 
         export interface User {
-					__typename?: 'User'
           name?: string
+					__typename?: 'User'
         }
 
-        export interface FollowersQueryVariables {
+        export interface Variables {
           id: string | undefined
           limit?: number | undefined
         }
 
         export function useFollowersQuery(
-          variables: FollowersQueryVariables,
-          options?: QueryHookOptions<FollowersQuery, FollowersQueryVariables>,
+          variables: Variables,
+          options?: QueryHookOptions<FollowersQuery, Variables>,
         ) {
-          return useQuery<FollowersQuery, FollowersQueryVariables>(query, {
+          return useQuery<FollowersQuery, Variables>(query, {
             variables,
             skip: !variables.id,
             ...options,

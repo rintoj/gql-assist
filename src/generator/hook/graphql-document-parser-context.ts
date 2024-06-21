@@ -12,7 +12,11 @@ export class GraphQLDocumentParserContext {
   public readonly errors: gql.GraphQLError[] = []
   private readonly parents: Array<gql.GraphQLObjectType | undefined | null> = []
   private readonly interfaceNameTracker = new NameTracker(getFieldName, getFieldHash)
-  private readonly parameterNameTracker = new NameTracker((node: gql.GraphQLArgument) => node.name)
+  private readonly parameterNameTracker = new NameTracker(
+    (node: gql.GraphQLArgument) => node.name,
+    undefined,
+    { prefix: true },
+  )
 
   constructor(public readonly typeInfo: gql.TypeInfo) {}
 
@@ -27,7 +31,7 @@ export class GraphQLDocumentParserContext {
   }
 
   getFields() {
-    const parent = this.parent()
+    const parent = this.typeInfo.getType()
     if (gql.isObjectType(parent)) {
       return parent.getFields()
     }
