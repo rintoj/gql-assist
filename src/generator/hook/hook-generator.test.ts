@@ -568,7 +568,7 @@ describe('generateHook', () => {
       \`
     `
     const { hook, errors } = await generate('use-query.gql.ts', query)
-    console.log(hook)
+    expect(errors).toEqual([])
     expect(toParsedOutput(hook)).toEqual(
       toParsedOutput(`
         import { MutationHookOptions, useMutation } from '@apollo/client'
@@ -584,12 +584,6 @@ describe('generateHook', () => {
           }
         \`
 
-        export interface RegisterUserInput {
-          name: string
-          email: string
-					__typename?: 'RegisterUserInput'
-        }
-
         export interface RegisterUserMutation {
           registerUser: User
 					__typename?: 'Mutation'
@@ -600,6 +594,12 @@ describe('generateHook', () => {
           name?: string
           email?: string
 					__typename?: 'User'
+        }
+
+        export interface RegisterUserInput {
+          name: string
+          email: string
+					__typename?: 'RegisterUserInput'
         }
 
         export interface Variables {

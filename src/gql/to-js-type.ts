@@ -1,6 +1,6 @@
 import * as gql from 'graphql'
 
-export function toJSType(type: gql.GraphQLNamedOutputType) {
+export function toJSType(type: gql.GraphQLNamedOutputType | gql.GraphQLNamedInputType) {
   if (gql.isScalarType(type)) {
     switch (type.name) {
       case 'ID':

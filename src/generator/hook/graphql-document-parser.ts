@@ -21,6 +21,7 @@ import {
 import { createArrayType, createType } from '../../ts'
 import { camelCase, toString } from '../../util'
 import { GraphQLDocumentParserContext } from './graphql-document-parser-context'
+import { create } from 'domain'
 
 function processEnum(enumType: gql.GraphQLEnumType, context: GraphQLDocumentParserContext) {
   const members = enumType
@@ -90,6 +91,44 @@ function resolveArgName(schemaType: gql.GraphQLInputType) {
   return type.name
 }
 
+function parseInputType(schemaType: gql.GraphQLInputType, context: GraphQLDocumentParserContext) {
+  const type = gql.getNamedType(schemaType)
+  if (gql.isInputObjectType(type)) {
+    const fields = Object.values(type.getFields())
+    context.addInterface(
+      ts.factory.createInterfaceDeclaration(
+        [ts.factory.createToken(ts.SyntaxKind.ExportKeyword)],
+        ts.factory.createIdentifier(type.name),
+        undefined,
+        undefined,
+        fields.map(field => {
+          const isNullable = !gql.isNonNullType(field.type)
+          const isArray = gql.isListType(gql.getNullableType(field.type))
+          const typeName = resolveArgName(field.type)
+          parseInputType(field.type, context)
+          return ts.factory.createPropertySignature(
+            undefined,
+            ts.factory.createIdentifier(field.name),
+            isNullable ? ts.factory.createToken(ts.SyntaxKind.QuestionToken) : undefined,
+            isArray ? createArrayType(typeName) : createType(typeName)
+          )
+        }).concat(createTypeName(type.name)),
+      ),
+    )
+  }
+
+
+}
+
+export function createTypeName(name: string) {
+  return ts.factory.createPropertySignature(
+    undefined,
+    ts.factory.createIdentifier('__typename'),
+    ts.factory.createToken(ts.SyntaxKind.QuestionToken),
+    createType(toString("'", name, "'")),
+  )
+}
+
 function parseArguments(
   node: gql.FieldNode,
   parentType: Maybe<gql.GraphQLOutputType>,
@@ -105,6 +144,7 @@ function parseArguments(
     const isNullable = gql.isNullableType(schemaType)
     const hash = toString(node.name.value, arg.name)
     const parameterName = context.toParameterName(hash, arg.name, node.name?.value)
+    parseInputType(schemaType, context)
     context.addParameter(
       {
         name: parameterName,
@@ -129,14 +169,7 @@ function parseType(
     return node.name?.value
   }
 
-  const fields = parseFields(node, schemaType, context).concat(
-    ts.factory.createPropertySignature(
-      undefined,
-      ts.factory.createIdentifier('__typename'),
-      ts.factory.createToken(ts.SyntaxKind.QuestionToken),
-      createType(toString("'", schemaType.name, "'")),
-    ),
-  )
+  const fields = parseFields(node, schemaType, context).concat(createTypeName(schemaType.name))
 
   const interfaceName = context.toInterfaceName(
     getFieldHash(schemaType.name, node),
