@@ -152,7 +152,12 @@ export function createQueryHook(
   const isLazyQuery = gqlVariableName.startsWith('lazy')
 
   // create imports
-  context.imports.push(createImport(libraryName, 'QueryHookOptions', 'useQuery'))
+  if (isLazyQuery) {
+    context.imports.push(createImport(libraryName, 'LazyQueryHookOptions', 'useLazyQuery'))
+  } else {
+    context.imports.push(createImport(libraryName, 'QueryHookOptions', 'useQuery'))
+
+  }
 
   // create query hook
   return ts.factory.createFunctionDeclaration(
@@ -191,7 +196,7 @@ export function createQueryHook(
       [
         ts.factory.createReturnStatement(
           ts.factory.createCallExpression(
-            ts.factory.createIdentifier('useQuery'),
+            ts.factory.createIdentifier(isLazyQuery ? 'useLazyQuery' : 'useQuery'),
             [
               ts.factory.createTypeReferenceNode(
                 ts.factory.createIdentifier(responseType),
@@ -206,18 +211,18 @@ export function createQueryHook(
               ts.factory.createIdentifier(gqlVariableName),
               hasVariables
                 ? ts.factory.createObjectLiteralExpression(
-                    [
-                      ts.factory.createShorthandPropertyAssignment(
-                        ts.factory.createIdentifier('variables'),
-                        undefined,
-                      ),
-                      !isLazyQuery && !!requiredVariables.length
-                        ? createSkip(requiredVariables)
-                        : null,
-                      ts.factory.createSpreadAssignment(ts.factory.createIdentifier('options')),
-                    ].filter(i => !!i) as any,
-                    true,
-                  )
+                  [
+                    ts.factory.createShorthandPropertyAssignment(
+                      ts.factory.createIdentifier('variables'),
+                      undefined,
+                    ),
+                    !isLazyQuery && !!requiredVariables.length
+                      ? createSkip(requiredVariables)
+                      : null,
+                    ts.factory.createSpreadAssignment(ts.factory.createIdentifier('options')),
+                  ].filter(i => !!i) as any,
+                  true,
+                )
                 : ts.factory.createIdentifier('options'),
             ].filter(i => !!i) as any,
           ),
