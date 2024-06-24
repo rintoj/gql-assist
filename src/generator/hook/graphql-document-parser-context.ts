@@ -1,24 +1,25 @@
 import * as gql from 'graphql'
+import { Maybe } from 'graphql/jsutils/Maybe'
 import { ById } from 'tsds-tools'
 import ts from 'typescript'
-import { getFieldHash, getFieldName } from '../../gql'
-import { NameTracker } from '../../util'
-import { Maybe } from 'graphql/jsutils/Maybe'
+import { NameTracker, camelCase, className } from '../../util'
+
+export interface PropertyConfig {
+  name: string
+  type: string
+  isNullable: boolean
+  isArray: boolean
+}
 
 export class GraphQLDocumentParserContext {
   public readonly types: ById<ts.InterfaceDeclaration | ts.EnumDeclaration> = {}
-  public readonly parameters: ById<ts.PropertySignature> = {}
+  public readonly parameters: ById<PropertyConfig> = {}
   public readonly variableDefinition: ById<gql.VariableDefinitionNode> = {}
   public readonly errors: gql.GraphQLError[] = []
-  private readonly parents: Array<gql.GraphQLObjectType | undefined | null> = []
-  private readonly interfaceNameTracker = new NameTracker(getFieldName, getFieldHash)
-  private readonly parameterNameTracker = new NameTracker(
-    (node: gql.GraphQLArgument) => node.name,
-    undefined,
-    { prefix: true },
-  )
+  private readonly interfaceNameTracker = new NameTracker()
+  private readonly parameterNameTracker = new NameTracker({ prefix: true })
 
-  constructor(public readonly typeInfo: gql.TypeInfo) {}
+  constructor(public readonly typeInfo: gql.TypeInfo) { }
 
   parent(): Maybe<gql.GraphQLOutputType> {
     return this.typeInfo.getType()
@@ -39,6 +40,7 @@ export class GraphQLDocumentParserContext {
 
   addInterface(type: ts.InterfaceDeclaration) {
     const name = type.name.escapedText ?? ''
+    if (this.types[name]) throw new Error(`Type by name ${name} already exists!`)
     this.types[name] = type
     return this
   }
@@ -50,21 +52,20 @@ export class GraphQLDocumentParserContext {
   }
 
   addParameter(
-    name: string,
-    type: ts.PropertySignature,
+    propertyConfig: PropertyConfig,
     variableDefinition: gql.VariableDefinitionNode,
   ) {
-    this.parameters[name] = type
-    this.variableDefinition[name] = variableDefinition
+    this.parameters[propertyConfig.name] = propertyConfig
+    this.variableDefinition[propertyConfig.name] = variableDefinition
     return this
   }
 
-  toInterfaceName(node: gql.FieldNode | gql.OperationDefinitionNode, ...hits: string[]) {
-    return this.interfaceNameTracker.next(node, ...hits)
+  toInterfaceName(hash: string, name: string, ...hints: Array<string | undefined>) {
+    return this.interfaceNameTracker.next(hash, className(name), ...hints.map(i => className(i)))
   }
 
-  toParameterName(node: gql.GraphQLArgument, ...hits: string[]) {
-    return this.parameterNameTracker.next(node, ...hits)
+  toParameterName(hash: string, name: string, ...hints: Array<string | undefined>) {
+    return this.parameterNameTracker.next(hash, camelCase(name), ...hints.map(i => camelCase(i)))
   }
 
   reportError(message: string, node: gql.ASTNode) {

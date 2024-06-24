@@ -329,7 +329,6 @@ describe('generateHook', () => {
     `
     const { hook, errors } = await generate('use-query.gql.ts', query)
     expect(errors).toEqual([])
-    console.log(hook)
     expect(toParsedOutput(hook)).toEqual(
       toParsedOutput(`
         import { QueryHookOptions, useQuery } from '@apollo/client'
@@ -372,7 +371,7 @@ describe('generateHook', () => {
     )
   })
 
-  test.skip('should generate query and its types with enum', async () => {
+  test('should generate query and its types with enum', async () => {
     const query = `
       import gql from 'graphql-tag'
 
@@ -386,7 +385,6 @@ describe('generateHook', () => {
       \`
     `
     const { hook, errors } = await generate('use-query.gql.ts', query)
-    console.log(hook)
     expect(errors).toEqual([])
     expect(toParsedOutput(hook)).toEqual(
       toParsedOutput(`
@@ -394,7 +392,7 @@ describe('generateHook', () => {
         import gql from 'graphql-tag'
 
         const query = gql\`
-          query user($id: ID!) {
+          query userQuery($id: ID!) {
             user(id: $id) {
               id
               status
@@ -404,12 +402,7 @@ describe('generateHook', () => {
 
         export interface UserQuery {
           user?: User
-        }
-
-        export interface User {
-					__typename?: 'User'
-          id: string
-          status?: UserStatus
+					__typename?: 'Query'
         }
 
         export enum UserStatus {
@@ -417,17 +410,23 @@ describe('generateHook', () => {
           INACTIVE = 'INACTIVE',
         }
 
-        export interface UserQueryVariables {
+        export interface User {
+          id: string
+          status?: UserStatus
+					__typename?: 'User'
+        }
+
+        export interface Variables {
           id: string | undefined
         }
 
-        export function useUserQueryVariables(
-          request: UserQueryVariables,
-          options?: QueryHookOptions<Query, UserQueryVariables>,
+        export function useUserQuery(
+          variables: Variables,
+          options?: QueryHookOptions<UserQuery, Variables>,
         ) {
-          return useQuery<Query, UserQueryVariables>(query, {
-            variables: request,
-            skip: !request.id,
+          return useQuery<UserQuery, Variables>(query, {
+            variables,
+            skip: !variables.id,
             ...options,
           })
         }
@@ -435,7 +434,7 @@ describe('generateHook', () => {
     )
   })
 
-  test.skip('should generate query with optional request parameter if none of the imports are mandatory', async () => {
+  test('should generate query with optional request parameter if none of the imports are mandatory', async () => {
     const query = `
       import gql from 'graphql-tag'
 
@@ -448,13 +447,14 @@ describe('generateHook', () => {
         }
       \`
     `
-    const hook = await generate('use-query.gql.ts', query)
+    const { hook, errors } = await generate('use-query.gql.ts', query)
+    expect(errors).toEqual([])
     expect(toParsedOutput(hook)).toEqual(
       toParsedOutput(`import { QueryHookOptions, useQuery } from '@apollo/client'
       import gql from 'graphql-tag'
 
       const query = gql\`
-        query fetchUsers($next: String) {
+        query usersQuery($next: String) {
           users(next: $next) {
             id
             status
@@ -462,18 +462,9 @@ describe('generateHook', () => {
         }
       \`
 
-      export interface RequestType {
-        next?: string | undefined
-      }
-
-      export interface QueryType {
-        users: UserType[]
-      }
-
-      export interface UserType {
-        id: string
-        status?: UserStatus
-        __typename?: 'User'
+      export interface UsersQuery {
+        users: User[]
+        __typename?: 'Query'
       }
 
       export enum UserStatus {
@@ -481,12 +472,22 @@ describe('generateHook', () => {
         INACTIVE = 'INACTIVE',
       }
 
+      export interface User {
+        id: string
+        status?: UserStatus
+        __typename?: 'User'
+      }
+
+      export interface Variables {
+        next?: string | undefined
+      }
+
       export function useUsersQuery(
-        request?: RequestType,
-        options?: QueryHookOptions<QueryType, RequestType>,
+        variables?: Variables,
+        options?: QueryHookOptions<UsersQuery, Variables>,
       ) {
-        return useQuery<QueryType, RequestType>(query, {
-          variables: request,
+        return useQuery<UsersQuery, Variables>(query, {
+          variables,
           ...options,
         })
       }
@@ -494,7 +495,7 @@ describe('generateHook', () => {
     )
   })
 
-  test.skip('should generate query with date', async () => {
+  test('should generate query with date', async () => {
     const query = `
       import gql from 'graphql-tag'
 
@@ -507,14 +508,15 @@ describe('generateHook', () => {
         }
       \`
     `
-    const hook = await generate('use-query.gql.ts', query)
+    const { hook, errors } = await generate('use-query.gql.ts', query)
+    expect(errors).toEqual([])
     expect(toParsedOutput(hook)).toEqual(
       toParsedOutput(`
         import { QueryHookOptions, useQuery } from '@apollo/client'
         import gql from 'graphql-tag'
 
         const query = gql\`
-          query fetchUser($id: ID!) {
+          query userQuery($id: ID!) {
             user(id: $id) {
               id
               createdAt
@@ -522,27 +524,28 @@ describe('generateHook', () => {
           }
         \`
 
-        export interface RequestType {
-          id: string | undefined
+        export interface UserQuery {
+          user?: User
+					__typename?: 'Query'
         }
 
-        export interface QueryType {
-          user?: UserType
-        }
-
-        export interface UserType {
+        export interface User {
           id: string
           createdAt?: DateTime
 					__typename?: 'User'
         }
 
+        export interface Variables {
+          id: string | undefined
+        }
+
         export function useUserQuery(
-          request: RequestType,
-          options?: QueryHookOptions<QueryType, RequestType>,
+          variables: Variables,
+          options?: QueryHookOptions<UserQuery, Variables>,
         ) {
-          return useQuery<QueryType, RequestType>(query, {
-            variables: request,
-            skip: !request.id,
+          return useQuery<UserQuery, Variables>(query, {
+            variables,
+            skip: !variables.id,
             ...options,
           })
         }
@@ -550,7 +553,7 @@ describe('generateHook', () => {
     )
   })
 
-  test.skip('should generate mutation and its types', async () => {
+  test('should generate mutation and its types', async () => {
     const query = `
       import gql from 'graphql-tag'
 
@@ -564,14 +567,15 @@ describe('generateHook', () => {
         }
       \`
     `
-    const hook = await generate('use-query.gql.ts', query)
+    const { hook, errors } = await generate('use-query.gql.ts', query)
+    console.log(hook)
     expect(toParsedOutput(hook)).toEqual(
       toParsedOutput(`
         import { MutationHookOptions, useMutation } from '@apollo/client'
         import gql from 'graphql-tag'
 
         const mutation = gql\`
-          mutation registerUser($input: RegisterUserInput!) {
+          mutation registerUserMutation($input: RegisterUserInput!) {
             registerUser(input: $input) {
               id
               name
@@ -580,29 +584,32 @@ describe('generateHook', () => {
           }
         \`
 
-        export interface RequestType {
-          input: RegisterUserInputType
-        }
-
-        export interface RegisterUserInputType {
+        export interface RegisterUserInput {
           name: string
           email: string
 					__typename?: 'RegisterUserInput'
         }
 
-        export interface MutationType {
-          registerUser: UserType
+        export interface RegisterUserMutation {
+          registerUser: User
+					__typename?: 'Mutation'
         }
 
-        export interface UserType {
+        export interface User {
           id: string
           name?: string
           email?: string
 					__typename?: 'User'
         }
 
-        export function useRegisterUserMutation(options?: MutationHookOptions<MutationType, RequestType>) {
-          return useMutation<MutationType, RequestType>(mutation, options)
+        export interface Variables {
+          input: RegisterUserInput
+        }
+
+        export function useRegisterUserMutation(
+          options?: MutationHookOptions<RegisterUserMutation, Variables>,
+        ) {
+          return useMutation<RegisterUserMutation, Variables>(mutation, options)
         }
     `),
     )
@@ -636,7 +643,7 @@ describe('generateHook', () => {
           }
         \`
 
-        export interface RequestType {
+        export interface Variables {
           id: string
         }
 
@@ -652,9 +659,9 @@ describe('generateHook', () => {
         }
 
         export function useOnUserChangeSubscription(
-          options?: SubscriptionHookOptions<SubscriptionType, RequestType>,
+          options?: SubscriptionHookOptions<SubscriptionType, Variables>,
         ) {
-          return useSubscription<SubscriptionType, RequestType>(subscription, options)
+          return useSubscription<SubscriptionType, Variables>(subscription, options)
         }
     `),
     )
@@ -710,7 +717,7 @@ describe('generateHook', () => {
           }
         \`
 
-        export interface RequestType {
+        export interface Variables {
           id: string | undefined
           size?: ImageSize | undefined
         }
@@ -744,11 +751,11 @@ describe('generateHook', () => {
         }
 
         export function useTweetQuery(
-          request: RequestType,
-          options?: QueryHookOptions<QueryType, RequestType>,
+          request: Variables,
+          options?: QueryHookOptions<QueryType, Variables>,
         ) {
-          return useQuery<QueryType, RequestType>(query, {
-            variables: request,
+          return useQuery<QueryType, Variables>(query, {
+            variables,
             skip: !request.id,
             ...options,
           })
@@ -879,7 +886,7 @@ describe('generateHook', () => {
           }
         \`
 
-        export interface RequestType {
+        export interface Variables {
           id: string | undefined
         }
 
@@ -893,11 +900,11 @@ describe('generateHook', () => {
         }
 
         export function useUserQuery(
-          request: RequestType,
-          options?: LazyQueryHookOptions<QueryType, RequestType>,
+          request: Variables,
+          options?: LazyQueryHookOptions<QueryType, Variables>,
         ) {
-          return useLazyQuery<QueryType, RequestType>(lazyQuery, {
-            variables: request,
+          return useLazyQuery<QueryType, Variables>(lazyQuery, {
+            variables,
             ...options,
           })
         }
@@ -1013,7 +1020,7 @@ describe('generateHook', () => {
           }
         \`
 
-        export interface RequestType {
+        export interface Variables {
           size?: ImageSize | undefined
         }
 
@@ -1059,11 +1066,11 @@ describe('generateHook', () => {
         }
 
         export function useMyNotificationsQuery(
-          request?: RequestType,
-          options?: QueryHookOptions<QueryType, RequestType>,
+          variables?: Variables,
+          options?: QueryHookOptions<QueryType, Variables>,
         ) {
-          return useQuery<QueryType, RequestType>(query, {
-            variables: request,
+          return useQuery<QueryType, Variables>(query, {
+            variables,
             ...options,
           })
         }

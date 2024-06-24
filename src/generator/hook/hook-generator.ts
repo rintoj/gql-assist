@@ -6,7 +6,6 @@ import { Diagnostic, diagnoseGraphQLQuery } from '../../diagnostic'
 import {
   createDefaultImport,
   createGraphQLQuery,
-  createImport,
   getGQLContent,
   getGraphQLQueryVariable,
 } from '../../ts'
@@ -14,8 +13,7 @@ import { addImports } from '../../ts/add-imports'
 import { organizeImports } from '../../ts/organize-imports'
 import { Context, createContext } from '../context'
 import { parseDocument } from './graphql-document-parser'
-import { createGraphQLHook, generateTypes } from './graphql-type-generator'
-import { GraphQLTypeParser } from './graphql-type-parser'
+import { createGraphQLHook } from './graphql-type-generator'
 
 const hooks = ['useQuery', 'useMutation', 'useSubscription']
 
@@ -49,21 +47,18 @@ async function generateGQLHook(sourceFile: ts.SourceFile, schema: GraphQLSchema,
 
   // parse graphql
   const initialDocument = gql.parse(graphQLQueryString.replace(/\{[\s\n]*\}/g, '{ __typename }'))
+  const { document, types } = parseDocument(initialDocument, schema)
 
   // create imports
-  context.imports.push(
-    createImport(identifyLibrary(sourceFile, context.config), 'QueryHookOptions', 'useQuery'),
-  )
+  const libraryName = identifyLibrary(sourceFile, context.config)
   context.imports.push(createDefaultImport('graphql-tag', 'gql'))
-
-  const { document, types } = parseDocument(initialDocument, schema)
 
   const processedFile = {
     ...sourceFile,
     statements: [
       createGraphQLQuery(document, variable),
       ...types,
-      createGraphQLHook(document, variable),
+      createGraphQLHook(document, variable, libraryName, context),
     ] as any,
   } as ts.SourceFile
 

@@ -1,7 +1,10 @@
 import * as gql from 'graphql'
 import { toCamelCase, toClassName } from 'name-util'
 import ts from 'typescript'
-import { TypeMap } from './graphql-type-parser'
+import { isMutation, isOperationDefinitionNode, isQuery } from '../../gql'
+import type { TypeMap } from './graphql-type-parser'
+import type { Context } from '../context'
+import { createImport } from '../../ts'
 
 function toJSType(type: string) {
   switch (type) {
@@ -77,7 +80,7 @@ function getDefinition(document: gql.DocumentNode) {
     )
   }
   const [def] = document.definitions
-  if (def.kind !== gql.Kind.OPERATION_DEFINITION) {
+  if (!isOperationDefinitionNode(def)) {
     throw new Error(
       `We can only generate type from operational definitions but found '${def.kind}'`,
     )
@@ -114,7 +117,26 @@ function createSkip(requiredVariables: string[]) {
   )
 }
 
-export function createGraphQLHook(document: gql.DocumentNode, variable: ts.VariableDeclaration) {
+export function createGraphQLHook(
+  document: gql.DocumentNode,
+  variable: ts.VariableDeclaration,
+  libraryName: string,
+  context: Context,
+) {
+  const def = getDefinition(document)
+  if (isQuery(def)) {
+    return createQueryHook(document, variable, libraryName, context)
+  } else if (isMutation(def)) {
+    return createMutationHook(document, libraryName, context)
+  }
+}
+
+export function createQueryHook(
+  document: gql.DocumentNode,
+  variable: ts.VariableDeclaration,
+  libraryName: string,
+  context: Context,
+) {
   const def = getDefinition(document)
   const defName = def.name?.value ?? ''
   const hookName = toCamelCase(`${defName}`)
@@ -129,13 +151,19 @@ export function createGraphQLHook(document: gql.DocumentNode, variable: ts.Varia
   const hasVariables = inputs.length > 0
   const isLazyQuery = gqlVariableName.startsWith('lazy')
 
+  // create imports
+  context.imports.push(createImport(libraryName, 'QueryHookOptions', 'useQuery'))
+
+  // create query hook
   return ts.factory.createFunctionDeclaration(
     [ts.factory.createModifier(ts.SyntaxKind.ExportKeyword)],
     undefined,
     ts.factory.createIdentifier(functionName),
     undefined,
     [
-      hasVariables ? createParameter('variables', variableType, false) : (undefined as any),
+      hasVariables
+        ? createParameter('variables', variableType, !requiredVariables.length)
+        : (undefined as any),
       ts.factory.createParameterDeclaration(
         undefined,
         undefined,
@@ -183,13 +211,71 @@ export function createGraphQLHook(document: gql.DocumentNode, variable: ts.Varia
                         ts.factory.createIdentifier('variables'),
                         undefined,
                       ),
-                      !isLazyQuery && requiredVariables ? createSkip(requiredVariables) : null,
+                      !isLazyQuery && !!requiredVariables.length
+                        ? createSkip(requiredVariables)
+                        : null,
                       ts.factory.createSpreadAssignment(ts.factory.createIdentifier('options')),
                     ].filter(i => !!i) as any,
                     true,
                   )
                 : ts.factory.createIdentifier('options'),
             ].filter(i => !!i) as any,
+          ),
+        ),
+      ],
+      true,
+    ),
+  )
+}
+
+function createMutationHook(document: gql.DocumentNode, libraryName: string, context: Context) {
+  const def = getDefinition(document)
+  const defName = def.name?.value ?? ''
+  const hookName = toCamelCase(`use-${defName}`)
+  const inputs = def.variableDefinitions ?? []
+  const responseType = toClassName(defName)
+  const hasVariables = inputs.length > 0
+
+  context.imports.push(createImport(libraryName, 'MutationHookOptions', 'useMutation'))
+
+  return ts.factory.createFunctionDeclaration(
+    [ts.factory.createModifier(ts.SyntaxKind.ExportKeyword)],
+    undefined,
+    ts.factory.createIdentifier(hookName),
+    undefined,
+    [
+      ts.factory.createParameterDeclaration(
+        undefined,
+        undefined,
+        ts.factory.createIdentifier('options'),
+        ts.factory.createToken(ts.SyntaxKind.QuestionToken),
+        ts.factory.createTypeReferenceNode(ts.factory.createIdentifier('MutationHookOptions'), [
+          ts.factory.createTypeReferenceNode(ts.factory.createIdentifier(responseType), undefined),
+          ts.factory.createTypeReferenceNode(
+            ts.factory.createIdentifier(hasVariables ? 'Variables' : 'never'),
+            undefined,
+          ),
+        ]),
+        undefined,
+      ),
+    ],
+    undefined,
+    ts.factory.createBlock(
+      [
+        ts.factory.createReturnStatement(
+          ts.factory.createCallExpression(
+            ts.factory.createIdentifier('useMutation'),
+            [
+              ts.factory.createTypeReferenceNode(
+                ts.factory.createIdentifier(responseType),
+                undefined,
+              ),
+              ts.factory.createTypeReferenceNode(
+                ts.factory.createIdentifier(hasVariables ? 'Variables' : 'never'),
+                undefined,
+              ),
+            ],
+            [ts.factory.createIdentifier('mutation'), ts.factory.createIdentifier('options')],
           ),
         ),
       ],

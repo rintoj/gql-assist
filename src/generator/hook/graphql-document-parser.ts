@@ -1,11 +1,19 @@
+import { Maybe } from 'graphql/jsutils/Maybe'
 import * as gql from 'graphql'
+import { toCamelCase } from 'name-util'
 import { toNonNullArray } from 'tsds-tools'
 import ts from 'typescript'
 import {
   createArgumentDefinition,
   createInputValueDefinition,
+  getFieldHash,
+  getFieldName,
+  hasAQuery,
+  isFieldNode,
+  isMutation,
+  isOperationDefinitionNode,
+  isQuery,
   toJSType,
-  updateArgName,
   updateArguments,
   updateName,
   updateVariableDefinitions,
@@ -13,8 +21,6 @@ import {
 import { createArrayType, createType } from '../../ts'
 import { camelCase, toString } from '../../util'
 import { GraphQLDocumentParserContext } from './graphql-document-parser-context'
-import { singular } from 'pluralize'
-import { toClassName } from 'name-util'
 
 function processEnum(enumType: gql.GraphQLEnumType, context: GraphQLDocumentParserContext) {
   const members = enumType
@@ -35,7 +41,7 @@ function processEnum(enumType: gql.GraphQLEnumType, context: GraphQLDocumentPars
 }
 
 function resolveTypeName(
-  selection: gql.FieldNode,
+  node: gql.FieldNode,
   schemaType: gql.GraphQLOutputType,
   context: GraphQLDocumentParserContext,
 ) {
@@ -43,27 +49,28 @@ function resolveTypeName(
   if (!type) return 'never'
   if (gql.isEnumType(schemaType)) return type.name
   if (gql.isScalarType(type)) return toJSType(type)
-  return context.toInterfaceName(updateName({ ...selection }, type.name), selection.name.value)
+  if (gql.isObjectType(type)) {
+    return context.toInterfaceName(getFieldHash(type.name, node), type.name, getFieldName(node))
+  }
+  throw new Error(`Unable to process ${type.name} of kind ${type.astNode?.kind}`)
 }
 
 function parseFields(
   node: gql.OperationDefinitionNode | gql.FieldNode,
+  schemaType: gql.GraphQLObjectType,
   context: GraphQLDocumentParserContext,
 ) {
-  const parent = context.parent()
-  if (!parent || !node.selectionSet?.selections?.length) return []
-  const fields = context.getFields()
+  const fields = schemaType.getFields()
   return toNonNullArray(
-    node.selectionSet.selections.map(selection => {
-      if (selection.kind === gql.Kind.FIELD) {
+    node.selectionSet?.selections.map(selection => {
+      if (isFieldNode(selection)) {
         const name = selection.name.value
-        const schemaType = fields?.[name]?.type
-        if (gql.isEnumType(schemaType)) processEnum(schemaType, context)
-        if (!schemaType) return
-        const typeName = resolveTypeName(selection, schemaType, context)
-        const isArray = gql.isListType(gql.getNullableType(schemaType))
-        const isNullable = gql.isNullableType(schemaType)
-
+        const fieldType = fields?.[name]?.type
+        if (gql.isEnumType(fieldType)) processEnum(fieldType, context)
+        if (!fieldType) return
+        const typeName = resolveTypeName(selection, fieldType, context)
+        const isArray = gql.isListType(gql.getNullableType(fieldType))
+        const isNullable = gql.isNullableType(fieldType)
         return ts.factory.createPropertySignature(
           undefined,
           ts.factory.createIdentifier(name),
@@ -71,7 +78,7 @@ function parseFields(
           isArray ? createArrayType(typeName) : createType(typeName),
         )
       }
-    }),
+    }) ?? [],
   )
 }
 
@@ -83,30 +90,30 @@ function resolveArgName(schemaType: gql.GraphQLInputType) {
   return type.name
 }
 
-function parseArguments(node: gql.FieldNode, context: GraphQLDocumentParserContext) {
-  const field = (context.typeInfo.getParentType() as any)?.getFields?.()?.[node.name.value]
-  if (!field) return node
+function parseArguments(
+  node: gql.FieldNode,
+  parentType: Maybe<gql.GraphQLOutputType>,
+  context: GraphQLDocumentParserContext,
+) {
+  if (!parentType || !gql.isObjectType(parentType)) return
+  const field = parentType.getFields()[node.name.value]
   const args = field.args ?? []
   const updatedArgs = args.map((arg: any) => {
     const schemaType = arg.type
     const typeName = resolveArgName(schemaType)
     const isArray = gql.isListType(gql.getNullableType(schemaType))
     const isNullable = gql.isNullableType(schemaType)
-    const parameterName = context.toParameterName(
-      updateArgName(arg, arg.name),
-      toClassName(node.name?.value as string),
-    )
+    const hash = toString(node.name.value, arg.name)
+    const parameterName = context.toParameterName(hash, arg.name, node.name?.value)
     context.addParameter(
-      parameterName,
-      ts.factory.createPropertySignature(
-        undefined,
-        ts.factory.createIdentifier(parameterName),
-        isNullable ? ts.factory.createToken(ts.SyntaxKind.QuestionToken) : undefined,
-        isArray ? createArrayType(typeName, 'undefined') : createType(typeName, 'undefined'),
-      ),
+      {
+        name: parameterName,
+        type: typeName,
+        isNullable,
+        isArray
+      },
       createArgumentDefinition(arg, parameterName),
     )
-
     return createInputValueDefinition(arg.name, parameterName)
   })
   return updateArguments(node, updatedArgs)
@@ -114,24 +121,28 @@ function parseArguments(node: gql.FieldNode, context: GraphQLDocumentParserConte
 
 function parseType(
   node: gql.OperationDefinitionNode | gql.FieldNode,
+  schemaType: gql.GraphQLObjectType | undefined,
   context: GraphQLDocumentParserContext,
 ) {
-  const parent = gql.getNamedType(context.parent())
-  console.log(node.name?.value, parent)
-  if (!parent || !node.selectionSet?.selections?.length) {
+  if (!schemaType || !node.selectionSet?.selections.length) {
+    console.log('No selectors for node', node.name?.value)
     return node.name?.value
   }
 
-  const fields = parseFields(node, context).concat(
+  const fields = parseFields(node, schemaType, context).concat(
     ts.factory.createPropertySignature(
       undefined,
       ts.factory.createIdentifier('__typename'),
       ts.factory.createToken(ts.SyntaxKind.QuestionToken),
-      createType(toString("'", parent.name, "'")),
+      createType(toString("'", schemaType.name, "'")),
     ),
   )
 
-  const interfaceName = context.toInterfaceName(node, singular(parent?.name ?? ''))
+  const interfaceName = context.toInterfaceName(
+    getFieldHash(schemaType.name, node),
+    isOperationDefinitionNode(node) ? node.name?.value! : schemaType.name,
+    getFieldName(node),
+  )
 
   context.addInterface(
     ts.factory.createInterfaceDeclaration(
@@ -150,7 +161,7 @@ function addVariableDefinitions(document: gql.DocumentNode, context: GraphQLDocu
   return {
     ...document,
     definitions: document.definitions.map(def => {
-      if (def.kind !== gql.Kind.OPERATION_DEFINITION) return def
+      if (!isOperationDefinitionNode(def)) return def
       return updateVariableDefinitions(def, Object.values(context.variableDefinition))
     }),
   }
@@ -161,6 +172,14 @@ function preprocessDocument(document: gql.DocumentNode, schema: gql.GraphQLSchem
   return gql.visit(
     document,
     gql.visitWithTypeInfo(typeInfo, {
+      OperationDefinition(node: gql.OperationDefinitionNode) {
+        const firstField = toCamelCase(
+          node.selectionSet?.selections
+            .map(field => isFieldNode(field) && field?.name?.value)
+            .join('-and-'),
+        )
+        return updateName(node, node.name?.value ?? camelCase(firstField, node.operation))
+      },
       Field(node) {
         const type = typeInfo.getFieldDef()
         return { ...node, arguments: type?.args.map(arg => createInputValueDefinition(arg.name)) }
@@ -172,21 +191,32 @@ function preprocessDocument(document: gql.DocumentNode, schema: gql.GraphQLSchem
 export function parseDocument(document: gql.DocumentNode, schema: gql.GraphQLSchema) {
   const typeInfo = new gql.TypeInfo(schema)
   const context = new GraphQLDocumentParserContext(typeInfo)
+  const fixedDoc = preprocessDocument(document, schema)
   const doc = gql.visit(
-    preprocessDocument(document, schema),
+    fixedDoc,
     gql.visitWithTypeInfo(typeInfo, {
       OperationDefinition(node: gql.OperationDefinitionNode) {
-        const interfaceName = parseType(node, context)
-        return updateName(node, camelCase(interfaceName))
+        const type = gql.getNamedType(typeInfo.getType())
+        if (gql.isObjectType(type)) {
+          parseType(node, type, context)
+        } else {
+          context.reportError(`No valid type found for ${node.operation} ${node.name?.value}`, node)
+        }
+        return node
       },
       Field(node) {
-        if (!!node.selectionSet?.selections?.length) {
-          parseType(node, context)
+        const type = gql.getNamedType(typeInfo.getType())
+        const parent = typeInfo.getParentType()
+        if (gql.isObjectType(type)) {
+          parseType(node, type, context)
+        } else {
+          context.reportError(`No valid type found for ${node.name?.value}`, node)
         }
-        return parseArguments(node, context)
+        return parseArguments(node, parent, context)
       },
     }),
   )
+  const isQueryType = hasAQuery(doc)
   const parameters = Object.values(context.parameters)
   if (parameters.length) {
     context.addInterface(
@@ -195,7 +225,13 @@ export function parseDocument(document: gql.DocumentNode, schema: gql.GraphQLSch
         ts.factory.createIdentifier('Variables'),
         undefined,
         undefined,
-        parameters,
+        parameters.map(param =>
+          ts.factory.createPropertySignature(
+            undefined,
+            ts.factory.createIdentifier(param.name),
+            param.isNullable ? ts.factory.createToken(ts.SyntaxKind.QuestionToken) : undefined,
+            param.isArray ? createArrayType(param.type, isQueryType ? 'undefined' : undefined) : createType(param.type, isQueryType ? 'undefined' : undefined),
+          ))
       ),
     )
   }

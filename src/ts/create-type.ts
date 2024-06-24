@@ -1,7 +1,7 @@
 import { toNonNullArray } from 'tsds-tools'
 import ts, { factory } from 'typescript'
 
-export function createType(...types: string[]): ts.TypeNode | undefined {
+export function createType(...types: Array<string | undefined>): ts.TypeNode | undefined {
   if (types.length > 1) {
     return factory.createUnionTypeNode(toNonNullArray(types.map(type => createType(type))))
   }
@@ -21,7 +21,7 @@ export function createType(...types: string[]): ts.TypeNode | undefined {
   if (type) return factory.createTypeReferenceNode(factory.createIdentifier(type), undefined)
 }
 
-export function createArrayType(...types: string[]) {
+export function createArrayType(...types: Array<string | undefined>) {
   const type = createType(...types)
   if (type) return ts.factory.createArrayTypeNode(type)
 }
