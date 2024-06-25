@@ -615,7 +615,7 @@ describe('generateHook', () => {
     )
   })
 
-  test.skip('should generate subscription and its types', async () => {
+  test('should generate subscription and its types', async () => {
     const query = `
       import gql from 'graphql-tag'
 
@@ -636,7 +636,7 @@ describe('generateHook', () => {
         import gql from 'graphql-tag'
 
         const subscription = gql\`
-          subscription subscribeToOnUserChange($id: ID!) {
+          subscription onUserChangeSubscription($id: ID!) {
             onUserChange(id: $id) {
               id
               name
@@ -644,31 +644,31 @@ describe('generateHook', () => {
           }
         \`
 
-        export interface Variables {
-          id: string
-        }
-
-        export interface SubscriptionType {
-          onUserChange: UserType
+        export interface OnUserChangeSubscription {
+          onUserChange: User
           __typename?: 'Subscription'
         }
 
-        export interface UserType {
+        export interface User {
           id: string
           name?: string
           __typename?: 'User'
         }
 
+        export interface Variables {
+          id: string
+        }
+
         export function useOnUserChangeSubscription(
-          options?: SubscriptionHookOptions<SubscriptionType, Variables>,
+          options?: SubscriptionHookOptions<OnUserChangeSubscription, Variables>,
         ) {
-          return useSubscription<SubscriptionType, Variables>(subscription, options)
+          return useSubscription<OnUserChangeSubscription, Variables>(subscription, options)
         }
     `),
     )
   })
 
-  test.skip('should generate query with shared variable', async () => {
+  test('should generate query with shared variable', async () => {
     const query = `
       import gql from 'graphql-tag'
 
@@ -692,14 +692,15 @@ describe('generateHook', () => {
         }
       \`
     `
-    const hook = await generate('use-query.gql.ts', query)
+    const { hook, errors } = await generate('use-query.gql.ts', query)
+    expect(errors).toEqual([])
     expect(toParsedOutput(hook)).toEqual(
       toParsedOutput(`
         import { QueryHookOptions, useQuery } from '@apollo/client'
         import gql from 'graphql-tag'
 
         const query = gql\`
-          query fetchTweet($id: ID!, $size: ImageSize) {
+          query fetchTweetQuery($id: ID!, $size: ImageSize) {
             tweet(id: $id) {
               id
               author {
@@ -718,9 +719,27 @@ describe('generateHook', () => {
           }
         \`
 
-        export interface Variables {
-          id: string | undefined
-          size?: ImageSize | undefined
+        export interface FetchTweetQuery {
+          tweet?: Tweet
+          __typename?: 'Query'
+        }
+
+        export interface Tweet {
+          id: string
+          author: User
+          mentions?: User[]
+          __typename?: 'Tweet'
+        }
+
+        export interface User {
+          id: string
+          photo?: Image
+          __typename?: 'User'
+        }
+
+        export interface Image {
+          url: string
+          __typename?: 'Image'
         }
 
         export enum ImageSize {
@@ -729,35 +748,18 @@ describe('generateHook', () => {
           LARGE = 'LARGE',
         }
 
-        export interface QueryType {
-          tweet?: TweetType
+        export interface Variables {
+          id: string | undefined
+          size?: ImageSize | undefined
         }
 
-        export interface TweetType {
-          id: string
-          author: UserType
-          mentions?: UserType[]
-          __typename?: 'Tweet'
-        }
-
-        export interface UserType {
-          id: string
-          photo?: ImageType
-          __typename?: 'User'
-        }
-
-        export interface ImageType {
-          url: string
-          __typename?: 'Image'
-        }
-
-        export function useTweetQuery(
-          request: Variables,
-          options?: QueryHookOptions<QueryType, Variables>,
+        export function useFetchTweetQuery(
+          variables: Variables,
+          options?: QueryHookOptions<FetchTweetQuery, Variables>,
         ) {
-          return useQuery<QueryType, Variables>(query, {
+          return useQuery<FetchTweetQuery, Variables>(query, {
             variables,
-            skip: !request.id,
+            skip: !variables.id,
             ...options,
           })
         }
@@ -765,7 +767,7 @@ describe('generateHook', () => {
     )
   })
 
-  test.skip('should generate query with no request type if query has no parameters', async () => {
+  test('should generate query with no request type if query has no parameters', async () => {
     const query = `
       import gql from 'graphql-tag'
 
@@ -779,14 +781,15 @@ describe('generateHook', () => {
         }
       \`
     `
-    const hook = await generate('use-query.gql.ts', query)
+    const { hook, errors } = await generate('use-query.gql.ts', query)
+    expect(errors).toEqual([])
     expect(toParsedOutput(hook)).toEqual(
       toParsedOutput(`
         import { QueryHookOptions, useQuery } from '@apollo/client'
         import gql from 'graphql-tag'
 
         const query = gql\`
-          query me {
+          query meQuery {
             me {
               id
               name
@@ -795,25 +798,26 @@ describe('generateHook', () => {
           }
         \`
 
-        export interface QueryType {
-          me?: UserType
+        export interface MeQuery {
+          me?: User
+          __typename?: 'Query'
         }
 
-        export interface UserType {
+        export interface User {
           id: string
           name?: string
           email?: string
 					__typename?: 'User'
         }
 
-        export function useMeQuery(options?: QueryHookOptions<QueryType, never>) {
-          return useQuery<QueryType, never>(query, options)
+        export function useMeQuery(options?: QueryHookOptions<MeQuery, never>) {
+          return useQuery<MeQuery, never>(query, options)
         }
     `),
     )
   })
 
-  test.skip('should generate lazy query with no parameters', async () => {
+  test('should generate lazy query with no parameters', async () => {
     const query = `
       import gql from 'graphql-tag'
 
@@ -827,14 +831,15 @@ describe('generateHook', () => {
         }
       \`
     `
-    const hook = await generate('use-query.gql.ts', query)
+    const { hook, errors } = await generate('use-query.gql.ts', query)
+    expect(errors).toEqual([])
     expect(toParsedOutput(hook)).toEqual(
       toParsedOutput(`
         import { LazyQueryHookOptions, useLazyQuery } from '@apollo/client'
         import gql from 'graphql-tag'
 
         const lazyQuery = gql\`
-          query me {
+          query meQuery {
             me {
               id
               name
@@ -843,19 +848,20 @@ describe('generateHook', () => {
           }
         \`
 
-        export interface QueryType {
-          me?: UserType
+        export interface MeQuery {
+          me?: User
+          __typename?: 'Query'
         }
 
-        export interface UserType {
+        export interface User {
           id: string
           name?: string
           email?: string
 					__typename?: 'User'
         }
 
-        export function useMeQuery(options?: LazyQueryHookOptions<QueryType, never>) {
-          return useLazyQuery<QueryType, never>(lazyQuery, options)
+        export function useMeQuery(options?: LazyQueryHookOptions<MeQuery, never>) {
+          return useLazyQuery<MeQuery, never>(lazyQuery, options)
         }
     `),
     )
@@ -959,7 +965,7 @@ describe('generateHook', () => {
     )
   })
 
-  test.skip('should generate query with union', async () => {
+  test.only('should generate query with union', async () => {
     const query = `
       import gql from 'graphql-tag'
 
@@ -991,14 +997,16 @@ describe('generateHook', () => {
         }
       \`
     `
-    const hook = await generate('use-query.gql.ts', query)
+    const { hook, errors } = await generate('use-query.gql.ts', query)
+    console.log(hook)
+    expect(errors).toEqual([])
     expect(toParsedOutput(hook)).toEqual(
       toParsedOutput(`
         import { QueryHookOptions, useQuery } from '@apollo/client'
         import gql from 'graphql-tag'
 
         const query = gql\`
-          query fetchMyNotifications($size: ImageSize) {
+          query fetchMyNotificationsQuery($size: ImageSize) {
             myNotifications {
               ... on FollowNotification {
                 id
@@ -1025,8 +1033,34 @@ describe('generateHook', () => {
           }
         \`
 
-        export interface Variables {
-          size?: ImageSize | undefined
+        export type Notification = FollowNotification | TweetNotification
+
+        export interface FetchMyNotificationsQuery {
+          myNotifications: Notification[]
+          __typename?: 'Query'
+        }
+
+        export interface FollowNotification {
+          id: string
+          user: User
+          __typename?: 'FollowNotification'
+        }
+
+        export interface TweetNotification {
+          id: string
+          tweet: Tweet
+          __typename?: 'TweetNotification'
+        }
+
+        export interface User {
+          id: string
+          photo?: Image
+          __typename?: 'User'
+        }
+
+        export interface Image {
+          url: string
+          __typename?: 'Image'
         }
 
         export enum ImageSize {
@@ -1035,46 +1069,21 @@ describe('generateHook', () => {
           LARGE = 'LARGE',
         }
 
-        export interface QueryType {
-          myNotifications: NotificationType[]
-        }
-
-        export type NotificationType = FollowNotificationType | TweetNotificationType
-
-        export interface FollowNotificationType {
+        export interface Tweet {
           id: string
-          user: UserType
-          __typename?: 'FollowNotification'
-        }
-
-        export interface UserType {
-          id: string
-          photo?: ImageType
-          __typename?: 'User'
-        }
-
-        export interface ImageType {
-          url: string
-          __typename?: 'Image'
-        }
-
-        export interface TweetNotificationType {
-          id: string
-          tweet: TweetType
-          __typename?: 'TweetNotification'
-        }
-
-        export interface TweetType {
-          id: string
-          author: UserType
+          author: User
           __typename?: 'Tweet'
         }
 
-        export function useMyNotificationsQuery(
+        export interface Variables {
+          size?: ImageSize | undefined
+        }
+
+        export function useFetchMyNotificationsQuery(
           variables?: Variables,
-          options?: QueryHookOptions<QueryType, Variables>,
+          options?: QueryHookOptions<FetchMyNotificationsQuery, Variables>,
         ) {
-          return useQuery<QueryType, Variables>(query, {
+          return useQuery<FetchMyNotificationsQuery, Variables>(query, {
             variables,
             ...options,
           })
@@ -1115,7 +1124,7 @@ describe('generateHook', () => {
     )
   })
 
-  test.skip('should not generate if files extension does not match', async () => {
+  test('should not generate if files extension does not match', async () => {
     const query = `
       import gql from 'graphql-tag'
 
@@ -1127,10 +1136,11 @@ describe('generateHook', () => {
         }
       \`
     `
-    const hook = await generate('use-query.gql.ts', query, {
+    const { hook, errors } = await generate('use-query.gql.ts', query, {
       ...config,
       reactHook: { ...config.reactHook, fileExtensions: ['user-query.ts'] },
     })
+    expect(errors).toEqual([])
     expect(toParsedOutput(hook)).toEqual(
       toParsedOutput(`
       import gql from 'graphql-tag'
@@ -1146,7 +1156,7 @@ describe('generateHook', () => {
     )
   })
 
-  test.skip('should not generate if files extension does not match default', async () => {
+  test('should not generate if files extension does not match default', async () => {
     const query = `
       import gql from 'graphql-tag'
 
@@ -1158,7 +1168,8 @@ describe('generateHook', () => {
         }
       \`
     `
-    const hook = await generate('use-query.ts', query)
+    const { hook, errors } = await generate('use-query.ts', query)
+    expect(errors).toEqual([])
     expect(toParsedOutput(hook)).toEqual(
       toParsedOutput(`
       import gql from 'graphql-tag'

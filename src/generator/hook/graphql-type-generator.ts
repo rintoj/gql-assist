@@ -1,7 +1,7 @@
 import * as gql from 'graphql'
 import { toCamelCase, toClassName } from 'name-util'
 import ts from 'typescript'
-import { isMutation, isOperationDefinitionNode, isQuery } from '../../gql'
+import { isMutation, isOperationDefinitionNode, isQuery, isSubscription } from '../../gql'
 import type { TypeMap } from './graphql-type-parser'
 import type { Context } from '../context'
 import { createImport } from '../../ts'
@@ -127,7 +127,9 @@ export function createGraphQLHook(
   if (isQuery(def)) {
     return createQueryHook(document, variable, libraryName, context)
   } else if (isMutation(def)) {
-    return createMutationHook(document, libraryName, context)
+    return createMutationHook(document, variable, libraryName, context)
+  } else if (isSubscription(def)) {
+    return createSubscriptionHook(document, variable, libraryName, context)
   }
 }
 
@@ -156,7 +158,6 @@ export function createQueryHook(
     context.imports.push(createImport(libraryName, 'LazyQueryHookOptions', 'useLazyQuery'))
   } else {
     context.imports.push(createImport(libraryName, 'QueryHookOptions', 'useQuery'))
-
   }
 
   // create query hook
@@ -211,18 +212,18 @@ export function createQueryHook(
               ts.factory.createIdentifier(gqlVariableName),
               hasVariables
                 ? ts.factory.createObjectLiteralExpression(
-                  [
-                    ts.factory.createShorthandPropertyAssignment(
-                      ts.factory.createIdentifier('variables'),
-                      undefined,
-                    ),
-                    !isLazyQuery && !!requiredVariables.length
-                      ? createSkip(requiredVariables)
-                      : null,
-                    ts.factory.createSpreadAssignment(ts.factory.createIdentifier('options')),
-                  ].filter(i => !!i) as any,
-                  true,
-                )
+                    [
+                      ts.factory.createShorthandPropertyAssignment(
+                        ts.factory.createIdentifier('variables'),
+                        undefined,
+                      ),
+                      !isLazyQuery && !!requiredVariables.length
+                        ? createSkip(requiredVariables)
+                        : null,
+                      ts.factory.createSpreadAssignment(ts.factory.createIdentifier('options')),
+                    ].filter(i => !!i) as any,
+                    true,
+                  )
                 : ts.factory.createIdentifier('options'),
             ].filter(i => !!i) as any,
           ),
@@ -233,13 +234,19 @@ export function createQueryHook(
   )
 }
 
-function createMutationHook(document: gql.DocumentNode, libraryName: string, context: Context) {
+function createMutationHook(
+  document: gql.DocumentNode,
+  variable: ts.VariableDeclaration,
+  libraryName: string,
+  context: Context,
+) {
   const def = getDefinition(document)
   const defName = def.name?.value ?? ''
   const hookName = toCamelCase(`use-${defName}`)
   const inputs = def.variableDefinitions ?? []
   const responseType = toClassName(defName)
   const hasVariables = inputs.length > 0
+  const gqlVariableName = variable.name.getText()
 
   context.imports.push(createImport(libraryName, 'MutationHookOptions', 'useMutation'))
 
@@ -280,7 +287,69 @@ function createMutationHook(document: gql.DocumentNode, libraryName: string, con
                 undefined,
               ),
             ],
-            [ts.factory.createIdentifier('mutation'), ts.factory.createIdentifier('options')],
+            [ts.factory.createIdentifier(gqlVariableName), ts.factory.createIdentifier('options')],
+          ),
+        ),
+      ],
+      true,
+    ),
+  )
+}
+
+export function createSubscriptionHook(
+  document: gql.DocumentNode,
+  variable: ts.VariableDeclaration,
+  libraryName: string,
+  context: Context,
+) {
+  const def = getDefinition(document)
+  const defName = def.name?.value ?? ''
+  const hookName = toCamelCase(`use-${defName}`)
+  const inputs = def.variableDefinitions ?? []
+  const responseType = toClassName(defName)
+  const hasVariables = inputs.length > 0
+  const gqlVariableName = variable.name.getText()
+
+  context.imports.push(createImport(libraryName, 'SubscriptionHookOptions', 'useSubscription'))
+
+  return ts.factory.createFunctionDeclaration(
+    [ts.factory.createModifier(ts.SyntaxKind.ExportKeyword)],
+    undefined,
+    ts.factory.createIdentifier(hookName),
+    undefined,
+    [
+      ts.factory.createParameterDeclaration(
+        undefined,
+        undefined,
+        ts.factory.createIdentifier('options'),
+        ts.factory.createToken(ts.SyntaxKind.QuestionToken),
+        ts.factory.createTypeReferenceNode(ts.factory.createIdentifier('SubscriptionHookOptions'), [
+          ts.factory.createTypeReferenceNode(ts.factory.createIdentifier(responseType), undefined),
+          ts.factory.createTypeReferenceNode(
+            ts.factory.createIdentifier(hasVariables ? 'Variables' : 'never'),
+            undefined,
+          ),
+        ]),
+        undefined,
+      ),
+    ],
+    undefined,
+    ts.factory.createBlock(
+      [
+        ts.factory.createReturnStatement(
+          ts.factory.createCallExpression(
+            ts.factory.createIdentifier('useSubscription'),
+            [
+              ts.factory.createTypeReferenceNode(
+                ts.factory.createIdentifier(responseType),
+                undefined,
+              ),
+              ts.factory.createTypeReferenceNode(
+                ts.factory.createIdentifier(hasVariables ? 'Variables' : 'never'),
+                undefined,
+              ),
+            ],
+            [ts.factory.createIdentifier(gqlVariableName), ts.factory.createIdentifier('options')],
           ),
         ),
       ],

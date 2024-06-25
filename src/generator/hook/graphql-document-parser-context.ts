@@ -12,14 +12,16 @@ export interface PropertyConfig {
 }
 
 export class GraphQLDocumentParserContext {
-  public readonly types: ById<ts.InterfaceDeclaration | ts.EnumDeclaration> = {}
+  public readonly types: ById<
+    ts.InterfaceDeclaration | ts.EnumDeclaration | ts.TypeAliasDeclaration
+  > = {}
   public readonly parameters: ById<PropertyConfig> = {}
   public readonly variableDefinition: ById<gql.VariableDefinitionNode> = {}
   public readonly errors: gql.GraphQLError[] = []
   private readonly interfaceNameTracker = new NameTracker()
   private readonly parameterNameTracker = new NameTracker({ prefix: true })
 
-  constructor(public readonly typeInfo: gql.TypeInfo) { }
+  constructor(public readonly typeInfo: gql.TypeInfo) {}
 
   parent(): Maybe<gql.GraphQLOutputType> {
     return this.typeInfo.getType()
@@ -40,7 +42,12 @@ export class GraphQLDocumentParserContext {
 
   addInterface(type: ts.InterfaceDeclaration) {
     const name = type.name.escapedText ?? ''
-    if (this.types[name]) throw new Error(`Type by name ${name} already exists!`)
+    this.types[name] = type
+    return this
+  }
+
+  addUnion(type: ts.TypeAliasDeclaration) {
+    const name = type.name.escapedText ?? ''
     this.types[name] = type
     return this
   }
@@ -51,10 +58,7 @@ export class GraphQLDocumentParserContext {
     return this
   }
 
-  addParameter(
-    propertyConfig: PropertyConfig,
-    variableDefinition: gql.VariableDefinitionNode,
-  ) {
+  addParameter(propertyConfig: PropertyConfig, variableDefinition: gql.VariableDefinitionNode) {
     this.parameters[propertyConfig.name] = propertyConfig
     this.variableDefinition[propertyConfig.name] = variableDefinition
     return this

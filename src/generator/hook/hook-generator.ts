@@ -8,6 +8,7 @@ import {
   createGraphQLQuery,
   getGQLContent,
   getGraphQLQueryVariable,
+  printTS,
 } from '../../ts'
 import { addImports } from '../../ts/add-imports'
 import { organizeImports } from '../../ts/organize-imports'
@@ -63,7 +64,8 @@ async function generateGQLHook(sourceFile: ts.SourceFile, schema: GraphQLSchema,
   } as ts.SourceFile
 
   const errors = diagnoseGraphQLQuery(gql.print(document), schema, { ...context, sourceFile })
-  return { sourceFile: organizeImports(addImports(processedFile, context.imports)), errors }
+  const statement = addImports(processedFile, context.imports)
+  return { sourceFile: organizeImports(statement), errors }
 }
 
 export async function generateHook(
