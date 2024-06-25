@@ -1,7 +1,7 @@
 import { toCamelCase, toClassName } from 'name-util'
 import { singular } from 'pluralize'
 import { ById } from 'tsds-tools'
-import { toString } from '../../util/to-string'
+import { camelCase, toString } from '../../util/to-string'
 
 export class ParameterNameTracker {
   private readonly nameMap: ById<boolean> = {}
@@ -14,13 +14,13 @@ export class ParameterNameTracker {
     let index = 0
     let nextName = name
     while (this.nameMap[nextName]) {
-      nextName = toString(
-        singular(toCamelCase(hits[index++] ?? '')),
-        toClassName(nextName),
-        index > hits.length && index - hits.length,
+      nextName = camelCase(
+        singular(hits[index++] ?? ''),
+        nextName,
+        index > hits.length ? index - hits.length : (undefined as any),
       )
     }
     this.nameMap[nextName] = true
-    return nextName
+    return toCamelCase(nextName)
   }
 }

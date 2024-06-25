@@ -13,10 +13,12 @@ import {
   isFieldNode,
   isOperationDefinitionNode,
   isVariableNode,
+  isInputValueDefinitionNode,
   toJSType,
   updateArguments,
   updateName,
   updateVariableDefinitions,
+  isArgumentNode,
 } from '../../gql'
 import { createArrayType, createType } from '../../ts'
 import { camelCase, className, toString } from '../../util'
@@ -156,22 +158,24 @@ function parseArguments(
 ) {
   if (!parentType || !gql.isObjectType(parentType)) return
   const field = parentType.getFields()[node.name.value]
-  const args = field.args ?? []
-  const inputs: Record<string, gql.InputValueDefinitionNode> = (node.arguments ?? []).reduce(
-    (a, i) => ({ ...a, [i.name.value]: i }),
-    {},
-  )
-  const updatedArgs = args.map(arg => {
+  const args = field?.args ?? []
+  const inputs: Record<string, gql.ArgumentNode | gql.InputValueDefinitionNode> = (
+    node.arguments ?? []
+  ).reduce((a, i) => ({ ...a, [i.name.value]: i }), {})
+  args.map(arg => {
     const schemaType = arg.type
     const typeName = resolveArgName(schemaType)
     const isArray = gql.isListType(gql.getNullableType(schemaType))
     const isNullable = gql.isNullableType(schemaType)
     parseInputType(schemaType, context)
-    const inputValueDefinition = inputs[arg.name]
-    const originalVariable =
-      (isVariableNode(inputValueDefinition.type)
-        ? getNodeName(inputValueDefinition.type)
-        : undefined) ?? arg.name
+
+    const input = inputs[arg.name]
+    let variable = isArgumentNode(input)
+      ? input.value
+      : isInputValueDefinitionNode(input)
+        ? input.type
+        : undefined
+    const originalVariable = variable && isVariableNode(variable) ? variable.name.value : arg.name
     context.addParameter(
       {
         name: originalVariable,
@@ -181,9 +185,7 @@ function parseArguments(
       },
       createArgumentDefinition(arg, originalVariable),
     )
-    return inputValueDefinition
   })
-  return updateArguments(node, updatedArgs)
 }
 
 function parseObjectType(
@@ -298,16 +300,15 @@ function createVariablesType(document: gql.DocumentNode, context: GraphQLDocumen
 export function parseDocument(inputDocument: gql.DocumentNode, schema: gql.GraphQLSchema) {
   const typeInfo = new gql.TypeInfo(schema)
   const context = new GraphQLDocumentParserContext(typeInfo)
-  const fixedDoc = fixDocument(inputDocument, schema, context)
-  const document = gql.visit(
-    fixedDoc,
+  const document = fixDocument(inputDocument, schema, context)
+  gql.visit(
+    document,
     gql.visitWithTypeInfo(typeInfo, {
       OperationDefinition(node: gql.OperationDefinitionNode) {
         const type = gql.getNamedType(typeInfo.getType())
         if (gql.isObjectType(type)) {
           parseObjectType(node, type, context)
         }
-        return node
       },
       Field(node) {
         const type = gql.getNamedType(typeInfo.getType())
@@ -319,7 +320,7 @@ export function parseDocument(inputDocument: gql.DocumentNode, schema: gql.Graph
         } else if (gql.isUnionType(type)) {
           parseUnionType(type, context)
         }
-        return parseArguments(node, parent, context)
+        parseArguments(node, parent, context)
       },
       InlineFragment(node) {
         const type = gql.getNamedType(typeInfo.getType())
@@ -327,7 +328,6 @@ export function parseDocument(inputDocument: gql.DocumentNode, schema: gql.Graph
         if (gql.isObjectType(type)) {
           parseObjectType(node, type, context)
         }
-        return node
       },
     }),
   )
