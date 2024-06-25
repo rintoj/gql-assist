@@ -1,5 +1,5 @@
-import { Maybe } from 'graphql/jsutils/Maybe'
 import * as gql from 'graphql'
+import { Maybe } from 'graphql/jsutils/Maybe'
 import { toCamelCase } from 'name-util'
 import { toNonNullArray } from 'tsds-tools'
 import ts from 'typescript'
@@ -8,11 +8,10 @@ import {
   createInputValueDefinition,
   getFieldHash,
   getFieldName,
+  getNodeName,
   hasAQuery,
   isFieldNode,
-  isMutation,
   isOperationDefinitionNode,
-  isQuery,
   toJSType,
   updateArguments,
   updateName,
@@ -21,7 +20,6 @@ import {
 import { createArrayType, createType } from '../../ts'
 import { camelCase, className, toString } from '../../util'
 import { GraphQLDocumentParserContext } from './graphql-document-parser-context'
-import { create } from 'domain'
 
 function processEnum(enumType: gql.GraphQLEnumType, context: GraphQLDocumentParserContext) {
   const members = enumType
@@ -77,7 +75,7 @@ function resolveTypeName(
 }
 
 function parseFields(
-  node: gql.OperationDefinitionNode | gql.FieldNode,
+  node: gql.OperationDefinitionNode | gql.FieldNode | gql.InlineFragmentNode,
   schemaType: gql.GraphQLObjectType,
   context: GraphQLDocumentParserContext,
 ) {
@@ -185,13 +183,13 @@ function parseArguments(
 }
 
 function parseType(
-  node: gql.OperationDefinitionNode | gql.FieldNode,
+  node: gql.OperationDefinitionNode | gql.FieldNode | gql.InlineFragmentNode,
   schemaType: gql.GraphQLObjectType | undefined,
   context: GraphQLDocumentParserContext,
 ) {
+  const nodeName = getNodeName(node)
   if (!schemaType || !node.selectionSet?.selections.length) {
-    console.log('No selectors for node', node.name?.value)
-    return node.name?.value
+    return console.log('No selectors for node', nodeName)
   }
 
   const fields = parseFields(node, schemaType, context).concat(createTypeName(schemaType.name))
@@ -275,6 +273,16 @@ export function parseDocument(document: gql.DocumentNode, schema: gql.GraphQLSch
           context.reportError(`No valid type found for ${node.name?.value}`, node)
         }
         return parseArguments(node, parent, context)
+      },
+      InlineFragment(node) {
+        const type = gql.getNamedType(typeInfo.getType())
+        const parent = typeInfo.getParentType()
+        if (gql.isObjectType(type)) {
+          parseType(node, type, context)
+        } else {
+          context.reportError(`No valid type found for ${node.typeCondition?.name?.value}`, node)
+        }
+        return node
       },
     }),
   )

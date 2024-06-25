@@ -15,6 +15,10 @@ export function isFieldNode(node: gql.ASTNode): node is gql.FieldNode {
   return node.kind === gql.Kind.FIELD
 }
 
+export function isInlineFragmentNode(node: gql.ASTNode): node is gql.InlineFragmentNode {
+  return node.kind === gql.Kind.INLINE_FRAGMENT
+}
+
 export function isSelectionSetNode(node: gql.ASTNode): node is gql.SelectionSetNode {
   return node.kind === gql.Kind.SELECTION_SET
 }

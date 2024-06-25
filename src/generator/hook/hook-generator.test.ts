@@ -965,7 +965,7 @@ describe('generateHook', () => {
     )
   })
 
-  test.only('should generate query with union', async () => {
+  test('should generate query with union', async () => {
     const query = `
       import gql from 'graphql-tag'
 
@@ -998,7 +998,6 @@ describe('generateHook', () => {
       \`
     `
     const { hook, errors } = await generate('use-query.gql.ts', query)
-    console.log(hook)
     expect(errors).toEqual([])
     expect(toParsedOutput(hook)).toEqual(
       toParsedOutput(`
@@ -1046,12 +1045,6 @@ describe('generateHook', () => {
           __typename?: 'FollowNotification'
         }
 
-        export interface TweetNotification {
-          id: string
-          tweet: Tweet
-          __typename?: 'TweetNotification'
-        }
-
         export interface User {
           id: string
           photo?: Image
@@ -1067,6 +1060,12 @@ describe('generateHook', () => {
           SMALL = 'SMALL',
           NORMAL = 'NORMAL',
           LARGE = 'LARGE',
+        }
+
+        export interface TweetNotification {
+          id: string
+          tweet: Tweet
+          __typename?: 'TweetNotification'
         }
 
         export interface Tweet {
