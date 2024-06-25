@@ -6,6 +6,41 @@ import type { TypeMap } from './graphql-type-parser'
 import type { Context } from '../context'
 import { createImport } from '../../ts'
 
+const NEVER_TYPE = 'never'
+const VARIABLES_TYPE = 'Variables'
+const VARIABLES_ARGUMENT_NAME = 'variables'
+const OPTIONS_ARGUMENT_NAME = 'options'
+
+export enum ExtendedOperationTypeNode {
+  LAZY_QUERY = 'LAZY_QUERY',
+}
+
+export function getHookName(type: gql.OperationTypeNode | ExtendedOperationTypeNode) {
+  switch (type) {
+    case gql.OperationTypeNode.QUERY:
+      return 'useQuery'
+    case ExtendedOperationTypeNode.LAZY_QUERY:
+      return 'useLazyQuery'
+    case gql.OperationTypeNode.MUTATION:
+      return 'useMutation'
+    case gql.OperationTypeNode.SUBSCRIPTION:
+      return 'useSubscription'
+  }
+}
+
+export function getOptionsType(type: gql.OperationTypeNode | ExtendedOperationTypeNode) {
+  switch (type) {
+    case gql.OperationTypeNode.QUERY:
+      return 'QueryHookOptions'
+    case ExtendedOperationTypeNode.LAZY_QUERY:
+      return 'LazyQueryHookOptions'
+    case gql.OperationTypeNode.MUTATION:
+      return 'MutationHookOptions'
+    case gql.OperationTypeNode.SUBSCRIPTION:
+      return 'SubscriptionHookOptions'
+  }
+}
+
 function toJSType(type: string) {
   switch (type) {
     case 'ID':
@@ -95,7 +130,7 @@ function createSkip(requiredVariables: string[]) {
   const firstVariable = ts.factory.createPrefixUnaryExpression(
     ts.SyntaxKind.ExclamationToken,
     ts.factory.createPropertyAccessExpression(
-      ts.factory.createIdentifier('variables'),
+      ts.factory.createIdentifier(VARIABLES_ARGUMENT_NAME),
       ts.factory.createIdentifier(requiredVariables[0]),
     ),
   )
@@ -108,7 +143,7 @@ function createSkip(requiredVariables: string[]) {
         ts.factory.createPrefixUnaryExpression(
           ts.SyntaxKind.ExclamationToken,
           ts.factory.createPropertyAccessExpression(
-            ts.factory.createIdentifier('variables'),
+            ts.factory.createIdentifier(VARIABLES_ARGUMENT_NAME),
             ts.factory.createIdentifier(i),
           ),
         ),
@@ -145,20 +180,18 @@ export function createQueryHook(
   const functionName = toCamelCase(`use-${hookName}`)
   const inputs = def.variableDefinitions ?? []
   const gqlVariableName = variable.name.getText()
-  const variableType = 'Variables'
   const responseType = toClassName(`${hookName}`)
   const requiredVariables = inputs
     .filter(input => input.type.kind === gql.Kind.NON_NULL_TYPE)
     .map(input => input.variable.name.value)
   const hasVariables = inputs.length > 0
   const isLazyQuery = gqlVariableName.startsWith('lazy')
+  const reactHook = getHookName(isLazyQuery ? ExtendedOperationTypeNode.LAZY_QUERY : def.operation)
+  const optionType = getOptionsType(
+    isLazyQuery ? ExtendedOperationTypeNode.LAZY_QUERY : def.operation,
+  )
 
-  // create imports
-  if (isLazyQuery) {
-    context.imports.push(createImport(libraryName, 'LazyQueryHookOptions', 'useLazyQuery'))
-  } else {
-    context.imports.push(createImport(libraryName, 'QueryHookOptions', 'useQuery'))
-  }
+  context.imports.push(createImport(libraryName, optionType, reactHook))
 
   // create query hook
   return ts.factory.createFunctionDeclaration(
@@ -168,26 +201,20 @@ export function createQueryHook(
     undefined,
     [
       hasVariables
-        ? createParameter('variables', variableType, !requiredVariables.length)
+        ? createParameter(VARIABLES_ARGUMENT_NAME, VARIABLES_TYPE, !requiredVariables.length)
         : (undefined as any),
       ts.factory.createParameterDeclaration(
         undefined,
         undefined,
-        ts.factory.createIdentifier('options'),
+        ts.factory.createIdentifier(OPTIONS_ARGUMENT_NAME),
         ts.factory.createToken(ts.SyntaxKind.QuestionToken),
-        ts.factory.createTypeReferenceNode(
-          ts.factory.createIdentifier(isLazyQuery ? 'LazyQueryHookOptions' : 'QueryHookOptions'),
-          [
-            ts.factory.createTypeReferenceNode(
-              ts.factory.createIdentifier(responseType),
-              undefined,
-            ),
-            ts.factory.createTypeReferenceNode(
-              ts.factory.createIdentifier(hasVariables ? variableType : 'never'),
-              undefined,
-            ),
-          ],
-        ),
+        ts.factory.createTypeReferenceNode(ts.factory.createIdentifier(optionType), [
+          ts.factory.createTypeReferenceNode(ts.factory.createIdentifier(responseType), undefined),
+          ts.factory.createTypeReferenceNode(
+            ts.factory.createIdentifier(hasVariables ? VARIABLES_TYPE : NEVER_TYPE),
+            undefined,
+          ),
+        ]),
         undefined,
       ),
     ].filter(i => !!i),
@@ -197,14 +224,14 @@ export function createQueryHook(
       [
         ts.factory.createReturnStatement(
           ts.factory.createCallExpression(
-            ts.factory.createIdentifier(isLazyQuery ? 'useLazyQuery' : 'useQuery'),
+            ts.factory.createIdentifier(reactHook),
             [
               ts.factory.createTypeReferenceNode(
                 ts.factory.createIdentifier(responseType),
                 undefined,
               ),
               ts.factory.createTypeReferenceNode(
-                ts.factory.createIdentifier(hasVariables ? variableType : 'never'),
+                ts.factory.createIdentifier(hasVariables ? VARIABLES_TYPE : NEVER_TYPE),
                 undefined,
               ),
             ],
@@ -214,17 +241,19 @@ export function createQueryHook(
                 ? ts.factory.createObjectLiteralExpression(
                     [
                       ts.factory.createShorthandPropertyAssignment(
-                        ts.factory.createIdentifier('variables'),
+                        ts.factory.createIdentifier(VARIABLES_ARGUMENT_NAME),
                         undefined,
                       ),
                       !isLazyQuery && !!requiredVariables.length
                         ? createSkip(requiredVariables)
                         : null,
-                      ts.factory.createSpreadAssignment(ts.factory.createIdentifier('options')),
+                      ts.factory.createSpreadAssignment(
+                        ts.factory.createIdentifier(OPTIONS_ARGUMENT_NAME),
+                      ),
                     ].filter(i => !!i) as any,
                     true,
                   )
-                : ts.factory.createIdentifier('options'),
+                : ts.factory.createIdentifier(OPTIONS_ARGUMENT_NAME),
             ].filter(i => !!i) as any,
           ),
         ),
@@ -247,8 +276,10 @@ function createMutationHook(
   const responseType = toClassName(defName)
   const hasVariables = inputs.length > 0
   const gqlVariableName = variable.name.getText()
+  const reactHook = getHookName(def.operation)
+  const optionType = getOptionsType(def.operation)
 
-  context.imports.push(createImport(libraryName, 'MutationHookOptions', 'useMutation'))
+  context.imports.push(createImport(libraryName, optionType, reactHook))
 
   return ts.factory.createFunctionDeclaration(
     [ts.factory.createModifier(ts.SyntaxKind.ExportKeyword)],
@@ -259,12 +290,12 @@ function createMutationHook(
       ts.factory.createParameterDeclaration(
         undefined,
         undefined,
-        ts.factory.createIdentifier('options'),
+        ts.factory.createIdentifier(OPTIONS_ARGUMENT_NAME),
         ts.factory.createToken(ts.SyntaxKind.QuestionToken),
-        ts.factory.createTypeReferenceNode(ts.factory.createIdentifier('MutationHookOptions'), [
+        ts.factory.createTypeReferenceNode(ts.factory.createIdentifier(optionType), [
           ts.factory.createTypeReferenceNode(ts.factory.createIdentifier(responseType), undefined),
           ts.factory.createTypeReferenceNode(
-            ts.factory.createIdentifier(hasVariables ? 'Variables' : 'never'),
+            ts.factory.createIdentifier(hasVariables ? VARIABLES_TYPE : NEVER_TYPE),
             undefined,
           ),
         ]),
@@ -276,18 +307,21 @@ function createMutationHook(
       [
         ts.factory.createReturnStatement(
           ts.factory.createCallExpression(
-            ts.factory.createIdentifier('useMutation'),
+            ts.factory.createIdentifier(reactHook),
             [
               ts.factory.createTypeReferenceNode(
                 ts.factory.createIdentifier(responseType),
                 undefined,
               ),
               ts.factory.createTypeReferenceNode(
-                ts.factory.createIdentifier(hasVariables ? 'Variables' : 'never'),
+                ts.factory.createIdentifier(hasVariables ? VARIABLES_TYPE : NEVER_TYPE),
                 undefined,
               ),
             ],
-            [ts.factory.createIdentifier(gqlVariableName), ts.factory.createIdentifier('options')],
+            [
+              ts.factory.createIdentifier(gqlVariableName),
+              ts.factory.createIdentifier(OPTIONS_ARGUMENT_NAME),
+            ],
           ),
         ),
       ],
@@ -309,8 +343,10 @@ export function createSubscriptionHook(
   const responseType = toClassName(defName)
   const hasVariables = inputs.length > 0
   const gqlVariableName = variable.name.getText()
+  const reactHook = getHookName(def.operation)
+  const optionType = getOptionsType(def.operation)
 
-  context.imports.push(createImport(libraryName, 'SubscriptionHookOptions', 'useSubscription'))
+  context.imports.push(createImport(libraryName, optionType, reactHook))
 
   return ts.factory.createFunctionDeclaration(
     [ts.factory.createModifier(ts.SyntaxKind.ExportKeyword)],
@@ -321,15 +357,21 @@ export function createSubscriptionHook(
       ts.factory.createParameterDeclaration(
         undefined,
         undefined,
-        ts.factory.createIdentifier('options'),
+        ts.factory.createIdentifier(OPTIONS_ARGUMENT_NAME),
         ts.factory.createToken(ts.SyntaxKind.QuestionToken),
-        ts.factory.createTypeReferenceNode(ts.factory.createIdentifier('SubscriptionHookOptions'), [
-          ts.factory.createTypeReferenceNode(ts.factory.createIdentifier(responseType), undefined),
-          ts.factory.createTypeReferenceNode(
-            ts.factory.createIdentifier(hasVariables ? 'Variables' : 'never'),
-            undefined,
-          ),
-        ]),
+        ts.factory.createTypeReferenceNode(
+          ts.factory.createIdentifier(getOptionsType(def.operation)),
+          [
+            ts.factory.createTypeReferenceNode(
+              ts.factory.createIdentifier(responseType),
+              undefined,
+            ),
+            ts.factory.createTypeReferenceNode(
+              ts.factory.createIdentifier(hasVariables ? VARIABLES_TYPE : NEVER_TYPE),
+              undefined,
+            ),
+          ],
+        ),
         undefined,
       ),
     ],
@@ -338,18 +380,21 @@ export function createSubscriptionHook(
       [
         ts.factory.createReturnStatement(
           ts.factory.createCallExpression(
-            ts.factory.createIdentifier('useSubscription'),
+            ts.factory.createIdentifier(reactHook),
             [
               ts.factory.createTypeReferenceNode(
                 ts.factory.createIdentifier(responseType),
                 undefined,
               ),
               ts.factory.createTypeReferenceNode(
-                ts.factory.createIdentifier(hasVariables ? 'Variables' : 'never'),
+                ts.factory.createIdentifier(hasVariables ? VARIABLES_TYPE : NEVER_TYPE),
                 undefined,
               ),
             ],
-            [ts.factory.createIdentifier(gqlVariableName), ts.factory.createIdentifier('options')],
+            [
+              ts.factory.createIdentifier(gqlVariableName),
+              ts.factory.createIdentifier(OPTIONS_ARGUMENT_NAME),
+            ],
           ),
         ),
       ],

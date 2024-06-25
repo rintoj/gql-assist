@@ -405,15 +405,15 @@ describe('generateHook', () => {
 					__typename?: 'Query'
         }
 
-        export enum UserStatus {
-          ACTIVE = 'ACTIVE',
-          INACTIVE = 'INACTIVE',
-        }
-
         export interface User {
           id: string
           status?: UserStatus
 					__typename?: 'User'
+        }
+
+        export enum UserStatus {
+          ACTIVE = 'ACTIVE',
+          INACTIVE = 'INACTIVE',
         }
 
         export interface Variables {
@@ -467,15 +467,15 @@ describe('generateHook', () => {
         __typename?: 'Query'
       }
 
-      export enum UserStatus {
-        ACTIVE = 'ACTIVE',
-        INACTIVE = 'INACTIVE',
-      }
-
       export interface User {
         id: string
         status?: UserStatus
         __typename?: 'User'
+      }
+
+      export enum UserStatus {
+        ACTIVE = 'ACTIVE',
+        INACTIVE = 'INACTIVE',
       }
 
       export interface Variables {
@@ -1032,12 +1032,12 @@ describe('generateHook', () => {
           }
         \`
 
-        export type Notification = FollowNotification | TweetNotification
-
         export interface FetchMyNotificationsQuery {
           myNotifications: Notification[]
           __typename?: 'Query'
         }
+
+        export type Notification = FollowNotification | TweetNotification
 
         export interface FollowNotification {
           id: string
