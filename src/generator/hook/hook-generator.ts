@@ -27,11 +27,11 @@ export function isHook(sourceFile: ts.SourceFile, config: GQLAssistConfig) {
 function identifyLibrary(sourceFile: ts.SourceFile, config: GQLAssistConfig) {
   const imports = sourceFile.statements.find((s): s is ts.ImportDeclaration =>
     ts.isImportDeclaration(s) &&
-    s.importClause?.namedBindings &&
-    ts.isNamedImports(s.importClause?.namedBindings)
+      s.importClause?.namedBindings &&
+      ts.isNamedImports(s.importClause?.namedBindings)
       ? !!s.importClause?.namedBindings?.elements.find(e =>
-          hooks.includes(e.name.escapedText ?? ''),
-        )
+        hooks.includes(e.name.escapedText ?? ''),
+      )
       : false,
   )
   return imports?.moduleSpecifier && ts.isStringLiteral(imports?.moduleSpecifier)

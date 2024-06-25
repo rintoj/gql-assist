@@ -19,6 +19,10 @@ export function isInlineFragmentNode(node: gql.ASTNode): node is gql.InlineFragm
   return node.kind === gql.Kind.INLINE_FRAGMENT
 }
 
+export function isVariableNode(node: gql.ASTNode): node is gql.VariableNode {
+  return node?.kind === gql.Kind.VARIABLE
+}
+
 export function isSelectionSetNode(node: gql.ASTNode): node is gql.SelectionSetNode {
   return node.kind === gql.Kind.SELECTION_SET
 }

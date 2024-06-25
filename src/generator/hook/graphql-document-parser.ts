@@ -1,16 +1,18 @@
 import * as gql from 'graphql'
 import { Maybe } from 'graphql/jsutils/Maybe'
 import { toCamelCase } from 'name-util'
-import { toNonNullArray } from 'tsds-tools'
+import { toByProperty, toNonNullArray } from 'tsds-tools'
 import ts from 'typescript'
 import {
   createArgumentDefinition,
   createInputValueDefinition,
   getFieldHash,
   getFieldName,
+  getNodeName,
   hasAQuery,
   isFieldNode,
   isOperationDefinitionNode,
+  isVariableNode,
   toJSType,
   updateArguments,
   updateName,
@@ -155,24 +157,31 @@ function parseArguments(
   if (!parentType || !gql.isObjectType(parentType)) return
   const field = parentType.getFields()[node.name.value]
   const args = field.args ?? []
-  const updatedArgs = args.map((arg: any) => {
+  const inputs: Record<string, gql.InputValueDefinitionNode> = (node.arguments ?? []).reduce(
+    (a, i) => ({ ...a, [i.name.value]: i }),
+    {},
+  )
+  const updatedArgs = args.map(arg => {
     const schemaType = arg.type
     const typeName = resolveArgName(schemaType)
     const isArray = gql.isListType(gql.getNullableType(schemaType))
     const isNullable = gql.isNullableType(schemaType)
-    const hash = toString(node.name.value, arg.name)
-    const parameterName = context.toParameterName(hash, arg.name, node.name?.value)
     parseInputType(schemaType, context)
+    const inputValueDefinition = inputs[arg.name]
+    const originalVariable =
+      (isVariableNode(inputValueDefinition.type)
+        ? getNodeName(inputValueDefinition.type)
+        : undefined) ?? arg.name
     context.addParameter(
       {
-        name: parameterName,
+        name: originalVariable,
         type: typeName,
         isNullable,
         isArray,
       },
-      createArgumentDefinition(arg, parameterName),
+      createArgumentDefinition(arg, originalVariable),
     )
-    return createInputValueDefinition(arg.name, parameterName)
+    return inputValueDefinition
   })
   return updateArguments(node, updatedArgs)
 }
@@ -207,7 +216,7 @@ function addVariableDefinitions(document: gql.DocumentNode, context: GraphQLDocu
     ...document,
     definitions: document.definitions.map(def => {
       if (!isOperationDefinitionNode(def)) return def
-      return updateVariableDefinitions(def, Object.values(context.variableDefinition))
+      return updateVariableDefinitions(def, context.getVariableDefinitions())
     }),
   }
 }
@@ -219,12 +228,18 @@ function addVariableDefinitions(document: gql.DocumentNode, context: GraphQLDocu
  * @param schema  GQL schema definition
  * @returns gql.DocumentNode
  */
-function fixDocument(document: gql.DocumentNode, schema: gql.GraphQLSchema) {
+function fixDocument(
+  document: gql.DocumentNode,
+  schema: gql.GraphQLSchema,
+  context: GraphQLDocumentParserContext,
+) {
   const typeInfo = new gql.TypeInfo(schema)
+  let definition: gql.OperationDefinitionNode
   return gql.visit(
     document,
     gql.visitWithTypeInfo(typeInfo, {
       OperationDefinition(node: gql.OperationDefinitionNode) {
+        definition = node
         const firstField = toCamelCase(
           node.selectionSet?.selections
             .map(field => isFieldNode(field) && field?.name?.value)
@@ -238,20 +253,53 @@ function fixDocument(document: gql.DocumentNode, schema: gql.GraphQLSchema) {
       },
       Field(node) {
         const type = typeInfo.getFieldDef()
+        const argumentsByName: Record<string, any> = (node.arguments ?? []).reduce(
+          (a, i) => ({ ...a, [i.name.value]: i }),
+          {},
+        )
         return updateArguments(
           node,
-          type?.args.map(arg => createInputValueDefinition(arg.name)) ?? [],
+          type?.args.map(arg => {
+            if (argumentsByName[arg.name]) return argumentsByName[arg.name]
+            const name = context.toParameterName(arg.name, node.name.value)
+            return createInputValueDefinition(arg.name, name)
+          }) ?? [],
         )
       },
     }),
   )
 }
 
-export function parseDocument(document: gql.DocumentNode, schema: gql.GraphQLSchema) {
+function createVariablesType(document: gql.DocumentNode, context: GraphQLDocumentParserContext) {
+  const isQueryType = hasAQuery(document)
+  const parameters = context.getParameters()
+  if (parameters.length) {
+    context.addInterface(
+      ts.factory.createInterfaceDeclaration(
+        [ts.factory.createToken(ts.SyntaxKind.ExportKeyword)],
+        ts.factory.createIdentifier('Variables'),
+        undefined,
+        undefined,
+        parameters.map(param =>
+          ts.factory.createPropertySignature(
+            undefined,
+            ts.factory.createIdentifier(param.name),
+            param.isNullable ? ts.factory.createToken(ts.SyntaxKind.QuestionToken) : undefined,
+            param.isArray
+              ? createArrayType(param.type, isQueryType ? 'undefined' : undefined)
+              : createType(param.type, isQueryType ? 'undefined' : undefined),
+          ),
+        ),
+      ),
+    )
+  }
+}
+
+export function parseDocument(inputDocument: gql.DocumentNode, schema: gql.GraphQLSchema) {
   const typeInfo = new gql.TypeInfo(schema)
   const context = new GraphQLDocumentParserContext(typeInfo)
-  const fixedDoc = fixDocument(document, schema)
-  const doc = gql.visit(
+  const fixedDoc = fixDocument(inputDocument, schema, context)
+  const document = gql.visit(
     fixedDoc,
     gql.visitWithTypeInfo(typeInfo, {
       OperationDefinition(node: gql.OperationDefinitionNode) {
@@ -283,30 +331,11 @@ export function parseDocument(document: gql.DocumentNode, schema: gql.GraphQLSch
       },
     }),
   )
-  const isQueryType = hasAQuery(doc)
-  const parameters = Object.values(context.parameters)
-  if (parameters.length) {
-    context.addInterface(
-      ts.factory.createInterfaceDeclaration(
-        [ts.factory.createToken(ts.SyntaxKind.ExportKeyword)],
-        ts.factory.createIdentifier('Variables'),
-        undefined,
-        undefined,
-        parameters.map(param =>
-          ts.factory.createPropertySignature(
-            undefined,
-            ts.factory.createIdentifier(param.name),
-            param.isNullable ? ts.factory.createToken(ts.SyntaxKind.QuestionToken) : undefined,
-            param.isArray
-              ? createArrayType(param.type, isQueryType ? 'undefined' : undefined)
-              : createType(param.type, isQueryType ? 'undefined' : undefined),
-          ),
-        ),
-      ),
-    )
-  }
+
+  createVariablesType(document, context)
+
   return {
-    document: addVariableDefinitions(doc, context),
-    types: Object.values(context.types).filter(i => !!i),
+    document: addVariableDefinitions(document, context),
+    types: Object.values(context.getTypes()).filter(i => !!i),
   }
 }

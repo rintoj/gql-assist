@@ -8,6 +8,15 @@ import { generateHook } from './hook-generator'
 
 const schema = loadSchema('test/schema.gql')
 
+function toQueryJS(content: string) {
+  return `
+    import gql from 'graphql-tag'
+    const query = gql\`
+      ${content}
+    \`
+  `
+}
+
 async function generate(fileName: string, content: string, inlineConfig?: GQLAssistConfig) {
   const sourceFile = parseTSFile(fileName, content)
   const { sourceFile: output, errors } = await generateHook(
@@ -19,6 +28,590 @@ async function generate(fileName: string, content: string, inlineConfig?: GQLAss
 }
 
 describe('generateHook', () => {
+  test('should fix argument for a simple query', async () => {
+    const query = toQueryJS(`
+      query getUser{
+        user {
+          id
+          name
+        }
+      }
+    `)
+    const { hook, errors } = await generate('query.gql.ts', query)
+    expect(errors).toEqual([])
+    expect(toParsedOutput(hook)).toEqual(
+      toParsedOutput(`
+        import { QueryHookOptions, useQuery } from '@apollo/client'
+        import gql from 'graphql-tag'
+
+        const query = gql\`
+          query getUserQuery($id: ID!) {
+            user(id: $id) {
+              id
+              name
+            }
+          }
+        \`
+
+        export interface GetUserQuery {
+          user?: User
+          __typename?: 'Query'
+        }
+
+        export interface User {
+          id: string
+          name?: string
+          __typename?: 'User'
+        }
+
+        export interface Variables {
+          id: string | undefined
+        }
+
+        export function useGetUserQuery(
+          variables: Variables,
+          options?: QueryHookOptions<GetUserQuery, Variables>,
+        ) {
+          return useQuery<GetUserQuery, Variables>(query, {
+            variables,
+            skip: !variables.id,
+            ...options,
+          })
+        }
+      `),
+    )
+  })
+
+  test('should fix more than one argument for a simple query', async () => {
+    const query = toQueryJS(`
+      query {
+        followers {
+          id
+          name
+        }
+      }
+    `)
+    const { hook, errors } = await generate('query.gql.ts', query)
+    expect(errors).toEqual([])
+    expect(toParsedOutput(hook)).toEqual(
+      toParsedOutput(`
+        import { QueryHookOptions, useQuery } from '@apollo/client'
+        import gql from 'graphql-tag'
+
+        const query = gql\`
+          query followersQuery($id: ID!, $limit: Int) {
+            followers(id: $id, limit: $limit) {
+              id
+              name
+            }
+          }
+        \`
+
+        export interface FollowersQuery {
+          followers: User[]
+          __typename?: 'Query'
+        }
+
+        export interface User {
+          id: string
+          name?: string
+          __typename?: 'User'
+        }
+
+        export interface Variables {
+          id: string | undefined
+          limit?: number | undefined
+        }
+
+        export function useFollowersQuery(
+          variables: Variables,
+          options?: QueryHookOptions<FollowersQuery, Variables>,
+        ) {
+          return useQuery<FollowersQuery, Variables>(query, {
+            variables,
+            skip: !variables.id,
+            ...options,
+          })
+        }
+      `),
+    )
+  })
+
+  test('should fix more than one argument for a complex query', async () => {
+    const query = toQueryJS(`
+      query {
+        user {
+          name
+          followers {
+            id
+            name
+          }
+        }
+      }
+    `)
+
+    const { hook, errors } = await generate('query.gql.ts', query)
+    expect(errors).toEqual([])
+    expect(toParsedOutput(hook)).toEqual(
+      toParsedOutput(`
+        import { QueryHookOptions, useQuery } from '@apollo/client'
+        import gql from 'graphql-tag'
+
+        const query = gql\`
+          query userQuery($id: ID!, $limit: Int) {
+            user(id: $id) {
+              name
+              followers(limit: $limit) {
+                id
+                name
+              }
+            }
+          }
+        \`
+
+        export interface UserQuery {
+          user?: User
+          __typename?: 'Query'
+        }
+
+        export interface User {
+          name?: string
+          followers: UserFollowers[]
+          __typename?: 'User'
+        }
+
+        export interface UserFollowers {
+          id: string
+          name?: string
+          __typename?: 'User'
+        }
+
+        export interface Variables {
+          id: string | undefined
+          limit?: number | undefined
+        }
+
+        export function useUserQuery(
+          variables: Variables,
+          options?: QueryHookOptions<UserQuery, Variables>,
+        ) {
+          return useQuery<UserQuery, Variables>(query, {
+            variables,
+            skip: !variables.id,
+            ...options,
+          })
+        }
+      `),
+    )
+  })
+
+  test('should fix more than one argument for a complex query with 3 level deep', async () => {
+    const query = toQueryJS(`
+      query {
+        user {
+          name
+          followers {
+            id
+            name
+            followers {
+              id
+              name
+            }
+          }
+        }
+      }
+    `)
+
+    const { hook, errors } = await generate('query.gql.ts', query)
+    expect(errors).toEqual([])
+    expect(toParsedOutput(hook)).toEqual(
+      toParsedOutput(`
+        import { QueryHookOptions, useQuery } from '@apollo/client'
+        import gql from 'graphql-tag'
+
+        const query = gql\`
+          query userQuery($id: ID!, $limit: Int, $followerLimit: Int) {
+            user(id: $id) {
+              name
+              followers(limit: $limit) {
+                id
+                name
+                followers(limit: $followerLimit) {
+                  id
+                  name
+                }
+              }
+            }
+          }
+        \`
+
+        export interface UserQuery {
+          user?: User
+          __typename?: 'Query'
+        }
+
+        export interface User {
+          name?: string
+          followers: UserFollowers[]
+          __typename?: 'User'
+        }
+
+        export interface UserFollowers {
+          id: string
+          name?: string
+          followers: UserFollower1[]
+          __typename?: 'User'
+        }
+
+        export interface UserFollower1 {
+          id: string
+          name?: string
+          __typename?: 'User'
+        }
+
+        export interface Variables {
+          id: string | undefined
+          limit?: number | undefined
+          followerLimit?: number | undefined
+        }
+
+        export function useUserQuery(
+          variables: Variables,
+          options?: QueryHookOptions<UserQuery, Variables>,
+        ) {
+          return useQuery<UserQuery, Variables>(query, {
+            variables,
+            skip: !variables.id,
+            ...options,
+          })
+        }
+      `),
+    )
+  })
+
+  test.skip('should fix more than one argument for a complex query with variables with same name', () => {
+    const query = `
+      query {
+        user {
+          name
+          follower {
+            id
+            name
+          }
+        }
+      }
+    `
+    const fixedQuery = fixGQLRequest(schema, query)
+    expect(toParsedOutput(fixedQuery)).toEqual(
+      toParsedOutput(`
+        query fetchUser($id: ID!, $userFollowerId: ID!) {
+          user(id: $id) {
+            name
+            follower(id: $userFollowerId) {
+              id
+              name
+            }
+          }
+        }
+      `),
+    )
+  })
+
+  test.skip('should fix more than one argument for 3 level query with variables with same name', () => {
+    const query = `
+      query {
+        user {
+          name
+          follower {
+            id
+            name
+            follower {
+              id
+              name
+            }
+          }
+        }
+      }
+    `
+    const fixedQuery = fixGQLRequest(schema, query)
+    expect(toParsedOutput(fixedQuery)).toEqual(
+      toParsedOutput(`
+        query fetchUser($id: ID!, $userFollowerId: ID!, $userFollowerFollowerId: ID!) {
+          user(id: $id) {
+            name
+            follower(id: $userFollowerId) {
+              id
+              name
+              follower(id: $userFollowerFollowerId) {
+                id
+                name
+              }
+            }
+          }
+        }
+      `),
+    )
+  })
+
+  test.skip('should fix batched query', () => {
+    const query = `
+      query {
+        user {
+          name
+        }
+        followers {
+          id
+        }
+      }
+    `
+    const fixedQuery = fixGQLRequest(schema, query)
+    expect(toParsedOutput(fixedQuery)).toEqual(
+      toParsedOutput(`
+        query fetchUserAndFollowers($id: ID!, $followersId: ID!, $limit: Int) {
+          user(id: $id) {
+            name
+          }
+          followers(id: $followersId, limit: $limit) {
+            id
+          }
+        }
+      `),
+    )
+  })
+
+  test.skip('should reuse existing variable names', () => {
+    const query = `
+      query ($userId: ID!, $followersId: ID!) {
+        user(id: $userId) {
+          name
+        }
+        followers(id: $followersId) {
+          id
+        }
+      }
+    `
+    const fixedQuery = fixGQLRequest(schema, query)
+    expect(toParsedOutput(fixedQuery)).toEqual(
+      toParsedOutput(`
+        query fetchUserAndFollowers($userId: ID!, $followersId: ID!, $limit: Int) {
+          user(id: $userId) {
+            name
+          }
+          followers(id: $followersId, limit: $limit) {
+            id
+          }
+        }
+      `),
+    )
+  })
+
+  test.skip('should work with common variable', () => {
+    const query = `
+      query fetchTweet($size: ImageSize) {
+        tweet {
+          id
+          author {
+            id
+            photo {
+              url(size: $size)
+            }
+          }
+          mentions {
+            id
+            photo {
+              url(size: $size)
+            }
+          }
+        }
+      }
+    `
+    const fixedQuery = fixGQLRequest(schema, query)
+    expect(toParsedOutput(fixedQuery)).toEqual(
+      toParsedOutput(`
+        query fetchTweet($id: ID!, $size: ImageSize) {
+          tweet(id: $id) {
+            id
+            author {
+              id
+              photo {
+                url(size: $size)
+              }
+            }
+            mentions {
+              id
+              photo {
+                url(size: $size)
+              }
+            }
+          }
+        }
+      `),
+    )
+  })
+
+  test.skip('should throw an error if invalid selector is used in a query', () => {
+    const query = `
+      query {
+        user {
+          id
+          name
+          invalid
+        }
+      }
+    `
+    expect(() => fixGQLRequest(schema, query)).toThrowError()
+  })
+
+  test.skip('should throw an error if invalid selector is used in a mutation', () => {
+    const query = `
+      mutation {
+        registerUser {
+          id
+          name
+          invalid
+        }
+      }
+    `
+    expect(() => fixGQLRequest(schema, query)).toThrow()
+  })
+
+  test.skip('should throw an error if invalid selector is used in a subscription', () => {
+    const query = `
+      subscription subscribeToToOnUserUsage{
+        onUserChange {
+          id
+          name
+          invalid
+        }
+      }
+    `
+    expect(() => fixGQLRequest(schema, query)).toThrowError()
+  })
+
+  test.skip('should fix argument for a simple mutation', () => {
+    const query = `
+      mutation {
+        registerUser {
+          id
+          name
+        }
+      }
+    `
+    const fixedQuery = fixGQLRequest(schema, query)
+    expect(toParsedOutput(fixedQuery)).toEqual(
+      toParsedOutput(`
+        mutation registerUser($input: RegisterUserInput!) {
+          registerUser(input: $input) {
+            id
+            name
+          }
+        }
+      `),
+    )
+  })
+
+  test.skip('should fix argument for a simple subscription', () => {
+    const query = `
+      subscription {
+        onUserChange {
+          id
+          name
+        }
+      }
+    `
+    const fixedQuery = fixGQLRequest(schema, query)
+    expect(toParsedOutput(fixedQuery)).toEqual(
+      toParsedOutput(`
+        subscription subscribeToOnUserChange($id: ID!) {
+          onUserChange(id: $id) {
+            id
+            name
+          }
+        }
+      `),
+    )
+  })
+
+  test.skip('should work with enums', () => {
+    const query = `
+      query {
+        user {
+          id
+          status
+        }
+      }
+    `
+    const fixedQuery = fixGQLRequest(schema, query)
+    expect(toParsedOutput(fixedQuery)).toEqual(
+      toParsedOutput(`
+        query fetchUser($id: ID!) {
+          user(id: $id) {
+            id
+            status
+          }
+        }
+      `),
+    )
+  })
+
+  test.skip('should work with union', () => {
+    const query = `
+      query {
+        myNotifications {
+          ... on FollowNotification {
+            id
+            user {
+              id
+              photo {
+                url
+              }
+            }
+          }
+          ... on TweetNotification {
+            id
+            tweet {
+              id
+              author {
+                photo {
+                  url
+                }
+              }
+            }
+          }
+        }
+      }
+    `
+    const fixedQuery = fixGQLRequest(schema, query)
+    expect(toParsedOutput(fixedQuery)).toEqual(
+      toParsedOutput(`
+        query fetchMyNotifications($size: ImageSize, $myNotificationsTweetAuthorPhotoSize: ImageSize) {
+          myNotifications {
+            ... on FollowNotification {
+              id
+              user {
+                id
+                photo {
+                  url(size: $size)
+                }
+              }
+            }
+            ... on TweetNotification {
+              id
+              tweet {
+                id
+                author {
+                  photo {
+                    url(size: $myNotificationsTweetAuthorPhotoSize)
+                  }
+                }
+              }
+            }
+          }
+        }
+      `),
+    )
+  })
+
   test('should generate query and its types', async () => {
     const query = `
       import gql from 'graphql-tag'

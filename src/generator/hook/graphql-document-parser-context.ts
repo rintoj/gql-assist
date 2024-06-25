@@ -2,7 +2,9 @@ import * as gql from 'graphql'
 import { Maybe } from 'graphql/jsutils/Maybe'
 import { ById } from 'tsds-tools'
 import ts from 'typescript'
-import { NameTracker, camelCase, className } from '../../util'
+import { camelCase, className } from '../../util'
+import { ParameterNameTracker } from './parameter-name-tracker'
+import { TypeNameTracker } from './type-name-tracker'
 
 export interface PropertyConfig {
   name: string
@@ -12,16 +14,32 @@ export interface PropertyConfig {
 }
 
 export class GraphQLDocumentParserContext {
-  public readonly types: ById<
+  private readonly types: ById<
     ts.InterfaceDeclaration | ts.EnumDeclaration | ts.TypeAliasDeclaration
   > = {}
-  public readonly parameters: ById<PropertyConfig> = {}
-  public readonly variableDefinition: ById<gql.VariableDefinitionNode> = {}
-  public readonly errors: gql.GraphQLError[] = []
-  private readonly interfaceNameTracker = new NameTracker()
-  private readonly parameterNameTracker = new NameTracker({ prefix: true })
+  private readonly parameters: ById<PropertyConfig> = {}
+  private readonly variableDefinition: ById<gql.VariableDefinitionNode> = {}
+  private readonly errors: gql.GraphQLError[] = []
+  private readonly typeNameTracker = new TypeNameTracker()
+  private readonly parameterNameTracker = new ParameterNameTracker()
 
   constructor(public readonly typeInfo: gql.TypeInfo) {}
+
+  getParameters() {
+    return Object.values(this.parameters)
+  }
+
+  getVariableDefinitions() {
+    return Object.values(this.variableDefinition)
+  }
+
+  getTypes() {
+    return Object.values(this.types)
+  }
+
+  getErrors() {
+    return [...this.errors]
+  }
 
   parent(): Maybe<gql.GraphQLOutputType> {
     return this.typeInfo.getType()
@@ -65,11 +83,11 @@ export class GraphQLDocumentParserContext {
   }
 
   toInterfaceName(hash: string, name: string, ...hints: Array<string | undefined>) {
-    return this.interfaceNameTracker.next(hash, className(name), ...hints.map(i => className(i)))
+    return this.typeNameTracker.next(hash, name, ...hints)
   }
 
-  toParameterName(hash: string, name: string, ...hints: Array<string | undefined>) {
-    return this.parameterNameTracker.next(hash, camelCase(name), ...hints.map(i => camelCase(i)))
+  toParameterName(name: string, ...hints: Array<string | undefined>) {
+    return this.parameterNameTracker.next(camelCase(name), ...hints.map(i => camelCase(i)))
   }
 
   reportError(message: string, node: gql.ASTNode) {

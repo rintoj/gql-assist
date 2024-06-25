@@ -1,5 +1,4 @@
 export * from './common'
-export * from './name-tracker'
 export * from './run-command'
 export * from './test-util'
 export * from './to-string'

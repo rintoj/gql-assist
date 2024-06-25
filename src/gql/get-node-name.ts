@@ -1,8 +1,13 @@
 import * as gql from 'graphql'
-import { isFieldNode, isInlineFragmentNode, isOperationDefinitionNode } from './validators'
+import {
+  isFieldNode,
+  isInlineFragmentNode,
+  isOperationDefinitionNode,
+  isVariableNode,
+} from './validators'
 
 export function getNodeName(
-  node: gql.OperationDefinitionNode | gql.FieldNode | gql.InlineFragmentNode,
+  node: gql.OperationDefinitionNode | gql.FieldNode | gql.InlineFragmentNode | gql.VariableNode,
 ) {
   if (isOperationDefinitionNode(node)) {
     return node.name?.value
@@ -12,5 +17,8 @@ export function getNodeName(
   }
   if (isInlineFragmentNode(node)) {
     return node.typeCondition?.name.value
+  }
+  if (isVariableNode(node)) {
+    return node.name.value
   }
 }
