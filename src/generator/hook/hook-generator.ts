@@ -8,7 +8,6 @@ import {
   createGraphQLQuery,
   getGQLContent,
   getGraphQLQueryVariable,
-  printTS,
 } from '../../ts'
 import { addImports } from '../../ts/add-imports'
 import { organizeImports } from '../../ts/organize-imports'
@@ -27,11 +26,11 @@ export function isHook(sourceFile: ts.SourceFile, config: GQLAssistConfig) {
 function identifyLibrary(sourceFile: ts.SourceFile, config: GQLAssistConfig) {
   const imports = sourceFile.statements.find((s): s is ts.ImportDeclaration =>
     ts.isImportDeclaration(s) &&
-      s.importClause?.namedBindings &&
-      ts.isNamedImports(s.importClause?.namedBindings)
+    s.importClause?.namedBindings &&
+    ts.isNamedImports(s.importClause?.namedBindings)
       ? !!s.importClause?.namedBindings?.elements.find(e =>
-        hooks.includes(e.name.escapedText ?? ''),
-      )
+          hooks.includes(e.name.escapedText ?? ''),
+        )
       : false,
   )
   return imports?.moduleSpecifier && ts.isStringLiteral(imports?.moduleSpecifier)
@@ -68,7 +67,7 @@ async function generateGQLHook(sourceFile: ts.SourceFile, schema: GraphQLSchema,
   return { sourceFile: organizeImports(statement), errors }
 }
 
-export async function generateHook(
+export async function generateHookWithErrors(
   sourceFile: ts.SourceFile,
   schema: GraphQLSchema,
   config: GQLAssistConfig,
@@ -76,4 +75,13 @@ export async function generateHook(
   if (!isHook(sourceFile, config)) return { sourceFile, errors: [] }
   const context = createContext({ config })
   return await generateGQLHook(sourceFile, schema, context)
+}
+
+export async function generateHook(
+  inputFile: ts.SourceFile,
+  schema: GraphQLSchema,
+  config: GQLAssistConfig,
+): Promise<ts.SourceFile> {
+  const { sourceFile } = await generateHookWithErrors(inputFile, schema, config)
+  return sourceFile
 }

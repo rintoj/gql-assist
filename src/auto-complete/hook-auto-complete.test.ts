@@ -1,6 +1,6 @@
 import { GQLAssistConfig, config } from '../config'
 import { Position } from '../diff'
-import { parseSchema } from '../generator/hook/graphql-util'
+import { parseSchema } from '../gql'
 import { parseTSFile } from '../ts/parse-ts'
 import { autoCompleteHook } from './hook-auto-complete'
 

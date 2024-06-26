@@ -17,7 +17,7 @@ function isInRange(node: gql.ASTNode, position: Position, offset?: Position) {
 export function autoCompleteHook(
   sourceFile: ts.SourceFile,
   position: Position,
-  schema: gql.DocumentNode,
+  schema: gql.GraphQLSchema,
   config: GQLAssistConfig,
 ) {
   const variable = getGraphQLQueryVariable(sourceFile)

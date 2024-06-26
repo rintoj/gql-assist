@@ -18,9 +18,10 @@ export interface FieldDef {
   isScalar?: boolean
 }
 
-export function extractTypeDefinitions(schema: gql.DocumentNode) {
+export function extractTypeDefinitions(schema: gql.GraphQLSchema) {
   const typeDefs: ById<ById<FieldDef>> = {}
-  gql.visit(schema, {
+  if (!schema?.astNode) return typeDefs
+  gql.visit(schema.astNode, {
     ObjectTypeDefinition(node) {
       const objectName = node.name.value
       typeDefs[objectName] = {} as any

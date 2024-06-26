@@ -1,5 +1,4 @@
 import * as gql from 'graphql'
-import { toNonNullArray } from 'tsds-tools'
 
 export function isOperationDefinitionNode(node: gql.ASTNode): node is gql.OperationDefinitionNode {
   return node.kind === gql.Kind.OPERATION_DEFINITION

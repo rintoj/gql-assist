@@ -2,9 +2,19 @@ import * as gql from 'graphql'
 import { Maybe } from 'graphql/jsutils/Maybe'
 import { ById } from 'tsds-tools'
 import ts from 'typescript'
-import { camelCase, className } from '../../util'
+import { camelCase } from '../../util'
 import { ParameterNameTracker } from './parameter-name-tracker'
 import { TypeNameTracker } from './type-name-tracker'
+
+export interface FieldDefinition {
+  name: string
+  type: string
+  isNullable: boolean
+  orUndefined: boolean
+  isArray: boolean
+}
+
+export type TypeMap = ById<ById<FieldDefinition>>
 
 export interface PropertyConfig {
   name: string
@@ -13,7 +23,7 @@ export interface PropertyConfig {
   isArray: boolean
 }
 
-export class GraphQLDocumentParserContext {
+export class GraphQLParserContext {
   private readonly types: ById<
     ts.InterfaceDeclaration | ts.EnumDeclaration | ts.TypeAliasDeclaration
   > = {}

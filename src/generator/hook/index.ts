@@ -1,2 +1,2 @@
-export * from './graphql-util'
+export * from './hook-generator'
 export * from './hook-generator'

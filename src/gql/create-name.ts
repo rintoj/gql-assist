@@ -1,4 +1,3 @@
-
 import * as gql from 'graphql'
 
 export function createName(name: string): gql.NameNode {

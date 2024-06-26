@@ -4,7 +4,7 @@ import { toNonNullArray } from 'tsds-tools'
 import ts from 'typescript'
 import { config } from '../config'
 import { generateHook } from '../generator'
-import { loadSchema, resolveSchemaFile } from '../generator/hook/graphql-util'
+import { loadSchema, resolveSchemaFile } from '../gql/schema-resolver'
 import { processTypeScriptFiles } from './process-typescript-files'
 
 interface Props {

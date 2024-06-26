@@ -1,30 +1,29 @@
 import * as gql from 'graphql'
 import { Maybe } from 'graphql/jsutils/Maybe'
 import { toCamelCase } from 'name-util'
-import { toByProperty, toNonNullArray } from 'tsds-tools'
+import { toNonNullArray } from 'tsds-tools'
 import ts from 'typescript'
 import {
   createArgumentDefinition,
   createInputValueDefinition,
   getFieldHash,
   getFieldName,
-  getNodeName,
   hasAQuery,
+  isArgumentNode,
   isFieldNode,
+  isInputValueDefinitionNode,
   isOperationDefinitionNode,
   isVariableNode,
-  isInputValueDefinitionNode,
   toJSType,
   updateArguments,
   updateName,
   updateVariableDefinitions,
-  isArgumentNode,
 } from '../../gql'
 import { createArrayType, createType } from '../../ts'
 import { camelCase, className, toString } from '../../util'
-import { GraphQLDocumentParserContext } from './graphql-document-parser-context'
+import { GraphQLParserContext } from './graphql-parser-context'
 
-function parseEnum(enumType: gql.GraphQLEnumType, context: GraphQLDocumentParserContext) {
+function parseEnum(enumType: gql.GraphQLEnumType, context: GraphQLParserContext) {
   const members = enumType
     .getValues()
     .map(value =>
@@ -42,7 +41,7 @@ function parseEnum(enumType: gql.GraphQLEnumType, context: GraphQLDocumentParser
   )
 }
 
-function parseUnionType(unionType: gql.GraphQLUnionType, context: GraphQLDocumentParserContext) {
+function parseUnionType(unionType: gql.GraphQLUnionType, context: GraphQLParserContext) {
   context.addUnion(
     ts.factory.createTypeAliasDeclaration(
       [ts.factory.createToken(ts.SyntaxKind.ExportKeyword)],
@@ -62,7 +61,7 @@ function parseUnionType(unionType: gql.GraphQLUnionType, context: GraphQLDocumen
 function resolveTypeName(
   node: gql.FieldNode,
   schemaType: gql.GraphQLOutputType,
-  context: GraphQLDocumentParserContext,
+  context: GraphQLParserContext,
 ) {
   const type = gql.getNamedType(schemaType)
   if (!type) return 'never'
@@ -80,7 +79,7 @@ function resolveTypeName(
 function parseFields(
   node: gql.OperationDefinitionNode | gql.FieldNode | gql.InlineFragmentNode,
   schemaType: gql.GraphQLObjectType,
-  context: GraphQLDocumentParserContext,
+  context: GraphQLParserContext,
 ) {
   const fields = schemaType.getFields()
   return toNonNullArray(
@@ -111,7 +110,7 @@ function resolveArgName(schemaType: gql.GraphQLInputType) {
   return type.name
 }
 
-function parseInputType(schemaType: gql.GraphQLInputType, context: GraphQLDocumentParserContext) {
+function parseInputType(schemaType: gql.GraphQLInputType, context: GraphQLParserContext) {
   const type = gql.getNamedType(schemaType)
   if (gql.isInputObjectType(type)) {
     const fields = Object.values(type.getFields())
@@ -154,7 +153,7 @@ export function createTypeName(name: string) {
 function parseArguments(
   node: gql.FieldNode,
   parentType: Maybe<gql.GraphQLOutputType>,
-  context: GraphQLDocumentParserContext,
+  context: GraphQLParserContext,
 ) {
   if (!parentType || !gql.isObjectType(parentType)) return
   const field = parentType.getFields()[node.name.value]
@@ -191,7 +190,7 @@ function parseArguments(
 function parseObjectType(
   node: gql.OperationDefinitionNode | gql.FieldNode | gql.InlineFragmentNode,
   schemaType: gql.GraphQLObjectType | undefined,
-  context: GraphQLDocumentParserContext,
+  context: GraphQLParserContext,
 ) {
   if (!schemaType || !gql.isObjectType(schemaType) || !node.selectionSet?.selections.length) {
     return
@@ -213,7 +212,7 @@ function parseObjectType(
   )
 }
 
-function addVariableDefinitions(document: gql.DocumentNode, context: GraphQLDocumentParserContext) {
+function addVariableDefinitions(document: gql.DocumentNode, context: GraphQLParserContext) {
   return {
     ...document,
     definitions: document.definitions.map(def => {
@@ -233,7 +232,7 @@ function addVariableDefinitions(document: gql.DocumentNode, context: GraphQLDocu
 function fixDocument(
   document: gql.DocumentNode,
   schema: gql.GraphQLSchema,
-  context: GraphQLDocumentParserContext,
+  context: GraphQLParserContext,
 ) {
   const typeInfo = new gql.TypeInfo(schema)
   let definition: gql.OperationDefinitionNode
@@ -272,7 +271,7 @@ function fixDocument(
   )
 }
 
-function createVariablesType(document: gql.DocumentNode, context: GraphQLDocumentParserContext) {
+function createVariablesType(document: gql.DocumentNode, context: GraphQLParserContext) {
   const isQueryType = hasAQuery(document)
   const parameters = context.getParameters()
   if (parameters.length) {
@@ -299,7 +298,7 @@ function createVariablesType(document: gql.DocumentNode, context: GraphQLDocumen
 
 export function parseDocument(inputDocument: gql.DocumentNode, schema: gql.GraphQLSchema) {
   const typeInfo = new gql.TypeInfo(schema)
-  const context = new GraphQLDocumentParserContext(typeInfo)
+  const context = new GraphQLParserContext(typeInfo)
   const document = fixDocument(inputDocument, schema, context)
   gql.visit(
     document,

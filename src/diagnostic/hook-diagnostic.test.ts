@@ -1,6 +1,6 @@
 import { resolve } from 'path'
 import { GQLAssistConfig, config } from '../config'
-import { loadSchema } from '../generator/hook/graphql-util'
+import { loadSchema } from '../gql'
 import { parseTSFile } from '../ts/parse-ts'
 import { diagnoseReactHook } from './hook-diagnostic'
 

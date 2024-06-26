@@ -1,7 +1,7 @@
-import { toCamelCase, toClassName } from 'name-util'
+import { toCamelCase } from 'name-util'
 import { singular } from 'pluralize'
 import { ById } from 'tsds-tools'
-import { camelCase, toString } from '../../util/to-string'
+import { camelCase } from '../../util/to-string'
 
 export class ParameterNameTracker {
   private readonly nameMap: ById<boolean> = {}

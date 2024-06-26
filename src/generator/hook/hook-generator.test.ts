@@ -1,10 +1,10 @@
 import { GQLAssistConfig, config } from '../../config'
+import { loadSchema } from '../../gql'
 import { parseTSFile } from '../../ts/parse-ts'
 import { prettify } from '../../ts/prettify'
 import { printTS } from '../../ts/print-ts'
 import { toParsedOutput } from '../../util/test-util'
-import { loadSchema } from './graphql-util'
-import { generateHook } from './hook-generator'
+import { generateHookWithErrors } from './hook-generator'
 
 const schema = loadSchema('test/schema.gql')
 
@@ -19,7 +19,7 @@ function toQueryJS(content: string) {
 
 async function generate(fileName: string, content: string, inlineConfig?: GQLAssistConfig) {
   const sourceFile = parseTSFile(fileName, content)
-  const { sourceFile: output, errors } = await generateHook(
+  const { sourceFile: output, errors } = await generateHookWithErrors(
     sourceFile,
     schema,
     inlineConfig ?? config,

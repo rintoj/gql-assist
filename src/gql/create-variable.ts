@@ -1,4 +1,3 @@
-
 import * as gql from 'graphql'
 import { createName } from './create-name'
 
