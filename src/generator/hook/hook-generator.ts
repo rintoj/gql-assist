@@ -26,11 +26,11 @@ export function isHook(sourceFile: ts.SourceFile, config: GQLAssistConfig) {
 function identifyLibrary(sourceFile: ts.SourceFile, config: GQLAssistConfig) {
   const imports = sourceFile.statements.find((s): s is ts.ImportDeclaration =>
     ts.isImportDeclaration(s) &&
-    s.importClause?.namedBindings &&
-    ts.isNamedImports(s.importClause?.namedBindings)
+      s.importClause?.namedBindings &&
+      ts.isNamedImports(s.importClause?.namedBindings)
       ? !!s.importClause?.namedBindings?.elements.find(e =>
-          hooks.includes(e.name.escapedText ?? ''),
-        )
+        hooks.includes(e.name.escapedText ?? ''),
+      )
       : false,
   )
   return imports?.moduleSpecifier && ts.isStringLiteral(imports?.moduleSpecifier)
@@ -42,11 +42,11 @@ async function generateGQLHook(sourceFile: ts.SourceFile, schema: GraphQLSchema,
   // identify graphql variable
   const variable = getGraphQLQueryVariable(sourceFile)
   if (!variable) return { sourceFile, errors: [] }
-  const graphQLQueryString = getGQLContent(variable)
-  if (!graphQLQueryString || graphQLQueryString?.trim() === '') return { sourceFile, errors: [] }
+  const query = getGQLContent(variable)
+  if (!query || query?.trim() === '') return { sourceFile, errors: [] }
 
   // parse graphql
-  const initialDocument = gql.parse(graphQLQueryString.replace(/\{[\s\n]*\}/g, '{ __typename }'))
+  const initialDocument = gql.parse(query.replace(/\{[\s\n]*\}/g, '{ __typename }'))
   const { document, types } = parseDocument(initialDocument, schema)
 
   // create imports
