@@ -127,14 +127,6 @@ describe('autoCompleteHook', () => {
     expect(output).toEqual([
       {
         parentType: 'Query',
-        name: 'me',
-        type: 'User',
-        isArray: false,
-        isNullable: true,
-        isScalar: false,
-      },
-      {
-        parentType: 'Query',
         name: 'user',
         type: 'User',
         isArray: false,
@@ -250,7 +242,6 @@ describe('autoCompleteHook', () => {
               name
             }
             user {
-              id
               name
               address {
                 id
@@ -270,22 +261,6 @@ describe('autoCompleteHook', () => {
         isArray: false,
         isNullable: false,
       },
-      {
-        parentType: 'User',
-        name: 'name',
-        type: 'String',
-        isArray: false,
-        isScalar: true,
-        isNullable: true,
-      },
-      {
-        parentType: 'User',
-        name: 'address',
-        type: 'Address',
-        isArray: false,
-        isScalar: false,
-        isNullable: true,
-      },
     ])
   })
 
@@ -297,9 +272,6 @@ describe('autoCompleteHook', () => {
 
         const query = gql\`
           query {
-            me {
-              name
-            }
             user {
               id
               name
@@ -310,20 +282,12 @@ describe('autoCompleteHook', () => {
           }
         \`
       `,
-      new Position(7, 9),
+      new Position(4, 9),
     )
     expect(output).toEqual([
       {
         parentType: 'Query',
         name: 'me',
-        type: 'User',
-        isArray: false,
-        isScalar: false,
-        isNullable: true,
-      },
-      {
-        parentType: 'Query',
-        name: 'user',
         type: 'User',
         isArray: false,
         isScalar: false,
@@ -345,7 +309,6 @@ describe('autoCompleteHook', () => {
             }
             user {
               id
-              name
               address {
                 id
               }
@@ -358,27 +321,11 @@ describe('autoCompleteHook', () => {
     expect(output).toEqual([
       {
         parentType: 'User',
-        name: 'id',
-        type: 'ID',
-        isArray: false,
-        isNullable: false,
-        isScalar: true,
-      },
-      {
-        parentType: 'User',
         name: 'name',
         type: 'String',
         isArray: false,
         isNullable: true,
         isScalar: true,
-      },
-      {
-        parentType: 'User',
-        name: 'address',
-        type: 'Address',
-        isArray: false,
-        isNullable: true,
-        isScalar: false,
       },
     ])
   })
@@ -406,23 +353,6 @@ describe('autoCompleteHook', () => {
       `,
       new Position(13, 5),
     )
-    expect(output).toEqual([
-      {
-        parentType: 'Query',
-        name: 'me',
-        type: 'User',
-        isArray: false,
-        isScalar: false,
-        isNullable: true,
-      },
-      {
-        parentType: 'Query',
-        name: 'user',
-        type: 'User',
-        isArray: false,
-        isScalar: false,
-        isNullable: true,
-      },
-    ])
+    expect(output).toEqual([])
   })
 })

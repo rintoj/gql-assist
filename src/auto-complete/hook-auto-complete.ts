@@ -2,10 +2,11 @@ import * as gql from 'graphql'
 import ts from 'typescript'
 import { GQLAssistConfig } from '../config'
 import { Position } from '../diff'
-import { isSelectionSetNode, makeQueryParsable } from '../gql'
+import { isFieldNode, isSelectionSetNode, makeQueryParsable } from '../gql'
 import { getGQLNodeLocationRange } from '../gql/get-gql-node-location-range'
 import { isPositionWithInRange } from '../position'
 import { getGQLContent, getGraphQLQueryVariable, getTSNodeLocationRange } from '../ts'
+import { toNonNullArray } from 'tsds-tools'
 
 function isInRange(node: gql.ASTNode, position: Position, offset?: Position) {
   const nodeRange = getGQLNodeLocationRange(node, offset)
@@ -81,6 +82,7 @@ export function autoCompleteHook(
     let schemaType: gql.GraphQLObjectType = schema.getRootType(
       topOperation(query),
     ) as gql.GraphQLObjectType
+    let existingFields: string[] = []
     const typeInfo = new gql.TypeInfo(schema)
     gql.visit(
       document,
@@ -91,6 +93,9 @@ export function autoCompleteHook(
               const type = typeInfo.getType()
               if (gql.isObjectType(type)) {
                 schemaType = type
+                existingFields = toNonNullArray(
+                  node.selections.map(f => (isFieldNode(f) ? f.name.value : undefined)),
+                )
               }
             }
           }
@@ -99,16 +104,18 @@ export function autoCompleteHook(
     )
     if (!gql.isObjectType(schemaType)) return []
     const fields = schemaType.getFields()
-    return Object.values(fields).map(field => {
-      return {
-        parentType: schemaType.name,
-        name: field.name,
-        type: gql.getNamedType(field.type).name,
-        isNullable: gql.isNullableType(field.type),
-        isArray: gql.isListType(gql.getNullableType(field.type)),
-        isScalar: gql.isScalarType(gql.getNullableType(field.type)),
-      }
-    })
+    return Object.values(fields)
+      .filter(field => !existingFields.includes(field.name))
+      .map(field => {
+        return {
+          parentType: schemaType.name,
+          name: field.name,
+          type: gql.getNamedType(field.type).name,
+          isNullable: gql.isNullableType(field.type),
+          isArray: gql.isListType(gql.getNullableType(field.type)),
+          isScalar: gql.isScalarType(gql.getNullableType(field.type)),
+        }
+      })
   } catch (e) {
     console.error(e)
     return []
