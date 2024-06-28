@@ -81,46 +81,45 @@ export function autoCompleteHook(
   try {
     const fixed = makeQueryParsable(query)
     const document = gql.parse(fixed)
-    let schemaType: gql.GraphQLObjectType = schema.getRootType(
-      topOperation(query),
-    ) as gql.GraphQLObjectType
+    let schemaType: gql.GraphQLObjectType | null | undefined
     let existingFields: string[] = []
     const typeInfo = new gql.TypeInfo(schema)
     gql.visit(
       document,
       gql.visitWithTypeInfo(typeInfo, {
-        enter(node) {
-          if (isSelectionSetNode(node)) {
-            if (isInRange(node, position, offset)) {
-              const type = typeInfo.getType()
-              if (gql.isObjectType(type)) {
-                schemaType = type
-                existingFields = toNonNullArray(
-                  node.selections.map(f => (isFieldNode(f) ? f.name.value : undefined)),
-                )
-              }
+        SelectionSet(node) {
+          if (isInRange(node, position, offset)) {
+            const type = typeInfo.getParentType()
+            if (!type || gql.isObjectType(type)) {
+              schemaType = type
+              existingFields = toNonNullArray(
+                node.selections.map(f => (isFieldNode(f) ? f.name.value : undefined)),
+              )
             }
           }
         },
       }),
     )
-    if (!gql.isObjectType(schemaType)) return []
+    if (!schemaType || !gql.isObjectType(schemaType)) return []
     const fields = schemaType.getFields()
-    return Object.values(fields)
-      .filter(field => !existingFields.includes(field.name))
-      .map(field => {
-        const nullableType = gql.getNullableType(field.type)
-        const isScalar = gql.isScalarType(nullableType)
-        return {
-          parentType: schemaType.name,
-          name: field.name,
-          type: gql.getNamedType(field.type).name,
-          isNullable: gql.isNullableType(field.type),
-          isArray: gql.isListType(nullableType),
-          isScalar,
-          insertText: isScalar ? field.name : `${field.name} { }`,
-        }
-      })
+    return toNonNullArray(
+      Object.values(fields)
+        .filter(field => !existingFields.includes(field.name))
+        .map(field => {
+          const nullableType = gql.getNullableType(field.type)
+          const isScalar = gql.isScalarType(nullableType)
+          if (!schemaType) return
+          return {
+            parentType: schemaType.name,
+            name: field.name,
+            type: gql.getNamedType(field.type).name,
+            isNullable: gql.isNullableType(field.type),
+            isArray: gql.isListType(nullableType),
+            isScalar,
+            insertText: isScalar ? field.name : `${field.name} { }`,
+          }
+        }),
+    )
   } catch (e) {
     console.error(e)
     return []

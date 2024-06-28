@@ -22,9 +22,15 @@ const schema = parseSchema(`
     code: String
   }
 
+  type Tweet {
+    id: ID!
+    mentions: [User!]
+  }
+
   type Query {
     me: User
     user(id: ID!): User
+    tweet(id: ID!): Tweet
   }
 
   type Mutation {
@@ -137,6 +143,15 @@ describe('autoCompleteHook', () => {
         isScalar: false,
         insertText: 'user { }',
       },
+      {
+        parentType: 'Query',
+        name: 'tweet',
+        type: 'Tweet',
+        isArray: false,
+        isNullable: true,
+        isScalar: false,
+        insertText: 'tweet { }',
+      },
     ])
   })
 
@@ -172,6 +187,15 @@ describe('autoCompleteHook', () => {
         isScalar: false,
         isNullable: true,
         insertText: 'user { }',
+      },
+      {
+        parentType: 'Query',
+        name: 'tweet',
+        type: 'Tweet',
+        isArray: false,
+        isNullable: true,
+        isScalar: false,
+        insertText: 'tweet { }',
       },
     ])
   })
@@ -304,6 +328,15 @@ describe('autoCompleteHook', () => {
         isNullable: true,
         insertText: 'me { }',
       },
+      {
+        parentType: 'Query',
+        name: 'tweet',
+        type: 'Tweet',
+        isArray: false,
+        isNullable: true,
+        isScalar: false,
+        insertText: 'tweet { }',
+      },
     ])
   })
 
@@ -365,6 +398,103 @@ describe('autoCompleteHook', () => {
       `,
       new Position(13, 5),
     )
-    expect(output).toEqual([])
+    expect(output).toEqual([
+      {
+        parentType: 'Query',
+        name: 'tweet',
+        type: 'Tweet',
+        isArray: false,
+        isNullable: true,
+        isScalar: false,
+        insertText: 'tweet { }',
+      },
+    ])
+  })
+
+  test('should return properties of tweet', async () => {
+    const output = await autoComplete(
+      'user.hook.ts',
+      `
+        import gql from 'graphql-tag'
+
+        const query = gql\`
+          query {
+            tweet {
+
+            }
+          }
+        \`
+      `,
+      new Position(5, 5),
+    )
+    expect(output).toEqual([
+      {
+        parentType: 'Tweet',
+        name: 'id',
+        type: 'ID',
+        isNullable: false,
+        isArray: false,
+        isScalar: true,
+        insertText: 'id',
+      },
+      {
+        parentType: 'Tweet',
+        name: 'mentions',
+        type: 'User',
+        isNullable: true,
+        isArray: true,
+        isScalar: false,
+        insertText: 'mentions { }',
+      },
+    ])
+  })
+
+  test('should generate properties of an array', async () => {
+    const output = await autoComplete(
+      'user.hook.ts',
+      `
+        import gql from 'graphql-tag'
+
+        const query = gql\`
+          query {
+            tweet {
+              mentions {
+                __typename
+              }
+            }
+          }
+        \`
+      `,
+      new Position(6, 5),
+    )
+    expect(output).toEqual([
+      {
+        parentType: 'User',
+        name: 'id',
+        type: 'ID',
+        isNullable: false,
+        isArray: false,
+        isScalar: true,
+        insertText: 'id',
+      },
+      {
+        parentType: 'User',
+        name: 'name',
+        type: 'String',
+        isNullable: true,
+        isArray: false,
+        isScalar: true,
+        insertText: 'name',
+      },
+      {
+        parentType: 'User',
+        name: 'address',
+        type: 'Address',
+        isNullable: true,
+        isArray: false,
+        isScalar: false,
+        insertText: 'address { }',
+      },
+    ])
   })
 })
