@@ -23,7 +23,7 @@ const schema = parseSchema(`
   }
 
   type Tweet {
-    id: ID!
+    tweetId: ID!
     mentions: [User!]
   }
 
@@ -141,7 +141,7 @@ describe('autoCompleteHook', () => {
         isArray: false,
         isNullable: true,
         isScalar: false,
-        insertText: 'user { id }',
+        insertText: 'user { ${1:id} }',
       },
       {
         parentType: 'Query',
@@ -150,7 +150,7 @@ describe('autoCompleteHook', () => {
         isArray: false,
         isNullable: true,
         isScalar: false,
-        insertText: 'tweet { id }',
+        insertText: 'tweet { ${1:tweetId} }',
       },
     ])
   })
@@ -177,7 +177,7 @@ describe('autoCompleteHook', () => {
         isArray: false,
         isNullable: true,
         isScalar: false,
-        insertText: 'me { id }',
+        insertText: 'me { ${1:id} }',
       },
       {
         parentType: 'Query',
@@ -186,7 +186,7 @@ describe('autoCompleteHook', () => {
         isArray: false,
         isScalar: false,
         isNullable: true,
-        insertText: 'user { id }',
+        insertText: 'user { ${1:id} }',
       },
       {
         parentType: 'Query',
@@ -195,7 +195,7 @@ describe('autoCompleteHook', () => {
         isArray: false,
         isNullable: true,
         isScalar: false,
-        insertText: 'tweet { id }',
+        insertText: 'tweet { ${1:tweetId} }',
       },
     ])
   })
@@ -222,7 +222,7 @@ describe('autoCompleteHook', () => {
         isScalar: false,
         isArray: false,
         isNullable: true,
-        insertText: 'createUser { id }',
+        insertText: 'createUser { ${1:id} }',
       },
       {
         parentType: 'Mutation',
@@ -231,7 +231,7 @@ describe('autoCompleteHook', () => {
         isScalar: false,
         isArray: false,
         isNullable: true,
-        insertText: 'updateUser { id }',
+        insertText: 'updateUser { ${1:id} }',
       },
     ])
   })
@@ -258,7 +258,7 @@ describe('autoCompleteHook', () => {
         isScalar: false,
         isArray: false,
         isNullable: true,
-        insertText: 'onUserChange { id }',
+        insertText: 'onUserChange { ${1:id} }',
       },
     ])
   })
@@ -326,7 +326,7 @@ describe('autoCompleteHook', () => {
         isArray: false,
         isScalar: false,
         isNullable: true,
-        insertText: 'me { id }',
+        insertText: 'me { ${1:id} }',
       },
       {
         parentType: 'Query',
@@ -335,7 +335,7 @@ describe('autoCompleteHook', () => {
         isArray: false,
         isNullable: true,
         isScalar: false,
-        insertText: 'tweet { id }',
+        insertText: 'tweet { ${1:tweetId} }',
       },
     ])
   })
@@ -406,7 +406,7 @@ describe('autoCompleteHook', () => {
         isArray: false,
         isNullable: true,
         isScalar: false,
-        insertText: 'tweet { id }',
+        insertText: 'tweet { ${1:tweetId} }',
       },
     ])
   })
@@ -430,12 +430,12 @@ describe('autoCompleteHook', () => {
     expect(output).toEqual([
       {
         parentType: 'Tweet',
-        name: 'id',
+        name: 'tweetId',
         type: 'ID',
         isNullable: false,
         isArray: false,
         isScalar: true,
-        insertText: 'id',
+        insertText: 'tweetId',
       },
       {
         parentType: 'Tweet',
@@ -444,7 +444,7 @@ describe('autoCompleteHook', () => {
         isNullable: true,
         isArray: true,
         isScalar: false,
-        insertText: 'mentions { id }',
+        insertText: 'mentions { ${1:id} }',
       },
     ])
   })
@@ -493,7 +493,7 @@ describe('autoCompleteHook', () => {
         isNullable: true,
         isArray: false,
         isScalar: false,
-        insertText: 'address { id }',
+        insertText: 'address { ${1:id} }',
       },
     ])
   })

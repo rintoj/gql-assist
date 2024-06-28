@@ -140,7 +140,7 @@ export function autoCompleteHook(
             isNullable: gql.isNullableType(field.type),
             isArray: gql.isListType(nullableType),
             isScalar,
-            insertText: isScalar ? field.name : `${field.name} { ${defaultField} }`,
+            insertText: isScalar ? field.name : `${field.name} { \${1:${defaultField}} }`,
           }
         }),
     )
