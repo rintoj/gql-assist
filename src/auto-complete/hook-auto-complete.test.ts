@@ -88,12 +88,14 @@ describe('autoCompleteHook', () => {
         name: 'query',
         type: 'Operation',
         isArray: false,
+        isScalar: false,
         isNullable: false,
       },
       {
         parentType: 'GraphQL',
         name: 'mutation',
         type: 'Operation',
+        isScalar: false,
         isArray: false,
         isNullable: false,
       },
@@ -102,6 +104,7 @@ describe('autoCompleteHook', () => {
         name: 'subscription',
         type: 'Operation',
         isArray: false,
+        isScalar: false,
         isNullable: false,
       },
     ])
@@ -128,6 +131,7 @@ describe('autoCompleteHook', () => {
         type: 'User',
         isArray: false,
         isNullable: true,
+        isScalar: false,
       },
       {
         parentType: 'Query',
@@ -135,6 +139,7 @@ describe('autoCompleteHook', () => {
         type: 'User',
         isArray: false,
         isNullable: true,
+        isScalar: false,
       },
     ])
   })
@@ -160,12 +165,14 @@ describe('autoCompleteHook', () => {
         type: 'User',
         isArray: false,
         isNullable: true,
+        isScalar: false,
       },
       {
         parentType: 'Query',
         name: 'user',
         type: 'User',
         isArray: false,
+        isScalar: false,
         isNullable: true,
       },
     ])
@@ -190,6 +197,7 @@ describe('autoCompleteHook', () => {
         parentType: 'Mutation',
         name: 'createUser',
         type: 'User',
+        isScalar: false,
         isArray: false,
         isNullable: true,
       },
@@ -197,6 +205,7 @@ describe('autoCompleteHook', () => {
         parentType: 'Mutation',
         name: 'updateUser',
         type: 'User',
+        isScalar: false,
         isArray: false,
         isNullable: true,
       },
@@ -222,6 +231,7 @@ describe('autoCompleteHook', () => {
         parentType: 'Subscription',
         name: 'onUserChange',
         type: 'User',
+        isScalar: false,
         isArray: false,
         isNullable: true,
       },
@@ -256,6 +266,7 @@ describe('autoCompleteHook', () => {
         parentType: 'User',
         name: 'id',
         type: 'ID',
+        isScalar: true,
         isArray: false,
         isNullable: false,
       },
@@ -264,6 +275,7 @@ describe('autoCompleteHook', () => {
         name: 'name',
         type: 'String',
         isArray: false,
+        isScalar: true,
         isNullable: true,
       },
       {
@@ -271,6 +283,7 @@ describe('autoCompleteHook', () => {
         name: 'address',
         type: 'Address',
         isArray: false,
+        isScalar: false,
         isNullable: true,
       },
     ])
@@ -305,6 +318,7 @@ describe('autoCompleteHook', () => {
         name: 'me',
         type: 'User',
         isArray: false,
+        isScalar: false,
         isNullable: true,
       },
       {
@@ -312,6 +326,7 @@ describe('autoCompleteHook', () => {
         name: 'user',
         type: 'User',
         isArray: false,
+        isScalar: false,
         isNullable: true,
       },
     ])
@@ -347,6 +362,7 @@ describe('autoCompleteHook', () => {
         type: 'ID',
         isArray: false,
         isNullable: false,
+        isScalar: true,
       },
       {
         parentType: 'User',
@@ -354,6 +370,7 @@ describe('autoCompleteHook', () => {
         type: 'String',
         isArray: false,
         isNullable: true,
+        isScalar: true,
       },
       {
         parentType: 'User',
@@ -361,6 +378,7 @@ describe('autoCompleteHook', () => {
         type: 'Address',
         isArray: false,
         isNullable: true,
+        isScalar: false,
       },
     ])
   })
@@ -394,6 +412,7 @@ describe('autoCompleteHook', () => {
         name: 'me',
         type: 'User',
         isArray: false,
+        isScalar: false,
         isNullable: true,
       },
       {
@@ -401,6 +420,7 @@ describe('autoCompleteHook', () => {
         name: 'user',
         type: 'User',
         isArray: false,
+        isScalar: false,
         isNullable: true,
       },
     ])
