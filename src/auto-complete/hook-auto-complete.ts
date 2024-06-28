@@ -49,15 +49,38 @@ function isEmptyQuery(query: string) {
   return false
 }
 
-function topOperation(query: string) {
-  const formatted = query
-    .split(/\s+/)
-    .filter(i => i !== '')
-    .join('')
-  if (/^query/.test(formatted)) return gql.OperationTypeNode.QUERY
-  if (/^mutation/.test(formatted)) return gql.OperationTypeNode.MUTATION
-  if (/^subscription/.test(formatted)) return gql.OperationTypeNode.SUBSCRIPTION
-  return gql.OperationTypeNode.QUERY
+function isFieldName(field: gql.GraphQLField<any, any, any>, name: string) {
+  return field.name === name
+}
+
+function getFirstFieldByScalarType(objectType: gql.GraphQLObjectType, type: string) {
+  const fields = Object.values(objectType.getFields())
+  return fields.find(field => {
+    const nullableType = gql.getNullableType(field.type)
+    const isScalar = gql.isScalarType(nullableType)
+    if (isScalar) {
+      const namedType = gql.getNamedType(nullableType)
+      return namedType.name === type
+    }
+  })
+}
+
+function getFirstScalarFieldByName(objectType: gql.GraphQLObjectType, name: string) {
+  const fields = Object.values(objectType.getFields())
+  return fields.find(field => {
+    const nullableType = gql.getNullableType(field.type)
+    return gql.isScalarType(nullableType) && field.name === name
+  })
+}
+
+function identifyDefaultField(nullableType: gql.GraphQLNullableType) {
+  const objectType = gql.getNamedType(nullableType)
+  if (!gql.isObjectType(objectType)) return undefined
+  const fieldByType = getFirstFieldByScalarType(objectType, 'ID')
+  if (fieldByType) return fieldByType.name
+  const fieldByName = getFirstScalarFieldByName(objectType, 'id')
+  if (fieldByName) return fieldByName.name
+  return '__typename'
 }
 
 export function autoCompleteHook(
@@ -108,6 +131,7 @@ export function autoCompleteHook(
         .map(field => {
           const nullableType = gql.getNullableType(field.type)
           const isScalar = gql.isScalarType(nullableType)
+          const defaultField = identifyDefaultField(field.type)
           if (!schemaType) return
           return {
             parentType: schemaType.name,
@@ -116,7 +140,7 @@ export function autoCompleteHook(
             isNullable: gql.isNullableType(field.type),
             isArray: gql.isListType(nullableType),
             isScalar,
-            insertText: isScalar ? field.name : `${field.name} { }`,
+            insertText: isScalar ? field.name : `${field.name} { ${defaultField} }`,
           }
         }),
     )

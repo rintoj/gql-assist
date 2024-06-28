@@ -127,7 +127,7 @@ describe('autoCompleteHook', () => {
 
         const query = gql\`
           query {
-            me { }
+            me { id }
           }
         \`
       `,
@@ -141,7 +141,7 @@ describe('autoCompleteHook', () => {
         isArray: false,
         isNullable: true,
         isScalar: false,
-        insertText: 'user { }',
+        insertText: 'user { id }',
       },
       {
         parentType: 'Query',
@@ -150,7 +150,7 @@ describe('autoCompleteHook', () => {
         isArray: false,
         isNullable: true,
         isScalar: false,
-        insertText: 'tweet { }',
+        insertText: 'tweet { id }',
       },
     ])
   })
@@ -177,7 +177,7 @@ describe('autoCompleteHook', () => {
         isArray: false,
         isNullable: true,
         isScalar: false,
-        insertText: 'me { }',
+        insertText: 'me { id }',
       },
       {
         parentType: 'Query',
@@ -186,7 +186,7 @@ describe('autoCompleteHook', () => {
         isArray: false,
         isScalar: false,
         isNullable: true,
-        insertText: 'user { }',
+        insertText: 'user { id }',
       },
       {
         parentType: 'Query',
@@ -195,7 +195,7 @@ describe('autoCompleteHook', () => {
         isArray: false,
         isNullable: true,
         isScalar: false,
-        insertText: 'tweet { }',
+        insertText: 'tweet { id }',
       },
     ])
   })
@@ -222,7 +222,7 @@ describe('autoCompleteHook', () => {
         isScalar: false,
         isArray: false,
         isNullable: true,
-        insertText: 'createUser { }',
+        insertText: 'createUser { id }',
       },
       {
         parentType: 'Mutation',
@@ -231,7 +231,7 @@ describe('autoCompleteHook', () => {
         isScalar: false,
         isArray: false,
         isNullable: true,
-        insertText: 'updateUser { }',
+        insertText: 'updateUser { id }',
       },
     ])
   })
@@ -258,7 +258,7 @@ describe('autoCompleteHook', () => {
         isScalar: false,
         isArray: false,
         isNullable: true,
-        insertText: 'onUserChange { }',
+        insertText: 'onUserChange { id }',
       },
     ])
   })
@@ -326,7 +326,7 @@ describe('autoCompleteHook', () => {
         isArray: false,
         isScalar: false,
         isNullable: true,
-        insertText: 'me { }',
+        insertText: 'me { id }',
       },
       {
         parentType: 'Query',
@@ -335,7 +335,7 @@ describe('autoCompleteHook', () => {
         isArray: false,
         isNullable: true,
         isScalar: false,
-        insertText: 'tweet { }',
+        insertText: 'tweet { id }',
       },
     ])
   })
@@ -406,7 +406,7 @@ describe('autoCompleteHook', () => {
         isArray: false,
         isNullable: true,
         isScalar: false,
-        insertText: 'tweet { }',
+        insertText: 'tweet { id }',
       },
     ])
   })
@@ -444,7 +444,7 @@ describe('autoCompleteHook', () => {
         isNullable: true,
         isArray: true,
         isScalar: false,
-        insertText: 'mentions { }',
+        insertText: 'mentions { id }',
       },
     ])
   })
@@ -493,7 +493,7 @@ describe('autoCompleteHook', () => {
         isNullable: true,
         isArray: false,
         isScalar: false,
-        insertText: 'address { }',
+        insertText: 'address { id }',
       },
     ])
   })
