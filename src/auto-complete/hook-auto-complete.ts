@@ -8,6 +8,8 @@ import { isPositionWithInRange } from '../position'
 import { getGQLContent, getGraphQLQueryVariable, getTSNodeLocationRange } from '../ts'
 import { toNonNullArray } from 'tsds-tools'
 
+export const DEFAULT_SIPPET = '{\n  ${1}\n}'
+
 function isInRange(node: gql.ASTNode, position: Position, offset?: Position) {
   const nodeRange = getGQLNodeLocationRange(node, offset)
   return isPositionWithInRange(position, nodeRange)
@@ -19,7 +21,7 @@ export interface FieldInformation {
   type: string
   isArray: boolean
   isNullable: boolean
-  isScalar: boolean
+  isSelectable: boolean
   insertText: string
 }
 
@@ -33,8 +35,8 @@ const topLevelInfo: FieldInformation[] = [
   type: 'Operation',
   isArray: false,
   isNullable: false,
-  isScalar: false,
-  insertText: `${name} { }`,
+  isSelectable: true,
+  insertText: `${name} ${DEFAULT_SIPPET}`,
 }))
 
 function isEmptyQuery(query: string) {
@@ -130,7 +132,7 @@ export function autoCompleteHook(
         .filter(field => !existingFields.includes(field.name))
         .map(field => {
           const nullableType = gql.getNullableType(field.type)
-          const isScalar = gql.isScalarType(nullableType)
+          const isSelectable = !gql.isScalarType(nullableType) && !gql.isEnumType(nullableType)
           const defaultField = identifyDefaultField(field.type)
           if (!schemaType) return
           return {
@@ -139,8 +141,8 @@ export function autoCompleteHook(
             type: gql.getNamedType(field.type).name,
             isNullable: gql.isNullableType(field.type),
             isArray: gql.isListType(nullableType),
-            isScalar,
-            insertText: isScalar ? field.name : `${field.name} { \${1:${defaultField}} }`,
+            isSelectable,
+            insertText: isSelectable ? `${field.name} ${DEFAULT_SIPPET}` : field.name,
           }
         }),
     )

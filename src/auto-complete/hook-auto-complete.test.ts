@@ -2,13 +2,19 @@ import { GQLAssistConfig, config } from '../config'
 import { Position } from '../diff'
 import { parseSchema } from '../gql'
 import { parseTSFile } from '../ts/parse-ts'
-import { autoCompleteHook } from './hook-auto-complete'
+import { DEFAULT_SIPPET, autoCompleteHook } from './hook-auto-complete'
 
 const schema = parseSchema(`
   type User {
     id: ID!
     name: String
     address: Address
+    status: UserStatus
+  }
+
+  enum UserStatus {
+    ACTIVE,
+    DELETED
   }
 
   type Address {
@@ -94,27 +100,27 @@ describe('autoCompleteHook', () => {
         name: 'query',
         type: 'Operation',
         isArray: false,
-        isScalar: false,
+        isSelectable: true,
         isNullable: false,
-        insertText: 'query { }',
+        insertText: `query ${DEFAULT_SIPPET}`,
       },
       {
         parentType: 'GraphQL',
         name: 'mutation',
         type: 'Operation',
-        isScalar: false,
+        isSelectable: true,
         isArray: false,
         isNullable: false,
-        insertText: 'mutation { }',
+        insertText: `mutation ${DEFAULT_SIPPET}`,
       },
       {
         parentType: 'GraphQL',
         name: 'subscription',
         type: 'Operation',
         isArray: false,
-        isScalar: false,
+        isSelectable: true,
         isNullable: false,
-        insertText: 'subscription { }',
+        insertText: `subscription ${DEFAULT_SIPPET}`,
       },
     ])
   })
@@ -140,8 +146,8 @@ describe('autoCompleteHook', () => {
         type: 'User',
         isArray: false,
         isNullable: true,
-        isScalar: false,
-        insertText: 'user { ${1:id} }',
+        isSelectable: true,
+        insertText: `user ${DEFAULT_SIPPET}`,
       },
       {
         parentType: 'Query',
@@ -149,8 +155,8 @@ describe('autoCompleteHook', () => {
         type: 'Tweet',
         isArray: false,
         isNullable: true,
-        isScalar: false,
-        insertText: 'tweet { ${1:tweetId} }',
+        isSelectable: true,
+        insertText: `tweet ${DEFAULT_SIPPET}`,
       },
     ])
   })
@@ -176,17 +182,17 @@ describe('autoCompleteHook', () => {
         type: 'User',
         isArray: false,
         isNullable: true,
-        isScalar: false,
-        insertText: 'me { ${1:id} }',
+        isSelectable: true,
+        insertText: `me ${DEFAULT_SIPPET}`,
       },
       {
         parentType: 'Query',
         name: 'user',
         type: 'User',
         isArray: false,
-        isScalar: false,
+        isSelectable: true,
         isNullable: true,
-        insertText: 'user { ${1:id} }',
+        insertText: `user ${DEFAULT_SIPPET}`,
       },
       {
         parentType: 'Query',
@@ -194,8 +200,8 @@ describe('autoCompleteHook', () => {
         type: 'Tweet',
         isArray: false,
         isNullable: true,
-        isScalar: false,
-        insertText: 'tweet { ${1:tweetId} }',
+        isSelectable: true,
+        insertText: `tweet ${DEFAULT_SIPPET}`,
       },
     ])
   })
@@ -219,19 +225,19 @@ describe('autoCompleteHook', () => {
         parentType: 'Mutation',
         name: 'createUser',
         type: 'User',
-        isScalar: false,
+        isSelectable: true,
         isArray: false,
         isNullable: true,
-        insertText: 'createUser { ${1:id} }',
+        insertText: `createUser ${DEFAULT_SIPPET}`,
       },
       {
         parentType: 'Mutation',
         name: 'updateUser',
         type: 'User',
-        isScalar: false,
+        isSelectable: true,
         isArray: false,
         isNullable: true,
-        insertText: 'updateUser { ${1:id} }',
+        insertText: `updateUser ${DEFAULT_SIPPET}`,
       },
     ])
   })
@@ -255,10 +261,10 @@ describe('autoCompleteHook', () => {
         parentType: 'Subscription',
         name: 'onUserChange',
         type: 'User',
-        isScalar: false,
+        isSelectable: true,
         isArray: false,
         isNullable: true,
-        insertText: 'onUserChange { ${1:id} }',
+        insertText: `onUserChange ${DEFAULT_SIPPET}`,
       },
     ])
   })
@@ -290,10 +296,19 @@ describe('autoCompleteHook', () => {
         parentType: 'User',
         name: 'id',
         type: 'ID',
-        isScalar: true,
+        isSelectable: false,
         isArray: false,
         isNullable: false,
         insertText: 'id',
+      },
+      {
+        parentType: 'User',
+        name: 'status',
+        type: 'UserStatus',
+        isSelectable: false,
+        isArray: false,
+        isNullable: true,
+        insertText: 'status',
       },
     ])
   })
@@ -324,9 +339,9 @@ describe('autoCompleteHook', () => {
         name: 'me',
         type: 'User',
         isArray: false,
-        isScalar: false,
+        isSelectable: true,
         isNullable: true,
-        insertText: 'me { ${1:id} }',
+        insertText: `me ${DEFAULT_SIPPET}`,
       },
       {
         parentType: 'Query',
@@ -334,8 +349,8 @@ describe('autoCompleteHook', () => {
         type: 'Tweet',
         isArray: false,
         isNullable: true,
-        isScalar: false,
-        insertText: 'tweet { ${1:tweetId} }',
+        isSelectable: true,
+        insertText: `tweet ${DEFAULT_SIPPET}`,
       },
     ])
   })
@@ -369,8 +384,17 @@ describe('autoCompleteHook', () => {
         type: 'String',
         isArray: false,
         isNullable: true,
-        isScalar: true,
+        isSelectable: false,
         insertText: 'name',
+      },
+      {
+        parentType: 'User',
+        name: 'status',
+        type: 'UserStatus',
+        isSelectable: false,
+        isArray: false,
+        isNullable: true,
+        insertText: 'status',
       },
     ])
   })
@@ -405,8 +429,8 @@ describe('autoCompleteHook', () => {
         type: 'Tweet',
         isArray: false,
         isNullable: true,
-        isScalar: false,
-        insertText: 'tweet { ${1:tweetId} }',
+        isSelectable: true,
+        insertText: `tweet ${DEFAULT_SIPPET}`,
       },
     ])
   })
@@ -434,7 +458,7 @@ describe('autoCompleteHook', () => {
         type: 'ID',
         isNullable: false,
         isArray: false,
-        isScalar: true,
+        isSelectable: false,
         insertText: 'tweetId',
       },
       {
@@ -443,8 +467,8 @@ describe('autoCompleteHook', () => {
         type: 'User',
         isNullable: true,
         isArray: true,
-        isScalar: false,
-        insertText: 'mentions { ${1:id} }',
+        isSelectable: true,
+        insertText: `mentions ${DEFAULT_SIPPET}`,
       },
     ])
   })
@@ -474,7 +498,7 @@ describe('autoCompleteHook', () => {
         type: 'ID',
         isNullable: false,
         isArray: false,
-        isScalar: true,
+        isSelectable: false,
         insertText: 'id',
       },
       {
@@ -483,7 +507,7 @@ describe('autoCompleteHook', () => {
         type: 'String',
         isNullable: true,
         isArray: false,
-        isScalar: true,
+        isSelectable: false,
         insertText: 'name',
       },
       {
@@ -492,8 +516,17 @@ describe('autoCompleteHook', () => {
         type: 'Address',
         isNullable: true,
         isArray: false,
-        isScalar: false,
-        insertText: 'address { ${1:id} }',
+        isSelectable: true,
+        insertText: `address ${DEFAULT_SIPPET}`,
+      },
+      {
+        parentType: 'User',
+        name: 'status',
+        type: 'UserStatus',
+        isSelectable: false,
+        isArray: false,
+        isNullable: true,
+        insertText: 'status',
       },
     ])
   })
