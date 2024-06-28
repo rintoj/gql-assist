@@ -20,6 +20,7 @@ export interface FieldInformation {
   isArray: boolean
   isNullable: boolean
   isScalar: boolean
+  insertText: string
 }
 
 const topLevelInfo: FieldInformation[] = [
@@ -33,6 +34,7 @@ const topLevelInfo: FieldInformation[] = [
   isArray: false,
   isNullable: false,
   isScalar: false,
+  insertText: `${name} { }`,
 }))
 
 function isEmptyQuery(query: string) {
@@ -107,13 +109,16 @@ export function autoCompleteHook(
     return Object.values(fields)
       .filter(field => !existingFields.includes(field.name))
       .map(field => {
+        const nullableType = gql.getNullableType(field.type)
+        const isScalar = gql.isScalarType(nullableType)
         return {
           parentType: schemaType.name,
           name: field.name,
           type: gql.getNamedType(field.type).name,
           isNullable: gql.isNullableType(field.type),
-          isArray: gql.isListType(gql.getNullableType(field.type)),
-          isScalar: gql.isScalarType(gql.getNullableType(field.type)),
+          isArray: gql.isListType(nullableType),
+          isScalar,
+          insertText: isScalar ? field.name : `${field.name} { }`,
         }
       })
   } catch (e) {

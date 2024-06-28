@@ -90,6 +90,7 @@ describe('autoCompleteHook', () => {
         isArray: false,
         isScalar: false,
         isNullable: false,
+        insertText: 'query { }',
       },
       {
         parentType: 'GraphQL',
@@ -98,6 +99,7 @@ describe('autoCompleteHook', () => {
         isScalar: false,
         isArray: false,
         isNullable: false,
+        insertText: 'mutation { }',
       },
       {
         parentType: 'GraphQL',
@@ -106,6 +108,7 @@ describe('autoCompleteHook', () => {
         isArray: false,
         isScalar: false,
         isNullable: false,
+        insertText: 'subscription { }',
       },
     ])
   })
@@ -132,6 +135,7 @@ describe('autoCompleteHook', () => {
         isArray: false,
         isNullable: true,
         isScalar: false,
+        insertText: 'user { }',
       },
     ])
   })
@@ -158,6 +162,7 @@ describe('autoCompleteHook', () => {
         isArray: false,
         isNullable: true,
         isScalar: false,
+        insertText: 'me { }',
       },
       {
         parentType: 'Query',
@@ -166,6 +171,7 @@ describe('autoCompleteHook', () => {
         isArray: false,
         isScalar: false,
         isNullable: true,
+        insertText: 'user { }',
       },
     ])
   })
@@ -192,6 +198,7 @@ describe('autoCompleteHook', () => {
         isScalar: false,
         isArray: false,
         isNullable: true,
+        insertText: 'createUser { }',
       },
       {
         parentType: 'Mutation',
@@ -200,6 +207,7 @@ describe('autoCompleteHook', () => {
         isScalar: false,
         isArray: false,
         isNullable: true,
+        insertText: 'updateUser { }',
       },
     ])
   })
@@ -226,6 +234,7 @@ describe('autoCompleteHook', () => {
         isScalar: false,
         isArray: false,
         isNullable: true,
+        insertText: 'onUserChange { }',
       },
     ])
   })
@@ -260,6 +269,7 @@ describe('autoCompleteHook', () => {
         isScalar: true,
         isArray: false,
         isNullable: false,
+        insertText: 'id',
       },
     ])
   })
@@ -292,6 +302,7 @@ describe('autoCompleteHook', () => {
         isArray: false,
         isScalar: false,
         isNullable: true,
+        insertText: 'me { }',
       },
     ])
   })
@@ -326,6 +337,7 @@ describe('autoCompleteHook', () => {
         isArray: false,
         isNullable: true,
         isScalar: true,
+        insertText: 'name',
       },
     ])
   })
