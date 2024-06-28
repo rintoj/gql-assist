@@ -23,21 +23,24 @@ export interface FieldInformation {
   isNullable: boolean
   isSelectable: boolean
   insertText: string
+  documentation: string
 }
 
-const topLevelInfo: FieldInformation[] = [
-  gql.OperationTypeNode.QUERY,
-  gql.OperationTypeNode.MUTATION,
-  gql.OperationTypeNode.SUBSCRIPTION,
-].map(name => ({
-  parentType: 'GraphQL',
-  name,
-  type: 'Operation',
-  isArray: false,
-  isNullable: false,
-  isSelectable: true,
-  insertText: `${name} ${DEFAULT_SIPPET}`,
-}))
+const topLevelInfo = (schema: gql.GraphQLSchema): FieldInformation[] =>
+  [
+    gql.OperationTypeNode.QUERY,
+    gql.OperationTypeNode.MUTATION,
+    gql.OperationTypeNode.SUBSCRIPTION,
+  ].map(name => ({
+    parentType: 'GraphQL',
+    name,
+    type: 'Operation',
+    isArray: false,
+    isNullable: false,
+    isSelectable: true,
+    insertText: `${name} ${DEFAULT_SIPPET}`,
+    documentation: getSource(schema.getRootType(name)?.astNode),
+  }))
 
 function isEmptyQuery(query: string) {
   const formatted = query
@@ -67,24 +70,6 @@ function getFirstFieldByScalarType(objectType: gql.GraphQLObjectType, type: stri
   })
 }
 
-function getFirstScalarFieldByName(objectType: gql.GraphQLObjectType, name: string) {
-  const fields = Object.values(objectType.getFields())
-  return fields.find(field => {
-    const nullableType = gql.getNullableType(field.type)
-    return gql.isScalarType(nullableType) && field.name === name
-  })
-}
-
-function identifyDefaultField(nullableType: gql.GraphQLNullableType) {
-  const objectType = gql.getNamedType(nullableType)
-  if (!gql.isObjectType(objectType)) return undefined
-  const fieldByType = getFirstFieldByScalarType(objectType, 'ID')
-  if (fieldByType) return fieldByType.name
-  const fieldByName = getFirstScalarFieldByName(objectType, 'id')
-  if (fieldByName) return fieldByName.name
-  return '__typename'
-}
-
 export function autoCompleteHook(
   sourceFile: ts.SourceFile,
   position: Position,
@@ -98,8 +83,8 @@ export function autoCompleteHook(
   if (!isPositionWithInRange(position, range)) return []
 
   const query = getGQLContent(variable)
-  if (!query || query?.trim() === '') return topLevelInfo
-  if (isEmptyQuery(query)) return topLevelInfo
+  if (!query || query?.trim() === '') return topLevelInfo(schema)
+  if (isEmptyQuery(query)) return topLevelInfo(schema)
 
   const offset = new Position(range.start.line, 0)
 
@@ -133,16 +118,17 @@ export function autoCompleteHook(
         .map(field => {
           const nullableType = gql.getNullableType(field.type)
           const isSelectable = !gql.isScalarType(nullableType) && !gql.isEnumType(nullableType)
-          const defaultField = identifyDefaultField(field.type)
+          const namedType = gql.getNamedType(field.type)
           if (!schemaType) return
           return {
             parentType: schemaType.name,
             name: field.name,
-            type: gql.getNamedType(field.type).name,
+            type: namedType.name,
             isNullable: gql.isNullableType(field.type),
             isArray: gql.isListType(nullableType),
             isSelectable,
             insertText: isSelectable ? `${field.name} ${DEFAULT_SIPPET}` : field.name,
+            documentation: namedType.description ?? getSource(namedType.astNode),
           }
         }),
     )
@@ -150,4 +136,11 @@ export function autoCompleteHook(
     console.error(e)
     return []
   }
+}
+
+function getSource(node: gql.ASTNode | null | undefined) {
+  if (!node?.loc) return ''
+  return ['```graphql', node.loc.source.body.substring(node.loc.start, node.loc.end), '```'].join(
+    '\n',
+  )
 }

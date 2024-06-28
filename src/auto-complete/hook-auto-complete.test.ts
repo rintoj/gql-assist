@@ -103,6 +103,7 @@ describe('autoCompleteHook', () => {
         isSelectable: true,
         isNullable: false,
         insertText: `query ${DEFAULT_SIPPET}`,
+        documentation: expect.any(String),
       },
       {
         parentType: 'GraphQL',
@@ -112,6 +113,7 @@ describe('autoCompleteHook', () => {
         isArray: false,
         isNullable: false,
         insertText: `mutation ${DEFAULT_SIPPET}`,
+        documentation: expect.any(String),
       },
       {
         parentType: 'GraphQL',
@@ -121,6 +123,7 @@ describe('autoCompleteHook', () => {
         isSelectable: true,
         isNullable: false,
         insertText: `subscription ${DEFAULT_SIPPET}`,
+        documentation: expect.any(String),
       },
     ])
   })
@@ -148,6 +151,7 @@ describe('autoCompleteHook', () => {
         isNullable: true,
         isSelectable: true,
         insertText: `user ${DEFAULT_SIPPET}`,
+        documentation: expect.any(String),
       },
       {
         parentType: 'Query',
@@ -157,6 +161,7 @@ describe('autoCompleteHook', () => {
         isNullable: true,
         isSelectable: true,
         insertText: `tweet ${DEFAULT_SIPPET}`,
+        documentation: expect.any(String),
       },
     ])
   })
@@ -184,6 +189,7 @@ describe('autoCompleteHook', () => {
         isNullable: true,
         isSelectable: true,
         insertText: `me ${DEFAULT_SIPPET}`,
+        documentation: expect.any(String),
       },
       {
         parentType: 'Query',
@@ -193,6 +199,7 @@ describe('autoCompleteHook', () => {
         isSelectable: true,
         isNullable: true,
         insertText: `user ${DEFAULT_SIPPET}`,
+        documentation: expect.any(String),
       },
       {
         parentType: 'Query',
@@ -202,6 +209,7 @@ describe('autoCompleteHook', () => {
         isNullable: true,
         isSelectable: true,
         insertText: `tweet ${DEFAULT_SIPPET}`,
+        documentation: expect.any(String),
       },
     ])
   })
@@ -229,6 +237,7 @@ describe('autoCompleteHook', () => {
         isArray: false,
         isNullable: true,
         insertText: `createUser ${DEFAULT_SIPPET}`,
+        documentation: expect.any(String),
       },
       {
         parentType: 'Mutation',
@@ -238,6 +247,7 @@ describe('autoCompleteHook', () => {
         isArray: false,
         isNullable: true,
         insertText: `updateUser ${DEFAULT_SIPPET}`,
+        documentation: expect.any(String),
       },
     ])
   })
@@ -265,6 +275,7 @@ describe('autoCompleteHook', () => {
         isArray: false,
         isNullable: true,
         insertText: `onUserChange ${DEFAULT_SIPPET}`,
+        documentation: expect.any(String),
       },
     ])
   })
@@ -300,6 +311,7 @@ describe('autoCompleteHook', () => {
         isArray: false,
         isNullable: false,
         insertText: 'id',
+        documentation: expect.any(String),
       },
       {
         parentType: 'User',
@@ -309,6 +321,7 @@ describe('autoCompleteHook', () => {
         isArray: false,
         isNullable: true,
         insertText: 'status',
+        documentation: expect.any(String),
       },
     ])
   })
@@ -342,6 +355,7 @@ describe('autoCompleteHook', () => {
         isSelectable: true,
         isNullable: true,
         insertText: `me ${DEFAULT_SIPPET}`,
+        documentation: expect.any(String),
       },
       {
         parentType: 'Query',
@@ -351,6 +365,7 @@ describe('autoCompleteHook', () => {
         isNullable: true,
         isSelectable: true,
         insertText: `tweet ${DEFAULT_SIPPET}`,
+        documentation: expect.any(String),
       },
     ])
   })
@@ -386,6 +401,7 @@ describe('autoCompleteHook', () => {
         isNullable: true,
         isSelectable: false,
         insertText: 'name',
+        documentation: expect.any(String),
       },
       {
         parentType: 'User',
@@ -395,6 +411,7 @@ describe('autoCompleteHook', () => {
         isArray: false,
         isNullable: true,
         insertText: 'status',
+        documentation: expect.any(String),
       },
     ])
   })
@@ -431,6 +448,7 @@ describe('autoCompleteHook', () => {
         isNullable: true,
         isSelectable: true,
         insertText: `tweet ${DEFAULT_SIPPET}`,
+        documentation: expect.any(String),
       },
     ])
   })
@@ -460,6 +478,7 @@ describe('autoCompleteHook', () => {
         isArray: false,
         isSelectable: false,
         insertText: 'tweetId',
+        documentation: expect.any(String),
       },
       {
         parentType: 'Tweet',
@@ -469,6 +488,7 @@ describe('autoCompleteHook', () => {
         isArray: true,
         isSelectable: true,
         insertText: `mentions ${DEFAULT_SIPPET}`,
+        documentation: expect.any(String),
       },
     ])
   })
@@ -500,6 +520,7 @@ describe('autoCompleteHook', () => {
         isArray: false,
         isSelectable: false,
         insertText: 'id',
+        documentation: expect.any(String),
       },
       {
         parentType: 'User',
@@ -509,6 +530,7 @@ describe('autoCompleteHook', () => {
         isArray: false,
         isSelectable: false,
         insertText: 'name',
+        documentation: expect.any(String),
       },
       {
         parentType: 'User',
@@ -518,6 +540,7 @@ describe('autoCompleteHook', () => {
         isArray: false,
         isSelectable: true,
         insertText: `address ${DEFAULT_SIPPET}`,
+        documentation: expect.any(String),
       },
       {
         parentType: 'User',
@@ -527,6 +550,7 @@ describe('autoCompleteHook', () => {
         isArray: false,
         isNullable: true,
         insertText: 'status',
+        documentation: expect.any(String),
       },
     ])
   })
