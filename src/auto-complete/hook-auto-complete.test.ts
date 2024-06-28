@@ -44,7 +44,17 @@ function trimSpaces(content: string) {
   const firstNonEmptyLine = lines[nonEmptyAt]
   const spaces = firstNonEmptyLine.split('').findIndex(i => i !== ' ')
   if (spaces < 1) return content.slice(nonEmptyAt)
-  const output = lines.slice(nonEmptyAt).map(line => line.replace(new RegExp(new Array(spaces).fill(null).map(() => ' ').join('')), ''))
+  const output = lines.slice(nonEmptyAt).map(line =>
+    line.replace(
+      new RegExp(
+        new Array(spaces)
+          .fill(null)
+          .map(() => ' ')
+          .join(''),
+      ),
+      '',
+    ),
+  )
   // console.log(output.map((l, i) => `${i}: ${l}`).join('\n'))
   return output.join('\n')
 }
@@ -67,7 +77,7 @@ describe('autoCompleteHook', () => {
         import gql from 'graphql-tag'
 
         const query = gql\`
-          
+
         \`
       `,
       new Position(3, 2),
@@ -78,22 +88,22 @@ describe('autoCompleteHook', () => {
         name: 'query',
         type: 'Operation',
         isArray: false,
-        isNullable: false
+        isNullable: false,
       },
       {
         parentType: 'GraphQL',
         name: 'mutation',
         type: 'Operation',
         isArray: false,
-        isNullable: false
+        isNullable: false,
       },
       {
         parentType: 'GraphQL',
         name: 'subscription',
         type: 'Operation',
         isArray: false,
-        isNullable: false
-      }
+        isNullable: false,
+      },
     ])
   })
 
@@ -104,8 +114,8 @@ describe('autoCompleteHook', () => {
         import gql from 'graphql-tag'
 
         const query = gql\`
-          {
-    
+          query {
+            me { }
           }
         \`
       `,
@@ -117,16 +127,15 @@ describe('autoCompleteHook', () => {
         name: 'me',
         type: 'User',
         isArray: false,
-        isNullable: true
+        isNullable: true,
       },
       {
         parentType: 'Query',
         name: 'user',
         type: 'User',
         isArray: false,
-        isNullable: true
-      }
-
+        isNullable: true,
+      },
     ])
   })
 
@@ -138,7 +147,7 @@ describe('autoCompleteHook', () => {
 
         const query = gql\`
           query {
-            
+
           }
         \`
       `,
@@ -150,15 +159,15 @@ describe('autoCompleteHook', () => {
         name: 'me',
         type: 'User',
         isArray: false,
-        isNullable: true
+        isNullable: true,
       },
       {
         parentType: 'Query',
         name: 'user',
         type: 'User',
         isArray: false,
-        isNullable: true
-      }
+        isNullable: true,
+      },
     ])
   })
 
@@ -170,7 +179,7 @@ describe('autoCompleteHook', () => {
 
         const query = gql\`
           mutation {
-            
+
           }
         \`
       `,
@@ -182,19 +191,19 @@ describe('autoCompleteHook', () => {
         name: 'createUser',
         type: 'User',
         isArray: false,
-        isNullable: true
+        isNullable: true,
       },
       {
         parentType: 'Mutation',
         name: 'updateUser',
         type: 'User',
         isArray: false,
-        isNullable: true
-      }
+        isNullable: true,
+      },
     ])
   })
 
-  test('should generate top level subscrition', async () => {
+  test('should generate top level subscription', async () => {
     const output = await autoComplete(
       'user.hook.ts',
       `
@@ -202,7 +211,7 @@ describe('autoCompleteHook', () => {
 
         const query = gql\`
           subscription {
-            
+
           }
         \`
       `,
@@ -214,8 +223,8 @@ describe('autoCompleteHook', () => {
         name: 'onUserChange',
         type: 'User',
         isArray: false,
-        isNullable: true
-      }
+        isNullable: true,
+      },
     ])
   })
 
@@ -248,22 +257,22 @@ describe('autoCompleteHook', () => {
         name: 'id',
         type: 'ID',
         isArray: false,
-        isNullable: false
+        isNullable: false,
       },
       {
         parentType: 'User',
         name: 'name',
         type: 'String',
         isArray: false,
-        isNullable: true
+        isNullable: true,
       },
       {
         parentType: 'User',
         name: 'address',
         type: 'Address',
         isArray: false,
-        isNullable: true
-      }
+        isNullable: true,
+      },
     ])
   })
 
@@ -296,15 +305,15 @@ describe('autoCompleteHook', () => {
         name: 'me',
         type: 'User',
         isArray: false,
-        isNullable: true
+        isNullable: true,
       },
       {
         parentType: 'Query',
         name: 'user',
         type: 'User',
         isArray: false,
-        isNullable: true
-      }
+        isNullable: true,
+      },
     ])
   })
 
@@ -337,22 +346,22 @@ describe('autoCompleteHook', () => {
         name: 'id',
         type: 'ID',
         isArray: false,
-        isNullable: false
+        isNullable: false,
       },
       {
         parentType: 'User',
         name: 'name',
         type: 'String',
         isArray: false,
-        isNullable: true
+        isNullable: true,
       },
       {
         parentType: 'User',
         name: 'address',
         type: 'Address',
         isArray: false,
-        isNullable: true
-      }
+        isNullable: true,
+      },
     ])
   })
 
@@ -385,15 +394,15 @@ describe('autoCompleteHook', () => {
         name: 'me',
         type: 'User',
         isArray: false,
-        isNullable: true
+        isNullable: true,
       },
       {
         parentType: 'Query',
         name: 'user',
         type: 'User',
         isArray: false,
-        isNullable: true
-      }
+        isNullable: true,
+      },
     ])
   })
 })
