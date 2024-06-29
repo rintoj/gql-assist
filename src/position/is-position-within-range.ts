@@ -10,7 +10,6 @@ export function isPositionWithInRange(position: Position, range: Range, includeE
       return position.character >= range.start.character
     } else {
       return position.character > range.start.character
-
     }
   }
   if (position.line == range.end.line) {
