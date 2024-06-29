@@ -5,6 +5,9 @@ import { Position, Range } from '../diff'
 import { GraphQLContext, createGraphQLContext, getGQLNodeLocationRange } from '../gql'
 import { getGQLContent, getGraphQLQueryVariable, getTSNodeLocationRange } from '../ts'
 import { Diagnostic, DiagnosticSeverity } from './diagnostic-type'
+import { NoDuplicateFieldName } from './rules/NoDuplicateFieldName'
+
+const additionalRules = [NoDuplicateFieldName]
 
 function toError(error: gql.GraphQLError, context: Pick<GraphQLContext, 'offset' | 'sourceFile'>) {
   const lineOffset = context?.offset?.line ?? 0
@@ -46,7 +49,9 @@ export function diagnoseGraphQLQuery(
 ): Diagnostic[] {
   try {
     const document = gql.parse(query)
-    const result = gql.validate(schema, document)
+    const result = gql
+      .validate(schema, document)
+      .concat(additionalRules.flatMap(rule => rule(document, schema)))
     return result.flatMap(error => toError(error, context))
   } catch (e) {
     return [toError(e, context)].flat()
