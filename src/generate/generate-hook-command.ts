@@ -1,11 +1,14 @@
-import { grey, yellow } from 'chalk'
+import { grey, green, red, yellow } from 'chalk'
 import { CliExpectedError, command, input } from 'clifer'
+import pluralize from 'pluralize'
 import { toNonNullArray } from 'tsds-tools'
 import ts from 'typescript'
 import { config } from '../config'
-import { generateHook } from '../generator'
-import { loadSchema, resolveSchemaFile } from '../generator/hook/graphql-util'
+import { Diagnostic } from '../diagnostic'
+import { generateHookWithErrors } from '../generator'
+import { loadSchema, resolveSchemaFile } from '../gql/schema-resolver'
 import { processTypeScriptFiles } from './process-typescript-files'
+import { toString } from '../util'
 
 interface Props {
   file?: string
@@ -21,6 +24,31 @@ function defaultGlobPattern() {
   return `**/*{${defaultPattern.join(',')}}`
 }
 
+const spacer = new Array(6).fill('').join(' ')
+
+function showError(error: Diagnostic, sourceFile: ts.SourceFile) {
+  console.log(spacer + green(error.code))
+  const sourceCode = sourceFile.getFullText().split('\n')
+  const show = sourceCode.slice(Math.max(0, error.range.start.line - 2), error.range.end.line + 3)
+  console.log(
+    show
+      .map((l, i) => {
+        const lineNumber = i + error.range.start.line - 1
+        return toString(
+          spacer,
+          grey(lineNumber),
+          grey(': '),
+          lineNumber > error.range.start.line && lineNumber <= error.range.end.line + 1
+            ? yellow(l)
+            : grey(l),
+          lineNumber - 1 === error.range.start.line ? toString(spacer, red(error.message)) : '',
+        )
+      })
+      .join('\n'),
+  )
+  console.log('')
+}
+
 async function run(props: Props) {
   const schemaFile = resolveSchemaFile(props.schema, [process.cwd()], config)
   if (!schemaFile) {
@@ -33,7 +61,16 @@ async function run(props: Props) {
   await processTypeScriptFiles(
     { ...props, defaultPattern: defaultGlobPattern() },
     async (sourceFile: ts.SourceFile) => {
-      return await generateHook(sourceFile, schema, config)
+      const { sourceFile: updatedSourcefile, errors } = await generateHookWithErrors(
+        sourceFile,
+        schema,
+        config,
+      )
+      if (!!errors.length) {
+        errors.map(error => showError(error, sourceFile))
+        throw new Error(`Found ${errors.length} ${pluralize('error', errors.length ?? 0)}!`)
+      }
+      return updatedSourcefile
     },
   )
 }

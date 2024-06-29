@@ -1,14 +1,14 @@
 import * as gql from 'graphql'
+import { toNonNullArray } from 'tsds-tools'
 import ts from 'typescript'
 import { GQLAssistConfig } from '../config'
 import { Diagnostic } from '../diagnostic'
 import { Position } from '../diff'
-import { toNonNullArray } from 'tsds-tools'
 
-export type Parent = gql.ObjectTypeDefinitionNode
+export type Parent = gql.ObjectTypeDefinitionNode | gql.UnionTypeDefinitionNode
 
 export interface GraphQLContext {
-  schema: gql.DocumentNode
+  schema: gql.GraphQLSchema
   config: GQLAssistConfig
   sourceFile: ts.SourceFile
   parent?: Parent

@@ -9,10 +9,10 @@ export enum DiagnosticSeverity {
 
 export class Diagnostic {
   constructor(
-    public readonly fileName: string,
-    public readonly range: Range,
-    public readonly message: string,
-    public readonly severity?: DiagnosticSeverity,
-    public readonly code?: string,
+    public fileName: string,
+    public range: Range,
+    public message: string,
+    public severity?: DiagnosticSeverity,
+    public code?: string,
   ) {}
 }
