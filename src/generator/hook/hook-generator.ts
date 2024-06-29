@@ -3,11 +3,13 @@ import { GraphQLSchema } from 'graphql'
 import ts from 'typescript'
 import { GQLAssistConfig } from '../../config'
 import { Diagnostic, diagnoseGraphQLQuery } from '../../diagnostic'
+import { Position } from '../../diff'
 import {
   createDefaultImport,
   createGraphQLQuery,
   getGQLContent,
   getGraphQLQueryVariable,
+  getTSNodeLocationRange,
 } from '../../ts'
 import { addImports } from '../../ts/add-imports'
 import { organizeImports } from '../../ts/organize-imports'
@@ -26,11 +28,11 @@ export function isHook(sourceFile: ts.SourceFile, config: GQLAssistConfig) {
 function identifyLibrary(sourceFile: ts.SourceFile, config: GQLAssistConfig) {
   const imports = sourceFile.statements.find((s): s is ts.ImportDeclaration =>
     ts.isImportDeclaration(s) &&
-      s.importClause?.namedBindings &&
-      ts.isNamedImports(s.importClause?.namedBindings)
+    s.importClause?.namedBindings &&
+    ts.isNamedImports(s.importClause?.namedBindings)
       ? !!s.importClause?.namedBindings?.elements.find(e =>
-        hooks.includes(e.name.escapedText ?? ''),
-      )
+          hooks.includes(e.name.escapedText ?? ''),
+        )
       : false,
   )
   return imports?.moduleSpecifier && ts.isStringLiteral(imports?.moduleSpecifier)
@@ -44,6 +46,8 @@ async function generateGQLHook(sourceFile: ts.SourceFile, schema: GraphQLSchema,
   if (!variable) return { sourceFile, errors: [] }
   const query = getGQLContent(variable)
   if (!query || query?.trim() === '') return { sourceFile, errors: [] }
+  const variableRange = getTSNodeLocationRange(variable, sourceFile)
+  const offset = new Position(variableRange.start.line, 0)
 
   // parse graphql
   const initialDocument = gql.parse(query.replace(/\{[\s\n]*\}/g, '{ __typename }'))
@@ -62,7 +66,18 @@ async function generateGQLHook(sourceFile: ts.SourceFile, schema: GraphQLSchema,
     ] as any,
   } as ts.SourceFile
 
-  const errors = diagnoseGraphQLQuery(gql.print(document), schema, { ...context, sourceFile })
+  const errors = diagnoseGraphQLQuery(gql.print(document), schema, { ...context, sourceFile }).map(
+    error => {
+      error.range.start.line += offset.line + 1
+      error.range.end.line += offset.line + 1
+      error.code = [
+        sourceFile.fileName,
+        error.range.start.line + 1,
+        error.range.start.character,
+      ].join(':')
+      return error
+    },
+  )
   const statement = addImports(processedFile, context.imports)
   return { sourceFile: organizeImports(statement), errors }
 }
