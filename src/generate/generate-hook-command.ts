@@ -1,4 +1,4 @@
-import { grey, green, red, yellow } from 'chalk'
+import { green, grey, red, yellow } from 'chalk'
 import { CliExpectedError, command, input } from 'clifer'
 import pluralize from 'pluralize'
 import { toNonNullArray } from 'tsds-tools'
@@ -6,9 +6,9 @@ import ts from 'typescript'
 import { config } from '../config'
 import { Diagnostic } from '../diagnostic'
 import { generateHookWithErrors } from '../generator'
-import { loadSchema, resolveSchemaFile } from '../gql/schema-resolver'
-import { processTypeScriptFiles } from './process-typescript-files'
+import { SchemaManager } from '../gql'
 import { toString } from '../util'
+import { processTypeScriptFiles } from './process-typescript-files'
 
 interface Props {
   file?: string
@@ -16,6 +16,8 @@ interface Props {
   schema: string
   ignore?: string
 }
+
+const schemaManager = new SchemaManager()
 
 function defaultGlobPattern() {
   const defaultPattern = toNonNullArray([...config.reactHook.fileExtensions].flat())
@@ -50,14 +52,18 @@ function showError(error: Diagnostic, sourceFile: ts.SourceFile) {
 }
 
 async function run(props: Props) {
-  const schemaFile = resolveSchemaFile(props.schema, [process.cwd()], config)
+  const schemaFile = props.schema ?? schemaManager.findSchemaFiles([process.cwd()], config)?.[0]
   if (!schemaFile) {
     throw new CliExpectedError(
       'No schema file was found in this project. Provide "--schema" as an option to continue',
     )
   }
+  await schemaManager.loadSchemaFromFile(schemaFile)
+  const schema = schemaManager.getSchema()
+  if (!schema) {
+    throw new CliExpectedError('Invalid schema file. Provide "--schema" as an option to continue')
+  }
   console.log(grey('Using schema file: ') + yellow(schemaFile) + '\n')
-  const schema = loadSchema(schemaFile)
   await processTypeScriptFiles(
     { ...props, defaultPattern: defaultGlobPattern() },
     async (sourceFile: ts.SourceFile) => {
