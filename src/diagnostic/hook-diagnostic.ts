@@ -9,7 +9,10 @@ import { NoDuplicateFieldName } from './rules/NoDuplicateFieldName'
 
 const additionalRules = [NoDuplicateFieldName]
 
-function toError(error: gql.GraphQLError, context: Pick<GraphQLContext, 'offset' | 'sourceFile'>) {
+function toDiagnostic(
+  error: gql.GraphQLError,
+  context: Pick<GraphQLContext, 'offset' | 'sourceFile'>,
+): Diagnostic[] {
   const lineOffset = context?.offset?.line ?? 0
   if (!error.nodes?.length) {
     const { line, column } = error.locations?.[0] ?? { line: 1, column: 1 }
@@ -18,15 +21,17 @@ function toError(error: gql.GraphQLError, context: Pick<GraphQLContext, 'offset'
       new Position(position.line + lineOffset - 1, position.character - 1),
       new Position(position.line + lineOffset - 1, position.character),
     )
-    return {
-      fileName: context.sourceFile.fileName,
-      range,
-      severity: DiagnosticSeverity.Error,
-      message: error.message,
-      code: [context.sourceFile.fileName, range.start.line + 1, range.start.character + 1].join(
-        ':',
-      ),
-    }
+    return [
+      {
+        fileName: context.sourceFile.fileName,
+        range,
+        severity: DiagnosticSeverity.Error,
+        message: error.message,
+        code: [context.sourceFile.fileName, range.start.line + 1, range.start.character + 1].join(
+          ':',
+        ),
+      },
+    ]
   }
   return error.nodes.map(node => {
     const range = getGQLNodeLocationRange(node, context.offset)
@@ -52,10 +57,31 @@ export function diagnoseGraphQLQuery(
     const result = gql
       .validate(schema, document)
       .concat(additionalRules.flatMap(rule => rule(document, schema)))
-    return result.flatMap(error => toError(error, context))
+    return result.flatMap(error => toDiagnostic(error, context))
   } catch (e) {
-    return [toError(e, context)].flat()
+    return toDiagnostic(e, context).flat()
   }
+}
+
+export function diagnoseSchema(
+  sourceFile: ts.SourceFile,
+  schema: gql.GraphQLSchema | undefined,
+): Diagnostic[] {
+  if (schema) return []
+  const variable = getGraphQLQueryVariable(sourceFile)
+  if (!variable) return []
+  const graphQLQueryString = getGQLContent(variable)
+  if (!graphQLQueryString || graphQLQueryString?.trim() === '') return []
+  const range = getTSNodeLocationRange(variable, sourceFile)
+  return [
+    {
+      fileName: sourceFile.fileName,
+      range,
+      severity: DiagnosticSeverity.Error,
+      message: `No schema. Run command "gql-assist.choose.schema" to configure schema`,
+      code: [sourceFile.fileName, range.start.line + 1, range.start.character + 1].join(':'),
+    },
+  ]
 }
 
 export function diagnoseReactHook(
