@@ -33,7 +33,8 @@ export interface GQLAssistConfig {
   reactHook: {
     enable: boolean
     library: string
-    schema: string[]
+    schema?: string
+    schemaFileNames: string[]
     fileExtensions: string[]
   }
 }
@@ -52,7 +53,7 @@ const DEFAULT_CONFIG: GQLAssistConfig = {
   reactHook: {
     enable: true,
     fileExtensions: ['.gql.ts'],
-    schema: ['schema.gql', 'schema.graphql'],
+    schemaFileNames: ['schema.gql', 'schema.graphql'],
     library: '@apollo/client',
   },
 }

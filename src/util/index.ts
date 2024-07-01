@@ -1,4 +1,5 @@
 export * from './common'
+export * from './generate-hash'
 export * from './run-command'
 export * from './test-util'
 export * from './to-string'

@@ -1,10 +1,10 @@
+import * as gql from 'graphql'
 import { GQLAssistConfig, config } from '../config'
 import { Position } from '../diff'
-import { parseSchema } from '../gql'
 import { parseTSFile } from '../ts/parse-ts'
 import { DEFAULT_SIPPET, autoCompleteHook } from './hook-auto-complete'
 
-const schema = parseSchema(`
+const schema = gql.buildSchema(`
   type User {
     id: ID!
     name: String
