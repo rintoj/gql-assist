@@ -65,7 +65,7 @@ function resolveTypeName(
 ) {
   const type = gql.getNamedType(schemaType)
   if (!type) return 'never'
-  if (gql.isEnumType(schemaType)) return type.name
+  if (gql.isEnumType(type)) return type.name
   if (gql.isScalarType(type)) return toJSType(type)
   if (gql.isObjectType(type)) {
     return context.toInterfaceName(getFieldHash(type.name, node), type.name, getFieldName(node))
