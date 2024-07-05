@@ -13,10 +13,9 @@ export function provideReferenceFromSchema(source: string, position: Position) {
     const fixed = makeQueryParsable(source)
     const document = gql.parse(fixed)
     let selectedName: string | undefined
-    const processNode = (node: gql.TypeDefinitionNode) => {
+    const processNode = (node: gql.TypeDefinitionNode | gql.NamedTypeNode) => {
       if (!isInRange(node, position)) return
       selectedName = node.name.value
-      return gql.BREAK
     }
     gql.visit(document, {
       EnumTypeDefinition(node) {
@@ -35,6 +34,9 @@ export function provideReferenceFromSchema(source: string, position: Position) {
         return processNode(node)
       },
       InterfaceTypeDefinition(node) {
+        return processNode(node)
+      },
+      NamedType(node) {
         return processNode(node)
       },
     })
