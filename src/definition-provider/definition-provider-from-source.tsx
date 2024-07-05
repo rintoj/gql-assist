@@ -31,6 +31,11 @@ export function provideDefinitionFromSource(
     gql.visit(
       document,
       gql.visitWithTypeInfo(typeInfo, {
+        OperationDefinition(node) {
+          if (!isInRange(node, position, offset)) return
+          const type = typeInfo.getType()
+          targetNode = gql.getNamedType(type)?.astNode
+        },
         VariableDefinition(node) {
           if (!isInRange(node, position, offset)) return
           const type = typeInfo.getInputType()
