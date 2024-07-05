@@ -15,4 +15,6 @@ export function trimSpaces(content: string) {
       '',
     ),
   )
+  // console.log(output.map((l, i) => `${i}: ${l}`).join('\n'))
+  return output.join('\n')
 }
