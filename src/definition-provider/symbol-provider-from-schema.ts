@@ -1,17 +1,38 @@
 import * as gql from 'graphql'
 import { Range } from '../diff'
-import { getGQLNodeRangeWithoutDescription, makeQueryParsable } from '../gql'
+import {
+  getGQLNodeRangeWithoutDescription,
+  isEnumTypeDefinition,
+  isInputObjectTypeDefinition,
+  isInterfaceTypeDefinition,
+  isObjectTypeDefinitionNode,
+} from '../gql'
 
-export type SymbolType = 'Scalar' | 'Type' | 'Enum' | 'Input' | 'Field' | 'Union' | 'Interface'
+export type SymbolType =
+  | 'Scalar'
+  | 'Type'
+  | 'Enum'
+  | 'Input'
+  | 'Field'
+  | 'Union'
+  | 'Interface'
+  | 'EnumMember'
 
 export interface SymbolInformation {
   name: string
   containerName: string
   type: SymbolType
   range: Range
+  children: SymbolInformation[]
 }
 
-function toType(node: gql.TypeDefinitionNode | gql.FieldDefinitionNode): SymbolType {
+function toType(
+  node:
+    | gql.TypeDefinitionNode
+    | gql.FieldDefinitionNode
+    | gql.InputValueDefinitionNode
+    | gql.EnumValueDefinitionNode,
+): SymbolType {
   switch (node.kind) {
     case gql.Kind.ENUM_TYPE_DEFINITION:
       return 'Enum'
@@ -26,8 +47,42 @@ function toType(node: gql.TypeDefinitionNode | gql.FieldDefinitionNode): SymbolT
     case gql.Kind.INTERFACE_TYPE_DEFINITION:
       return 'Interface'
     case gql.Kind.FIELD_DEFINITION:
+    case gql.Kind.INPUT_VALUE_DEFINITION:
       return 'Field'
+    case gql.Kind.ENUM_VALUE_DEFINITION:
+      return 'EnumMember'
   }
+}
+
+function parseChildren(node: gql.TypeDefinitionNode) {
+  const symbols: SymbolInformation[] = []
+  if (
+    isObjectTypeDefinitionNode(node) ||
+    isInputObjectTypeDefinition(node) ||
+    isInterfaceTypeDefinition(node)
+  ) {
+    for (const field of node.fields ?? []) {
+      symbols.push({
+        name: field.name.value,
+        containerName: node.name.value,
+        type: toType(field),
+        range: getGQLNodeRangeWithoutDescription(field),
+        children: [],
+      })
+    }
+  }
+  if (isEnumTypeDefinition(node)) {
+    for (const field of node.values ?? []) {
+      symbols.push({
+        name: field.name.value,
+        containerName: node.name.value,
+        type: toType(field),
+        range: getGQLNodeRangeWithoutDescription(field),
+        children: [],
+      })
+    }
+  }
+  return symbols
 }
 
 export function provideSymbolsFromSchema(source: string) {
@@ -35,16 +90,13 @@ export function provideSymbolsFromSchema(source: string) {
     const document = gql.parse(source)
     const symbols: SymbolInformation[] = []
     let parent: string | undefined
-    const processNode = (node: gql.TypeDefinitionNode | gql.FieldDefinitionNode) => {
-      let containerName = parent ?? 'schema'
-      if (node.kind !== gql.Kind.FIELD_DEFINITION) {
-        parent = node.name.value
-      }
+    const processNode = (node: gql.TypeDefinitionNode) => {
       symbols.push({
         name: node.name.value,
-        containerName,
+        containerName: '',
         type: toType(node),
         range: getGQLNodeRangeWithoutDescription(node),
+        children: parseChildren(node),
       })
     }
     gql.visit(document, {
@@ -64,9 +116,6 @@ export function provideSymbolsFromSchema(source: string) {
         return processNode(node)
       },
       InterfaceTypeDefinition(node) {
-        return processNode(node)
-      },
-      FieldDefinition(node) {
         return processNode(node)
       },
     })
