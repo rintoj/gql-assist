@@ -20,27 +20,30 @@ export function provideDefinitionFromSchema(source: string, position: Position) 
         selectedName = node.name.value
       },
     })
+    const processNode = (node: gql.TypeDefinitionNode) => {
+      if (node.name.value !== selectedName) return
+      targetNode = node
+      return gql.BREAK
+    }
     if (!selectedName) return null
     gql.visit(document, {
       EnumTypeDefinition(node) {
-        if (node.name.value !== selectedName) return
-        targetNode = node
-        return gql.BREAK
+        return processNode(node)
       },
       ScalarTypeDefinition(node) {
-        if (node.name.value !== selectedName) return
-        targetNode = node
-        return gql.BREAK
+        return processNode(node)
       },
       ObjectTypeDefinition(node) {
-        if (node.name.value !== selectedName) return
-        targetNode = node
-        return gql.BREAK
+        return processNode(node)
       },
       InputObjectTypeDefinition(node) {
-        if (node.name.value !== selectedName) return
-        targetNode = node
-        return gql.BREAK
+        return processNode(node)
+      },
+      UnionTypeDefinition(node) {
+        return processNode(node)
+      },
+      InterfaceTypeDefinition(node) {
+        return processNode(node)
       },
     })
     if (!targetNode) return null
