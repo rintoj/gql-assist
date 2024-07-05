@@ -2,7 +2,7 @@ import * as gql from 'graphql'
 import ts from 'typescript'
 import { GQLAssistConfig } from '../config'
 import { Position, Range } from '../diff'
-import { GraphQLContext, createGraphQLContext, getGQLNodeLocationRange } from '../gql'
+import { GraphQLContext, createGraphQLContext, getGQLNodeRange } from '../gql'
 import { getGQLContent, getGraphQLQueryVariable, getTSNodeLocationRange } from '../ts'
 import { Diagnostic, DiagnosticSeverity } from './diagnostic-type'
 import { NoDuplicateFieldName } from './rules/NoDuplicateFieldName'
@@ -34,7 +34,7 @@ function toDiagnostic(
     ]
   }
   return error.nodes.map(node => {
-    const range = getGQLNodeLocationRange(node, context.offset)
+    const range = getGQLNodeRange(node, context.offset)
     return {
       fileName: context.sourceFile.fileName,
       range,

@@ -1,17 +1,17 @@
 import * as gql from 'graphql'
+import { toNonNullArray } from 'tsds-tools'
 import ts from 'typescript'
 import { GQLAssistConfig } from '../config'
 import { Position } from '../diff'
-import { isFieldNode, isSelectionSetNode, makeQueryParsable } from '../gql'
-import { getGQLNodeLocationRange } from '../gql/get-gql-node-location-range'
+import { isFieldNode, makeQueryParsable } from '../gql'
+import { getGQLNodeRange } from '../gql/get-gql-node-location-range'
 import { isPositionWithInRange } from '../position'
 import { getGQLContent, getGraphQLQueryVariable, getTSNodeLocationRange } from '../ts'
-import { toNonNullArray } from 'tsds-tools'
 
 export const DEFAULT_SIPPET = '{\n  ${1}\n}'
 
 function isInRange(node: gql.ASTNode, position: Position, offset?: Position) {
-  const nodeRange = getGQLNodeLocationRange(node, offset)
+  const nodeRange = getGQLNodeRange(node, offset)
   return isPositionWithInRange(position, nodeRange)
 }
 
@@ -52,22 +52,6 @@ function isEmptyQuery(query: string) {
   if (/^mu?t?a?t?i?o?n?$/.test(formatted)) return true
   if (/^su?b?s?c?r?i?p?t?i?o?n?$/.test(formatted)) return true
   return false
-}
-
-function isFieldName(field: gql.GraphQLField<any, any, any>, name: string) {
-  return field.name === name
-}
-
-function getFirstFieldByScalarType(objectType: gql.GraphQLObjectType, type: string) {
-  const fields = Object.values(objectType.getFields())
-  return fields.find(field => {
-    const nullableType = gql.getNullableType(field.type)
-    const isScalar = gql.isScalarType(nullableType)
-    if (isScalar) {
-      const namedType = gql.getNamedType(nullableType)
-      return namedType.name === type
-    }
-  })
 }
 
 export function autoCompleteHook(

@@ -10,6 +10,22 @@ export function isObjectTypeDefinitionNode(
   return node.kind === gql.Kind.OBJECT_TYPE_DEFINITION
 }
 
+export function isInputObjectTypeDefinition(
+  node: gql.ASTNode,
+): node is gql.InputObjectTypeDefinitionNode {
+  return node.kind === gql.Kind.INPUT_OBJECT_TYPE_DEFINITION
+}
+
+export function isEnumTypeDefinition(node: gql.ASTNode): node is gql.EnumTypeDefinitionNode {
+  return node.kind === gql.Kind.ENUM_TYPE_DEFINITION
+}
+
+export function isInterfaceTypeDefinition(
+  node: gql.ASTNode,
+): node is gql.InterfaceTypeDefinitionNode {
+  return node.kind === gql.Kind.INTERFACE_TYPE_DEFINITION
+}
+
 export function isFieldNode(node: gql.ASTNode): node is gql.FieldNode {
   return node.kind === gql.Kind.FIELD
 }

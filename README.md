@@ -1,9 +1,11 @@
 # GQL Assist
 
-GQL Assist is a powerful tool designed to streamline the development of GraphQL APIs in a NestJS
-environment. By automatically converting TypeScript classes, resolvers, and enums into their
-corresponding GraphQL definitions, GQL Assist significantly reduces the amount of boilerplate code
-you need to write.
+GQL Assist is your go-to tool for supercharging GraphQL development. It simplifies writing GraphQL
+queries for Apollo Client by converting them into TypeScript code, making your development process
+smoother and error-free. On the server side, gql-assist streamlines API development in NestJS by
+automatically converting TypeScript classes, resolvers, and enums into their GraphQL counterparts,
+drastically reducing boilerplate code. With gql-assist, you can focus on building your application
+while it handles the heavy lifting of GraphQL integration.
 
 ## Installation
 
@@ -21,19 +23,98 @@ yarn add gql-assist
 
 ## Features
 
-GQL Assist provides several key functionalities:
+Discover the power of GraphQL Assist with its suite of robust functionalities:
 
-- **Model Conversion**: Automatically converts TypeScript classes to NestJS GraphQL Object Types.
-- **Resolver Conversion**: Automatically transforms resolver methods to GraphQL resolvers with
-  appropriate decorators.
-- **Field Resolver Conversion**: Converts methods to GraphQL field resolvers with the necessary
-  decorators.
-- **Enum Conversion**: Transforms TypeScript enums to GraphQL enums and registers them.
+### React Hook
+
+Transform your GraphQL queries into TypeScript code seamlessly compatible with
+[`@apollo/client`](https://www.apollographql.com/docs/react/). With GraphQL Assist, writing GraphQL
+queries for Apollo Client becomes a breeze, letting you concentrate on what matters most—building
+your application.
+
+### Server Side
+
+Streamline your GraphQL API development in a [NestJS](https://docs.nestjs.com/graphql/quick-start)
+environment with GraphQL Assist. Automatically convert TypeScript classes, resolvers, and enums into
+their GraphQL definitions, slashing boilerplate code and boosting productivity.
+
+- **Model Conversion**: Instantly convert TypeScript classes to NestJS GraphQL Object Types for
+  generating models, inputs, and response types.
+- **Resolver Conversion**: Effortlessly transform resolver methods into GraphQL resolvers with the
+  correct decorators.
+- **Field Resolver Conversion**: Easily convert methods to GraphQL field resolvers with the
+  necessary decorators.
+- **Enum Conversion**: Swiftly transform TypeScript enums to GraphQL enums and register them.
 
 ## Usage
 
 ```sh
 npx gql-assist generate decorator
+```
+
+### React Hook
+
+GraphQL Assist can also help you with writing queries for graphql client by converting GraphQL
+queries into TypeScript code compatible with `@apollo/client`. With GraphQL Assist, writing GraphQL
+queries for Apollo Client becomes easier and less error-prone, allowing you to focus more on
+building your application.
+
+```sh
+npx gql-assist generate hook
+```
+
+#### Example
+
+Given the following GraphQL query:
+
+```ts
+import gql from 'graphql-tag'
+
+const query = gql`
+  query {
+    user {
+      name
+    }
+  }
+```
+
+GraphQL Assist will look at the schema and convert it to the following on save:
+
+```ts
+import { QueryHookOptions, useQuery } from '@apollo/client'
+import gql from 'graphql-tag'
+
+const query = gql`
+  query fetchUser($id: ID!) {
+    user(id: $id) {
+      name
+    }
+  }
+`
+
+export interface RequestType {
+  id: string | undefined
+}
+
+export interface QueryType {
+  user?: UserType
+}
+
+export interface UserType {
+  name?: string
+  __typename?: 'User'
+}
+
+export function useUserQuery(
+  request: RequestType,
+  options?: QueryHookOptions<QueryType, RequestType>,
+) {
+  return useQuery<QueryType, RequestType>(query, {
+    variables: request,
+    skip: !request.id,
+    ...options,
+  })
+}
 ```
 
 ### Models
@@ -176,71 +257,6 @@ export enum UserStatus {
 registerEnumType(UserStatus, { name: 'UserStatus' })
 ```
 
-### React Hook
-
-GraphQL Assist can also help you with writing queries for graphql client by converting GraphQL
-queries into TypeScript code compatible with `@apollo/client`. With GraphQL Assist, writing GraphQL
-queries for Apollo Client becomes easier and less error-prone, allowing you to focus more on
-building your application.
-
-```sh
-npx gql-assist generate hook
-```
-
-#### Example
-
-Given the following GraphQL query:
-
-```ts
-import gql from 'graphql-tag'
-
-const query = gql`
-  query {
-    user {
-      name
-    }
-  }
-```
-
-GraphQL Assist will look at the schema and convert it to the following on save:
-
-```ts
-import { QueryHookOptions, useQuery } from '@apollo/client'
-import gql from 'graphql-tag'
-
-const query = gql`
-  query fetchUser($id: ID!) {
-    user(id: $id) {
-      name
-    }
-  }
-`
-
-export interface RequestType {
-  id: string | undefined
-}
-
-export interface QueryType {
-  user?: UserType
-}
-
-export interface UserType {
-  name?: string
-  __typename?: 'User'
-}
-
-export function useUserQuery(
-  request: RequestType,
-  options?: QueryHookOptions<QueryType, RequestType>,
-) {
-  return useQuery<QueryType, RequestType>(query, {
-    variables: request,
-    skip: !request.id,
-    ...options,
-  })
-}
-```
-
 ## Command: gql-assist
 
 GQL Assist is a powerful tool designed to streamline the development of GraphQL APIs in a NestJS
@@ -346,14 +362,14 @@ name        Name of the module
 ## VSCode Extension
 
 For an enhanced development experience, you can install the
-[GQL Assist](https://marketplace.visualstudio.com/items?itemName=rintoj.gql-assist) extension from
-the Visual Studio Code Marketplace. This extension provides in-editor completions and suggestions,
-making it even easier to work with GraphQL and NestJS.
+[GraphQL Assist](https://marketplace.visualstudio.com/items?itemName=rintoj.gql-assist) extension
+from the Visual Studio Code Marketplace. This extension provides in-editor completions and
+suggestions, making it even easier to work with GraphQL and NestJS.
 
 1. Open Visual Studio Code.
 2. Go to the Extensions view by clicking on the Extensions icon in the Activity Bar on the side of
    the window or by pressing `Ctrl+Shift+X`.
-3. Search for "GQL Assist".
+3. Search for "GraphQL Assist".
 4. Click the Install button to install the extension.
 5. Once installed, the extension will provide code completions and suggestions directly within your
    IDE.

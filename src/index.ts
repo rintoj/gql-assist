@@ -1,5 +1,6 @@
 export * from './auto-complete'
 export * from './config'
+export * from './definition-provider'
 export * from './diagnostic'
 export * from './diff'
 export * from './generate'
