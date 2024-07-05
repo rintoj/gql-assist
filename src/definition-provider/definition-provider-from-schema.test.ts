@@ -1,4 +1,5 @@
 import { Position, Range } from '../diff'
+import { trimSpaces } from '../util/trim-spaces'
 import { provideDefinitionFromSchema } from './definition-provider-from-schema'
 
 const schema = `
@@ -50,27 +51,6 @@ type Subscription {
 }
 
 `
-
-function trimSpaces(content: string) {
-  const lines = content.split('\n')
-  const nonEmptyAt = lines.findIndex(line => line.trim() !== '') ?? ''
-  const firstNonEmptyLine = lines[nonEmptyAt]
-  const spaces = firstNonEmptyLine.split('').findIndex(i => i !== ' ')
-  if (spaces < 1) return content.slice(nonEmptyAt)
-  const output = lines.slice(nonEmptyAt).map(line =>
-    line.replace(
-      new RegExp(
-        new Array(spaces)
-          .fill(null)
-          .map(() => ' ')
-          .join(''),
-      ),
-      '',
-    ),
-  )
-  // console.log(output.map((l, i) => `${i}: ${l}`).join('\n'))
-  return output.join('\n')
-}
 
 function getAt(schema: string, range: Range | null) {
   if (!range) return
