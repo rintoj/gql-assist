@@ -4,14 +4,14 @@ import ts from 'typescript'
 import { GQLAssistConfig } from '../config'
 import { Position } from '../diff'
 import { isFieldNode, makeQueryParsable } from '../gql'
-import { getGQLNodeLocationRange } from '../gql/get-gql-node-location-range'
+import { getGQLNodeRange } from '../gql/get-gql-node-location-range'
 import { isPositionWithInRange } from '../position'
 import { getGQLContent, getGraphQLQueryVariable, getTSNodeLocationRange } from '../ts'
 
 export const DEFAULT_SIPPET = '{\n  ${1}\n}'
 
 function isInRange(node: gql.ASTNode, position: Position, offset?: Position) {
-  const nodeRange = getGQLNodeLocationRange(node, offset)
+  const nodeRange = getGQLNodeRange(node, offset)
   return isPositionWithInRange(position, nodeRange)
 }
 

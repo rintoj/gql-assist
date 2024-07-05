@@ -1,13 +1,12 @@
 import * as gql from 'graphql'
 import ts from 'typescript'
 import { Position } from '../diff'
-import { getGQLNodeLocationRange, isOperationDefinitionNode, makeQueryParsable } from '../gql'
+import { getGQLNodeRange, getGQLNodeRangeWithoutDescription, makeQueryParsable } from '../gql'
 import { isPositionWithInRange } from '../position/is-position-within-range'
 import { getGQLContent, getGraphQLQueryVariable, getTSNodeLocationRange } from '../ts'
-import { toNonNullArray } from 'tsds-tools'
 
 function isInRange(node: gql.ASTNode, position: Position, offset?: Position) {
-  const nodeRange = getGQLNodeLocationRange(node, offset)
+  const nodeRange = getGQLNodeRange(node, offset)
   return isPositionWithInRange(position, nodeRange, true)
 }
 
@@ -22,7 +21,6 @@ export function provideDefinitionFromSource(
   const range = getTSNodeLocationRange(variable, sourceFile)
   const query = getGQLContent(variable)
   if (!query || query?.trim() === '') return null
-
   const offset = new Position(range.start.line, 0)
 
   try {
@@ -47,7 +45,7 @@ export function provideDefinitionFromSource(
       }),
     )
     if (!targetNode) return null
-    return getGQLNodeLocationRange(targetNode)
+    return getGQLNodeRangeWithoutDescription(targetNode)
   } catch (e) {
     console.error(e)
     return null
