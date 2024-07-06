@@ -64,8 +64,8 @@ function getAt(schema: string, range: Range | null) {
 
 describe('provideDefinitionFromSchema', () => {
   test('should return all lines that has User in it', async () => {
-    const ranges = provideReferenceForSchema(schema, new Position(1, 5))
-    const output = ranges?.map(range => getAt(schema, range)).join('\n\n')
+    const positions = await provideReferenceForSchema(schema, 'schema.ts', new Position(1, 5), '')
+    const output = positions?.map(position => getAt(schema, position.range)).join('\n\n')
     expect(trimSpaces(output)).toEqual(
       trimSpaces(`
         mentions: [User!]
