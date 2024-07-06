@@ -13,27 +13,12 @@ export function provideReferenceForSchema(source: string, position: Position) {
     const fixed = makeQueryParsable(source)
     const document = gql.parse(fixed)
     let selectedName: string | undefined
-    const processNode = (node: gql.TypeDefinitionNode | gql.NamedTypeNode) => {
+    const processNode = (node: gql.NameNode | gql.NamedTypeNode) => {
       if (!isInRange(node, position)) return
-      selectedName = node.name.value
+      selectedName = node.kind === gql.Kind.NAME ? node.value : node.name.value
     }
     gql.visit(document, {
-      EnumTypeDefinition(node) {
-        return processNode(node)
-      },
-      ScalarTypeDefinition(node) {
-        return processNode(node)
-      },
-      ObjectTypeDefinition(node) {
-        return processNode(node)
-      },
-      InputObjectTypeDefinition(node) {
-        return processNode(node)
-      },
-      UnionTypeDefinition(node) {
-        return processNode(node)
-      },
-      InterfaceTypeDefinition(node) {
+      Name(node) {
         return processNode(node)
       },
       NamedType(node) {
