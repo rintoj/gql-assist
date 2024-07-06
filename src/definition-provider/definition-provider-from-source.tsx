@@ -10,7 +10,7 @@ function isInRange(node: gql.ASTNode, position: Position, offset?: Position) {
   return isPositionWithInRange(position, nodeRange, true)
 }
 
-export function provideDefinitionForSource(
+export function provideDefinitionFromSource(
   sourceFile: ts.SourceFile,
   position: Position,
   schema: gql.GraphQLSchema,
