@@ -12,7 +12,7 @@ export interface ParseOptions {
   fix?: boolean
 }
 
-export interface GraphQLContext {
+export interface GraphQLDocumentContext {
   sourceFile: ts.SourceFile
   variable?: ts.VariableDeclaration
   source?: string
@@ -23,7 +23,7 @@ export interface GraphQLContext {
 export function parseGraphQLDocumentFromTS(
   sourceFile: ts.SourceFile,
   options?: ParseOptions,
-): GraphQLContext {
+): GraphQLDocumentContext {
   const variable = getGraphQLQueryVariable(sourceFile)
   if (!variable) return { sourceFile }
 
