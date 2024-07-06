@@ -91,7 +91,7 @@ export async function provideReferenceForSchema(
         case gql.Kind.INPUT_OBJECT_TYPE_DEFINITION:
         case gql.Kind.INTERFACE_TYPE_DEFINITION:
           for (const field of node.fields ?? []) {
-            if (isInRange(field.name, position)) {
+            if (isInRange(field, position)) {
               selectedField = { parent: node.name.value, name: field.name.value }
               return gql.BREAK
             }
