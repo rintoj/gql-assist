@@ -22,6 +22,7 @@ export class Range {
   constructor(
     public start: Position,
     public end: Position,
+    public path?: string,
   ) {}
 
   setStart(start: Position) {
@@ -36,6 +37,17 @@ export class Range {
 
   clone() {
     return new Range(this.start.clone(), this.end.clone())
+  }
+}
+
+export class Location {
+  constructor(
+    public path: string,
+    public range: Range,
+  ) {}
+
+  clone() {
+    return new Location(this.path, this.range.clone())
   }
 }
 

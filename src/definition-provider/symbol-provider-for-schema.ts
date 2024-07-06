@@ -85,7 +85,7 @@ function parseChildren(node: gql.TypeDefinitionNode) {
   return symbols
 }
 
-export function provideSymbolsFromSchema(source: string) {
+export function provideSymbolsForSchema(source: string) {
   try {
     const document = gql.parse(source)
     const symbols: SymbolInformation[] = []
