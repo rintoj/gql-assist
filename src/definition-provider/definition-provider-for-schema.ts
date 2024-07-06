@@ -8,7 +8,7 @@ function isInRange(node: gql.ASTNode, position: Position, offset?: Position) {
   return isPositionWithInRange(position, nodeRange, true)
 }
 
-export function provideDefinitionFromSchema(source: string, position: Position) {
+export function provideDefinitionForSchema(source: string, position: Position) {
   try {
     const fixed = makeQueryParsable(source)
     const document = gql.parse(fixed)
