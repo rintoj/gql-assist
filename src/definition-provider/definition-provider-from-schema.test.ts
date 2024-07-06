@@ -1,6 +1,6 @@
 import { Position, Range } from '../diff'
 import { trimSpaces } from '../util/trim-spaces'
-import { provideDefinitionForSchema } from './definition-provider-for-schema'
+import { provideDefinitionFromSchema } from './definition-provider-from-schema'
 
 const schema = `
 type User {
@@ -60,7 +60,7 @@ function getAt(schema: string, range: Range | null) {
 
 describe('provideDefinitionFromSchema', () => {
   test('should provide return address type', async () => {
-    const range = provideDefinitionForSchema(schema, new Position(4, 16))
+    const range = provideDefinitionFromSchema(schema, new Position(4, 16))
     const output = getAt(schema, range)
     expect(output).toEqual(
       trimSpaces(`
@@ -73,7 +73,7 @@ describe('provideDefinitionFromSchema', () => {
   })
 
   test('should provide user status', async () => {
-    const range = provideDefinitionForSchema(schema, new Position(5, 16))
+    const range = provideDefinitionFromSchema(schema, new Position(5, 16))
     const output = getAt(schema, range)
     expect(output).toEqual(
       trimSpaces(`
@@ -85,7 +85,7 @@ describe('provideDefinitionFromSchema', () => {
   })
 
   test('should provide tweet type', async () => {
-    const range = provideDefinitionForSchema(schema, new Position(36, 22))
+    const range = provideDefinitionFromSchema(schema, new Position(36, 22))
     const output = getAt(schema, range)
     expect(output).toEqual(
       trimSpaces(`

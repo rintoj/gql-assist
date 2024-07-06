@@ -1,5 +1,5 @@
 import * as gql from 'graphql'
-import { Position } from '../diff'
+import { Position, Range } from '../diff'
 import { getGQLNodeRange, getGQLNodeRangeWithoutDescription, makeQueryParsable } from '../gql'
 import { isPositionWithInRange } from '../position/is-position-within-range'
 
@@ -8,24 +8,15 @@ function isInRange(node: gql.ASTNode, position: Position, offset?: Position) {
   return isPositionWithInRange(position, nodeRange, true)
 }
 
-export function provideDefinitionForSchema(source: string, position: Position) {
+export function provideReferenceFromSchema(source: string, position: Position) {
   try {
     const fixed = makeQueryParsable(source)
     const document = gql.parse(fixed)
     let selectedName: string | undefined
-    let targetNode: gql.ASTNode | undefined
-    gql.visit(document, {
-      NamedType(node) {
-        if (!isInRange(node, position)) return
-        selectedName = node.name.value
-      },
-    })
-    const processNode = (node: gql.TypeDefinitionNode) => {
-      if (node.name.value !== selectedName) return
-      targetNode = node
-      return gql.BREAK
+    const processNode = (node: gql.TypeDefinitionNode | gql.NamedTypeNode) => {
+      if (!isInRange(node, position)) return
+      selectedName = node.name.value
     }
-    if (!selectedName) return null
     gql.visit(document, {
       EnumTypeDefinition(node) {
         return processNode(node)
@@ -45,11 +36,21 @@ export function provideDefinitionForSchema(source: string, position: Position) {
       InterfaceTypeDefinition(node) {
         return processNode(node)
       },
+      NamedType(node) {
+        return processNode(node)
+      },
     })
-    if (!targetNode) return null
-    return getGQLNodeRangeWithoutDescription(targetNode)
+    if (!selectedName) return []
+    const ranges: Range[] = []
+    gql.visit(document, {
+      NamedType(node) {
+        if (node.name.value !== selectedName) return
+        ranges.push(getGQLNodeRangeWithoutDescription(node))
+      },
+    })
+    return ranges
   } catch (e) {
     console.error(e)
-    return null
+    return []
   }
 }

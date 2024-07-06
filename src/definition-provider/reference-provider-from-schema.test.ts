@@ -1,6 +1,6 @@
 import { Position, Range } from '../diff'
 import { trimSpaces } from '../util/trim-spaces'
-import { provideReferenceForSchema } from './reference-provider-for-schema'
+import { provideReferenceFromSchema } from './reference-provider-from-schema'
 
 const schema = `
 type User {
@@ -64,7 +64,7 @@ function getAt(schema: string, range: Range | null) {
 
 describe('provideDefinitionFromSchema', () => {
   test('should return all lines that has User in it', async () => {
-    const ranges = provideReferenceForSchema(schema, new Position(1, 5))
+    const ranges = provideReferenceFromSchema(schema, new Position(1, 5))
     const output = ranges?.map(range => getAt(schema, range)).join('\n\n')
     expect(trimSpaces(output)).toEqual(
       trimSpaces(`

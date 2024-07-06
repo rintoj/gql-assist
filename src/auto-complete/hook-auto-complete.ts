@@ -3,10 +3,10 @@ import { toNonNullArray } from 'tsds-tools'
 import ts from 'typescript'
 import { GQLAssistConfig } from '../config'
 import { Position } from '../diff'
-import { isFieldNode } from '../gql'
+import { isFieldNode, makeQueryParsable } from '../gql'
 import { getGQLNodeRange } from '../gql/get-gql-node-location-range'
 import { isPositionWithInRange } from '../position'
-import { parseGraphQLDocumentFromTS } from '../ts'
+import { getGQLContent, getGraphQLQueryVariable, getTSNodeLocationRange } from '../ts'
 
 export const DEFAULT_SIPPET = '{\n  ${1}\n}'
 
@@ -60,13 +60,21 @@ export function autoCompleteHook(
   schema: gql.GraphQLSchema,
   config: GQLAssistConfig,
 ): FieldInformation[] {
-  try {
-    const { variable, document, source, offset } = parseGraphQLDocumentFromTS(sourceFile, {
-      position,
-    })
-    if (!variable) return []
-    if (!source || isEmptyQuery(source) || !document) return topLevelInfo(schema)
+  const variable = getGraphQLQueryVariable(sourceFile)
+  if (!variable) return []
 
+  const range = getTSNodeLocationRange(variable, sourceFile)
+  if (!isPositionWithInRange(position, range)) return []
+
+  const query = getGQLContent(variable)
+  if (!query || query?.trim() === '') return topLevelInfo(schema)
+  if (isEmptyQuery(query)) return topLevelInfo(schema)
+
+  const offset = new Position(range.start.line, 0)
+
+  try {
+    const fixed = makeQueryParsable(query)
+    const document = gql.parse(fixed)
     let schemaType: gql.GraphQLObjectType | null | undefined
     let existingFields: string[] = []
     const typeInfo = new gql.TypeInfo(schema)
