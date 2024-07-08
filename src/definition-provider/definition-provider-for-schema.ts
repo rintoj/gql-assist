@@ -9,7 +9,12 @@ import { getDecorator, hasDecorator, readTSFile } from '../ts'
 import { SelectedField } from './selected-field.type'
 
 function getPositionOfMethod(
-  node: ts.ClassDeclaration | ts.MethodDeclaration | ts.PropertyDeclaration,
+  node:
+    | ts.EnumDeclaration
+    | ts.EnumMember
+    | ts.ClassDeclaration
+    | ts.MethodDeclaration
+    | ts.PropertyDeclaration,
   sourceFile: ts.SourceFile,
 ) {
   const start = node.name?.getStart()
@@ -180,6 +185,47 @@ async function processModels(
   }
 }
 
+async function processEnum(
+  selectedEnum: SelectedField,
+  enumPattern: string,
+): Promise<Location | undefined> {
+  if (!selectedEnum || !enumPattern) return
+  const stream = globStream(enumPattern, { onlyFiles: true, ignore: ['**/node_modules/**'] })
+  for await (const file of stream) {
+    const sourceFile = readTSFile(file as string)
+    for (const enumDeclaration of sourceFile.statements) {
+      if (ts.isEnumDeclaration(enumDeclaration)) {
+        if (enumDeclaration?.name?.getText() === selectedEnum.parent) {
+          for (const value of enumDeclaration.members) {
+            if (value?.name?.getText() === selectedEnum.name) {
+              return getPositionOfMethod(value, sourceFile)
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+async function processEnumForName(
+  name: string,
+  enumPattern: string,
+): Promise<Location | undefined> {
+  console.log(name, enumPattern)
+  if (!name || !enumPattern) return
+  const stream = globStream(enumPattern, { onlyFiles: true, ignore: ['**/node_modules/**'] })
+  for await (const file of stream) {
+    const sourceFile = readTSFile(file as string)
+    for (const enumDeclaration of sourceFile.statements) {
+      if (ts.isEnumDeclaration(enumDeclaration)) {
+        if (enumDeclaration?.name?.getText() === name) {
+          return getPositionOfMethod(enumDeclaration, sourceFile)
+        }
+      }
+    }
+  }
+}
+
 function processFromSchema(type: string, document: gql.DocumentNode, schemaLocation: string) {
   let targetNode: gql.ASTNode | undefined
   if (!type) return
@@ -236,6 +282,7 @@ export async function provideDefinitionForSchema(
   position: Position,
   resolverPattern: string,
   modelPattern: string,
+  enumPattern: string,
 ): Promise<Location | undefined> {
   try {
     const fixed = makeQueryParsable(source)
@@ -243,6 +290,8 @@ export async function provideDefinitionForSchema(
     let type: string | undefined
     let modelName: string | undefined
     let selectedField: SelectedField | undefined
+    let enumName: string | undefined
+    let selectedEnum: SelectedField | undefined
     const processFields = (node: gql.TypeDefinitionNode) => {
       if (!isInRange(node, position)) return
       if (isInRange(node.name, position)) {
@@ -276,6 +325,19 @@ export async function provideDefinitionForSchema(
       InterfaceTypeDefinition(node) {
         return processFields(node)
       },
+      EnumTypeDefinition(node) {
+        if (!isInRange(node, position)) return
+        if (isInRange(node.name, position)) {
+          enumName = node.name.value
+          return gql.BREAK
+        }
+        for (const field of node.values ?? []) {
+          if (isInRange(field.name, position)) {
+            selectedEnum = { parent: node.name.value, name: field.name.value }
+            return gql.BREAK
+          }
+        }
+      },
     })
     if (type) {
       return processFromSchema(type, document, schemaLocation)
@@ -286,6 +348,10 @@ export async function provideDefinitionForSchema(
       )
     } else if (modelName) {
       return await processModelForName(modelName, modelPattern)
+    } else if (selectedEnum) {
+      return await processEnum(selectedEnum, enumPattern)
+    } else if (enumName) {
+      return await processEnumForName(enumName, enumPattern)
     }
   } catch (e) {
     console.error(e)
