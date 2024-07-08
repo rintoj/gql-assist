@@ -2,6 +2,7 @@ import { resolve } from 'path'
 import { Position, Range } from '../diff'
 import { trimSpaces } from '../util/trim-spaces'
 import { provideDefinitionForSchema } from './definition-provider-for-schema'
+import { readFileSync } from 'fs-extra'
 
 const schema = `
 type User {
@@ -59,15 +60,21 @@ function getAt(schema: string, range: Range | null) {
 }
 
 async function process(position: Position) {
-  const positions = await provideDefinitionForSchema(
+  const foundPosition = await provideDefinitionForSchema(
     schema,
     'schema.gql',
     position,
-    resolve(__dirname, 'test', '*.{model,resolver}.ts'),
+    resolve(__dirname, 'test', '*.resolver.ts'),
+    resolve(__dirname, 'test', '*.model.ts'),
   )
-  return positions
-    ?.map(position => [`# ${position.path}`, getAt(schema, position.range)].join('\n'))
-    .join('\n\n')
+  if (!foundPosition) return ''
+  const source = foundPosition.path.startsWith('schema.gql')
+    ? schema
+    : readFileSync(foundPosition.path, 'utf-8')
+  return [
+    `# ${[foundPosition.path.replace(__dirname + '/', ''), foundPosition.range.start.line, foundPosition.range.start.character].join(':')}`,
+    getAt(source, foundPosition.range),
+  ].join('\n')
 }
 
 describe('provideDefinitionFromSchema', () => {
@@ -75,7 +82,7 @@ describe('provideDefinitionFromSchema', () => {
     const output = await process(new Position(4, 16))
     expect(output).toEqual(
       trimSpaces(`
-        # schema.gql
+        # schema.gql:13:0
         type Address {
           id: String
           address: String
@@ -88,7 +95,7 @@ describe('provideDefinitionFromSchema', () => {
     const output = await process(new Position(5, 16))
     expect(output).toEqual(
       trimSpaces(`
-        # schema.gql
+        # schema.gql:8:0
         enum UserStatus {
           ACTIVE,
           DELETED
@@ -100,7 +107,7 @@ describe('provideDefinitionFromSchema', () => {
     const output = await process(new Position(36, 22))
     expect(output).toEqual(
       trimSpaces(`
-        # schema.gql
+        # schema.gql:28:0
         type Tweet {
           tweetId: ID!
           mentions: [User!]
@@ -108,15 +115,30 @@ describe('provideDefinitionFromSchema', () => {
     )
   })
 
-  test('should provide tweet type', async () => {
+  test('should provide definition tweet type in typescript', async () => {
     const output = await process(new Position(36, 6))
     expect(output).toEqual(
       trimSpaces(`
-        # schema.gql
-        type Tweet {
-          tweetId: ID!
-          mentions: [User!]
-        }`),
+        # test/tweet.resolver.ts:6:2
+          tweet() {`),
+    )
+  })
+
+  test('should provide definition user.name in typescript', async () => {
+    const output = await process(new Position(3, 5))
+    expect(output).toEqual(
+      trimSpaces(`
+        # test/user.model.ts:6:2
+          name?: string`),
+    )
+  })
+
+  test('should provide definition user id in typescript', async () => {
+    const output = await process(new Position(2, 3))
+    expect(output).toEqual(
+      trimSpaces(`
+        # test/base.model.ts:5:2
+          id!: string`),
     )
   })
 })
