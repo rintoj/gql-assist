@@ -122,6 +122,7 @@ function getParent(classDeclaration: ts.ClassDeclaration, sourceFile: ts.SourceF
       )) {
         if (
           hasDecorator(classDeclaration, 'ObjectType') &&
+          ts.isClassDeclaration(classDeclaration) &&
           classDeclaration.name?.getText() === parentName
         ) {
           return { name: parentName, classDeclaration, sourceFile: parentSourceFile }
@@ -147,11 +148,13 @@ function processObjectType(
     }
     const parent = getParent(classDeclaration, sourceFile)
     if (parent) {
-      const parentLocation = processObjectType(parent.classDeclaration, parent.sourceFile, {
-        ...selectedField,
-        parent: parent.name,
-      })
-      if (parentLocation) return parentLocation
+      if (ts.isClassDeclaration(parent.classDeclaration)) {
+        const parentLocation = processObjectType(parent.classDeclaration, parent.sourceFile, {
+          ...selectedField,
+          parent: parent.name,
+        })
+        if (parentLocation) return parentLocation
+      }
     }
   }
 }
@@ -167,8 +170,10 @@ async function processModels(
     for (const classDeclaration of sourceFile.statements.filter(statement =>
       ts.isClassDeclaration(statement),
     )) {
-      const location = processObjectType(classDeclaration, sourceFile, selectedField)
-      if (location) return location
+      if (ts.isClassDeclaration(classDeclaration)) {
+        const location = processObjectType(classDeclaration, sourceFile, selectedField)
+        if (location) return location
+      }
     }
   }
 }
