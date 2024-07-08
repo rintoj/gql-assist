@@ -9,11 +9,12 @@ import { getDecorator, hasDecorator, readTSFile } from '../ts'
 import { SelectedField } from './selected-field.type'
 
 function getPositionOfMethod(
-  node: ts.MethodDeclaration | ts.PropertyDeclaration,
+  node: ts.ClassDeclaration | ts.MethodDeclaration | ts.PropertyDeclaration,
   sourceFile: ts.SourceFile,
 ) {
-  const start = node.name.getStart()
-  const end = node.name.getEnd()
+  const start = node.name?.getStart()
+  const end = node.name?.getEnd()
+  if (!start || !end) return
   const startPosition = sourceFile.getLineAndCharacterOfPosition(start)
   const endPosition = sourceFile.getLineAndCharacterOfPosition(end)
   return new Location(
@@ -121,7 +122,8 @@ function getParent(classDeclaration: ts.ClassDeclaration, sourceFile: ts.SourceF
         ts.isClassDeclaration(statement),
       )) {
         if (
-          hasDecorator(classDeclaration, 'ObjectType') &&
+          (hasDecorator(classDeclaration, 'ObjectType') ||
+            hasDecorator(classDeclaration, 'InputType')) &&
           ts.isClassDeclaration(classDeclaration) &&
           classDeclaration.name?.getText() === parentName
         ) {
@@ -139,7 +141,7 @@ function processObjectType(
 ): Location | undefined {
   if (!ts.isClassDeclaration(classDeclaration)) return
   if (
-    hasDecorator(classDeclaration, 'ObjectType') &&
+    (hasDecorator(classDeclaration, 'ObjectType') || hasDecorator(classDeclaration, 'InputType')) &&
     classDeclaration.name?.getText() === selectedField.parent
   ) {
     for (const member of classDeclaration.members) {
@@ -210,6 +212,24 @@ function processFromSchema(type: string, document: gql.DocumentNode, schemaLocat
   return new Location(schemaLocation, getGQLNodeRangeWithoutDescription(targetNode))
 }
 
+async function processModelForName(
+  name: string,
+  modelPattern: string,
+): Promise<Location | undefined> {
+  if (!name || !modelPattern) return
+  const stream = globStream(modelPattern, { onlyFiles: true, ignore: ['**/node_modules/**'] })
+  for await (const file of stream) {
+    const sourceFile = readTSFile(file as string)
+    for (const classDeclaration of sourceFile.statements) {
+      if (ts.isClassDeclaration(classDeclaration) && classDeclaration.name?.getText() === name) {
+        const location = getPositionOfMethod(classDeclaration, sourceFile)
+        console.log(`here location=${location}`)
+        if (location) return location
+      }
+    }
+  }
+}
+
 export async function provideDefinitionForSchema(
   source: string,
   schemaLocation: string,
@@ -221,9 +241,14 @@ export async function provideDefinitionForSchema(
     const fixed = makeQueryParsable(source)
     const document = gql.parse(fixed)
     let type: string | undefined
+    let modelName: string | undefined
     let selectedField: SelectedField | undefined
     const processFields = (node: gql.TypeDefinitionNode) => {
       if (!isInRange(node, position)) return
+      if (isInRange(node.name, position)) {
+        modelName = node.name.value
+        return gql.BREAK
+      }
       switch (node.kind) {
         case gql.Kind.OBJECT_TYPE_DEFINITION:
         case gql.Kind.INPUT_OBJECT_TYPE_DEFINITION:
@@ -259,6 +284,8 @@ export async function provideDefinitionForSchema(
         (await processResolvers(selectedField, resolverPattern)) ??
         (await processModels(selectedField, modelPattern))
       )
+    } else if (modelName) {
+      return await processModelForName(modelName, modelPattern)
     }
   } catch (e) {
     console.error(e)
