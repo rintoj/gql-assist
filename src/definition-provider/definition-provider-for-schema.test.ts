@@ -1,3 +1,4 @@
+import { resolve } from 'path'
 import { Position, Range } from '../diff'
 import { trimSpaces } from '../util/trim-spaces'
 import { provideDefinitionForSchema } from './definition-provider-for-schema'
@@ -49,7 +50,6 @@ type Mutation {
 type Subscription {
   onUserChange(id: ID!): User
 }
-
 `
 
 function getAt(schema: string, range: Range | null) {
@@ -58,12 +58,24 @@ function getAt(schema: string, range: Range | null) {
   return lines.join('\n')
 }
 
+async function process(position: Position) {
+  const positions = await provideDefinitionForSchema(
+    schema,
+    'schema.gql',
+    position,
+    resolve(__dirname, 'test', '*.{model,resolver}.ts'),
+  )
+  return positions
+    ?.map(position => [`# ${position.path}`, getAt(schema, position.range)].join('\n'))
+    .join('\n\n')
+}
+
 describe('provideDefinitionFromSchema', () => {
   test('should provide return address type', async () => {
-    const range = provideDefinitionForSchema(schema, new Position(4, 16))
-    const output = getAt(schema, range)
+    const output = await process(new Position(4, 16))
     expect(output).toEqual(
       trimSpaces(`
+        # schema.gql
         type Address {
           id: String
           address: String
@@ -73,10 +85,10 @@ describe('provideDefinitionFromSchema', () => {
   })
 
   test('should provide user status', async () => {
-    const range = provideDefinitionForSchema(schema, new Position(5, 16))
-    const output = getAt(schema, range)
+    const output = await process(new Position(5, 16))
     expect(output).toEqual(
       trimSpaces(`
+        # schema.gql
         enum UserStatus {
           ACTIVE,
           DELETED
@@ -85,10 +97,22 @@ describe('provideDefinitionFromSchema', () => {
   })
 
   test('should provide tweet type', async () => {
-    const range = provideDefinitionForSchema(schema, new Position(36, 22))
-    const output = getAt(schema, range)
+    const output = await process(new Position(36, 22))
     expect(output).toEqual(
       trimSpaces(`
+        # schema.gql
+        type Tweet {
+          tweetId: ID!
+          mentions: [User!]
+        }`),
+    )
+  })
+
+  test('should provide tweet type', async () => {
+    const output = await process(new Position(36, 6))
+    expect(output).toEqual(
+      trimSpaces(`
+        # schema.gql
         type Tweet {
           tweetId: ID!
           mentions: [User!]
