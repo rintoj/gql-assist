@@ -34,7 +34,13 @@ used as primitive type
 """
 type Tweet {
   tweetId: ID!
+  status: TweetStatus
   mentions: [User!]
+}
+
+enum TweetStatus {
+  DRAFT
+  ACTIVE
 }
 
 type Query {
@@ -66,6 +72,7 @@ async function process(position: Position) {
     position,
     resolve(__dirname, 'test', '*.resolver.ts'),
     resolve(__dirname, 'test', '*.model.ts'),
+    resolve(__dirname, 'test', '*.enum.ts'),
   )
   if (!foundPosition) return ''
   const source = foundPosition.path.startsWith('schema.gql')
@@ -104,19 +111,32 @@ describe('provideDefinitionFromSchema', () => {
   })
 
   test('should provide tweet type', async () => {
-    const output = await process(new Position(36, 22))
+    const output = await process(new Position(42, 22))
     expect(output).toEqual(
       trimSpaces(`
         # schema.gql:28:0
         type Tweet {
           tweetId: ID!
+          status: TweetStatus
           mentions: [User!]
         }`),
     )
   })
 
+  test('should provide tweet status', async () => {
+    const output = await process(new Position(30, 22))
+    expect(output).toEqual(
+      trimSpaces(`
+        # schema.gql:34:0
+        enum TweetStatus {
+          DRAFT
+          ACTIVE
+        }`),
+    )
+  })
+
   test('should provide definition tweet type in typescript', async () => {
-    const output = await process(new Position(36, 6))
+    const output = await process(new Position(42, 6))
     expect(output).toEqual(
       trimSpaces(`
         # test/tweet.resolver.ts:6:2
@@ -139,6 +159,24 @@ describe('provideDefinitionFromSchema', () => {
       trimSpaces(`
         # test/base.model.ts:5:2
           id!: string`),
+    )
+  })
+
+  test('should provide definition of enum in typescript', async () => {
+    const output = await process(new Position(34, 12))
+    expect(output).toEqual(
+      trimSpaces(`
+        # test/tweet-status.enum.ts:2:12
+        export enum TweetStatus {`),
+    )
+  })
+
+  test('should provide definition of enum member in typescript', async () => {
+    const output = await process(new Position(35, 6))
+    expect(output).toEqual(
+      trimSpaces(`
+        # test/tweet-status.enum.ts:3:2
+          DRAFT = 'DRAFT',`),
     )
   })
 })

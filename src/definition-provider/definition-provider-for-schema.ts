@@ -211,7 +211,6 @@ async function processEnumForName(
   name: string,
   enumPattern: string,
 ): Promise<Location | undefined> {
-  console.log(name, enumPattern)
   if (!name || !enumPattern) return
   const stream = globStream(enumPattern, { onlyFiles: true, ignore: ['**/node_modules/**'] })
   for await (const file of stream) {
