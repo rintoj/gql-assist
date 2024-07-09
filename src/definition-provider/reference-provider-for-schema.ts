@@ -4,11 +4,7 @@ import { Location, Position } from '../diff'
 import { getGQLNodeRange, getGQLNodeRangeWithoutDescription, makeQueryParsable } from '../gql'
 import { isPositionWithInRange } from '../position/is-position-within-range'
 import { parseGraphQLDocumentFromTS, readTSFile } from '../ts'
-
-interface SelectedField {
-  parent: string
-  name: string
-}
+import { SelectedField } from './selected-field.type'
 
 function isInRange(node: gql.ASTNode, position: Position, offset?: Position) {
   const nodeRange = getGQLNodeRange(node, offset)

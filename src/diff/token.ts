@@ -22,7 +22,6 @@ export class Range {
   constructor(
     public start: Position,
     public end: Position,
-    public path?: string,
   ) {}
 
   setStart(start: Position) {
