@@ -8,9 +8,14 @@ export function createImport(from: string, ...imports: string[]) {
           false,
           undefined,
           ts.factory.createNamedImports(
-            imports.map(item =>
-              ts.factory.createImportSpecifier(false, undefined, ts.factory.createIdentifier(item)),
-            ),
+            imports.map(item => {
+              const [name, property] = item.split(':')
+              return ts.factory.createImportSpecifier(
+                false,
+                property ? ts.factory.createIdentifier(property) : undefined,
+                ts.factory.createIdentifier(name),
+              )
+            }),
           ),
         )
       : undefined,
