@@ -2,7 +2,7 @@ import * as gql from 'graphql'
 import ts from 'typescript'
 import { GQLAssistConfig } from '../config'
 import { Location, Position } from '../diff'
-import { isEnum, isModel } from '../generator'
+import { isEnum, isHook, isInput, isModel } from '../generator'
 import { getGQLNodeRange, getGQLNodeRangeWithoutDescription, makeQueryParsable } from '../gql'
 import { isPositionWithInRange } from '../position/is-position-within-range'
 import { getGQLContent, getGraphQLQueryVariable, getTSNodeLocationRange, hasDecorator } from '../ts'
@@ -67,7 +67,10 @@ function processClassDeclaration(
   schema: gql.GraphQLSchema,
   schemaLocation: string,
 ) {
-  if (!hasDecorator(classDeclaration, 'ObjectType') || !classDeclaration.name) {
+  if (
+    !classDeclaration.name ||
+    (!hasDecorator(classDeclaration, 'ObjectType') && !hasDecorator(classDeclaration, 'InputType'))
+  ) {
     return null
   }
   const range = getTSNodeLocationRange(classDeclaration.name, sourceFile)
@@ -93,7 +96,6 @@ function processEnumDeclaration(
   const range = getTSNodeLocationRange(enumDeclaration.name, sourceFile)
   const enumName = enumDeclaration.name.getText()
   if (range && isPositionWithInRange(position, range, true)) {
-    console.log(enumName)
     const type = schema.getType(enumName)
     if (type?.astNode) {
       return new Location(schemaLocation, getGQLNodeRange(type.astNode))
@@ -108,7 +110,7 @@ function provideDefinitionForClassAndFields(
   schemaLocation: string,
   config: GQLAssistConfig,
 ) {
-  if (isModel(sourceFile, config)) {
+  if (isModel(sourceFile, config) || isInput(sourceFile, config)) {
     for (const statement of sourceFile.statements) {
       if (ts.isClassDeclaration(statement)) {
         const location = processClassDeclaration(
@@ -145,7 +147,8 @@ export function provideDefinitionForSource(
   schemaLocation: string,
   config: GQLAssistConfig,
 ) {
-  const location = provideDefinitionForGraphQL(sourceFile, position, schema, schemaLocation)
-  if (location) return location
+  if (isHook(sourceFile, config)) {
+    return provideDefinitionForGraphQL(sourceFile, position, schema, schemaLocation)
+  }
   return provideDefinitionForClassAndFields(sourceFile, position, schema, schemaLocation, config)
 }

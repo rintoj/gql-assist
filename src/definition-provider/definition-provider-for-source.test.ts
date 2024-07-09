@@ -51,12 +51,20 @@ type Query {
 }
 
 type Mutation {
-  createUser(name: String): User
+  createUser(input: CreateUserInput!): CreateUserResponse
   updateUser(id: ID!, name: String): User
 }
 
 type Subscription {
   onUserChange(id: ID!): User
+}
+
+input CreateUserInput {
+  name: String!
+}
+
+type CreateUserResponse {
+  user: User!
 }
 `
 
@@ -82,6 +90,89 @@ async function process(path: string, code: string, position: Position) {
 }
 
 describe('provideDefinitionForSource', () => {
+  test('should generate a location in schema for graphql query', async () => {
+    const code = `
+      const query = gql\`
+        query tweetQuery($id: ID!) {
+          tweet(id: $id)  {
+            tweetId
+            status
+          }
+        }
+      \`
+    `
+    const output = await process('user.gql.ts', code, new Position(2, 4))
+    expect(output).toEqual(
+      trimSpaces(`
+        # schema.gql:42:2
+          tweet(id: ID!): Tweet`),
+    )
+  })
+
+  test('should generate a location in schema for field definition', async () => {
+    const code = `
+      const query = gql\`
+        query tweetQuery($id: ID!) {
+          tweet(id: $id)  {
+            tweetId
+            status
+          }
+        }
+      \`
+    `
+    const output = await process('user.gql.ts', code, new Position(3, 6))
+    expect(output).toEqual(
+      trimSpaces(`
+        # schema.gql:29:2
+          tweetId: ID!`),
+    )
+  })
+
+  test('should generate a location in schema for variable definition', async () => {
+    const code = `
+      const query = gql\`
+        mutation createUserMutation($input: CreateUserInput!) {
+          createUser(input: $input)  {
+            user {
+              id
+            }
+          }
+        }
+      \`
+    `
+    const output = await process('create-user-mutation.gql.ts', code, new Position(1, 50))
+    expect(output).toEqual(
+      trimSpaces(`
+        # schema.gql:54:0
+        input CreateUserInput {
+          name: String!
+        }`),
+    )
+  })
+
+  test('should generate a location in schema for operation definition', async () => {
+    const code = `
+      const query = gql\`
+        mutation createUserMutation($input: CreateUserInput!) {
+          createUser(input: $input)  {
+            user {
+              id
+            }
+          }
+        }
+      \`
+    `
+    const output = await process('create-user-mutation.gql.ts', code, new Position(1, 3))
+    expect(output).toEqual(
+      trimSpaces(`
+        # schema.gql:45:0
+        type Mutation {
+          createUser(input: CreateUserInput!): CreateUserResponse
+          updateUser(id: ID!, name: String): User
+        }`),
+    )
+  })
+
   test('should generate a location in schema for a given model name', async () => {
     const code = `
       @ObjectType()
@@ -103,6 +194,46 @@ describe('provideDefinitionForSource', () => {
           name: String
           address: Address
           status: UserStatus
+        }`),
+    )
+  })
+
+  test('should generate a location in schema for a given input model', async () => {
+    const code = `
+      @InputType()
+      class CreateUserInput {
+        @Field(() => ID)
+        id!: string
+
+        @Field(() => String, { nullable: true })
+        name?: string
+      }
+
+    `
+    const output = await process('create-user.input.ts', code, new Position(1, 6))
+    expect(output).toEqual(
+      trimSpaces(`
+        # schema.gql:54:0
+        input CreateUserInput {
+          name: String!
+        }`),
+    )
+  })
+
+  test('should generate a location in schema for a given response model', async () => {
+    const code = `
+      @ObjectType()
+      class CreateUserResponse {
+        @Field()
+        user!: User
+      }
+    `
+    const output = await process('create-user.response.ts', code, new Position(1, 6))
+    expect(output).toEqual(
+      trimSpaces(`
+        # schema.gql:58:0
+        type CreateUserResponse {
+          user: User!
         }`),
     )
   })
