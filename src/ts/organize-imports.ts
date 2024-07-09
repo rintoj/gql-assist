@@ -27,7 +27,9 @@ export function organizeImports(sourceFile: ts.SourceFile): ts.SourceFile {
           ts.isNamedImports(statement.importClause.namedBindings)
         ) {
           statement.importClause.namedBindings.elements.map(el =>
-            importStatements[importFrom].names.add(el.name.text),
+            importStatements[importFrom].names.add(
+              [el.name.text, el.propertyName?.text].filter(Boolean).join(':'),
+            ),
           )
         }
       }
