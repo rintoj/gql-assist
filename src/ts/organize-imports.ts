@@ -1,9 +1,19 @@
 import ts from 'typescript'
-import { createDefaultImport, createImport, createNamespaceImport } from './create-import'
+import {
+  createDefaultImport,
+  createImport,
+  createNamespaceImport,
+  createTypeOnlyImport,
+} from './create-import'
 
 export function organizeImports(sourceFile: ts.SourceFile): ts.SourceFile {
   const importStatements: {
-    [id: string]: { names: Set<string>; isDefault?: boolean; isNamespaceImport?: boolean }
+    [id: string]: {
+      names: Set<string>
+      isDefault?: boolean
+      isNamespaceImport?: boolean
+      isTypeOnly?: boolean
+    }
   } = {}
   sourceFile.statements.map((statement: any) => {
     if (ts.isImportDeclaration(statement) && ts.isStringLiteral(statement.moduleSpecifier)) {
@@ -22,6 +32,17 @@ export function organizeImports(sourceFile: ts.SourceFile): ts.SourceFile {
         ) {
           importStatements[importFrom].names.add(statement.importClause.namedBindings.name.text)
           importStatements[importFrom].isNamespaceImport = true
+        } else if (
+          statement.importClause.namedBindings &&
+          ts.isNamedImports(statement.importClause.namedBindings) &&
+          statement.importClause?.isTypeOnly
+        ) {
+          statement.importClause.namedBindings.elements.map(el => {
+            importStatements[importFrom].isTypeOnly = true
+            return importStatements[importFrom].names.add(
+              [el.name.text, el.propertyName?.text].filter(Boolean).join(':'),
+            )
+          })
         } else if (
           statement.importClause.namedBindings &&
           ts.isNamedImports(statement.importClause.namedBindings)
@@ -70,6 +91,8 @@ export function organizeImports(sourceFile: ts.SourceFile): ts.SourceFile {
           return createDefaultImport(fromFile, Array.from(importStatement.names)[0])
         } else if (importStatement.isNamespaceImport) {
           return createNamespaceImport(fromFile, Array.from(importStatement.names)[0])
+        } else if (importStatement.isTypeOnly) {
+          return createTypeOnlyImport(fromFile, ...Array.from(importStatement.names).sort())
         }
         return createImport(fromFile, ...Array.from(importStatement.names).sort())
       }),
