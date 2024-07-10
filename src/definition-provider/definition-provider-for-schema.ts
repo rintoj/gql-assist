@@ -10,6 +10,7 @@ import { SelectedField } from './selected-field.type'
 
 function getPositionOfMethod(
   node:
+    | ts.VariableDeclaration
     | ts.EnumDeclaration
     | ts.EnumMember
     | ts.ClassDeclaration
@@ -268,7 +269,35 @@ async function processModelForName(
     for (const classDeclaration of sourceFile.statements) {
       if (ts.isClassDeclaration(classDeclaration) && classDeclaration.name?.getText() === name) {
         const location = getPositionOfMethod(classDeclaration, sourceFile)
-        console.log(`here location=${location}`)
+        if (location) return location
+      }
+    }
+  }
+}
+
+async function processScalarName(
+  name: string,
+  scalarPattern: string,
+): Promise<Location | undefined> {
+  if (!name || !scalarPattern) return
+  const stream = globStream(scalarPattern, { onlyFiles: true, ignore: ['**/node_modules/**'] })
+  for await (const file of stream) {
+    const sourceFile = readTSFile(file as string)
+    for (const statement of sourceFile.statements) {
+      if (
+        ts.isVariableStatement(statement) &&
+        !!statement?.declarationList?.declarations[0] &&
+        ts.isVariableDeclaration(statement?.declarationList?.declarations?.[0]) &&
+        !!statement?.declarationList?.declarations?.[0].initializer &&
+        ts.isNewExpression(statement?.declarationList?.declarations?.[0].initializer) &&
+        ts.isIdentifier(statement?.declarationList?.declarations?.[0].initializer.expression) &&
+        statement?.declarationList?.declarations?.[0].initializer.expression.text ===
+          'GraphQLScalarType'
+      ) {
+        const location = getPositionOfMethod(
+          statement?.declarationList?.declarations?.[0],
+          sourceFile,
+        )
         if (location) return location
       }
     }
@@ -282,6 +311,7 @@ export async function provideDefinitionForSchema(
   resolverPattern: string,
   modelPattern: string,
   enumPattern: string,
+  scalarPattern: string,
 ): Promise<Location | undefined> {
   try {
     const fixed = makeQueryParsable(source)
@@ -290,6 +320,7 @@ export async function provideDefinitionForSchema(
     let modelName: string | undefined
     let selectedField: SelectedField | undefined
     let enumName: string | undefined
+    let scalarName: string | undefined
     let selectedEnum: SelectedField | undefined
     const processFields = (node: gql.TypeDefinitionNode) => {
       if (!isInRange(node, position)) return
@@ -337,6 +368,13 @@ export async function provideDefinitionForSchema(
           }
         }
       },
+      ScalarTypeDefinition(node) {
+        if (!isInRange(node, position)) return
+        if (isInRange(node.name, position)) {
+          scalarName = node.name.value
+          return gql.BREAK
+        }
+      },
     })
     if (type) {
       return processFromSchema(type, document, schemaLocation)
@@ -345,6 +383,8 @@ export async function provideDefinitionForSchema(
         (await processResolvers(selectedField, resolverPattern)) ??
         (await processModels(selectedField, modelPattern))
       )
+    } else if (scalarName) {
+      return await processScalarName(scalarName, scalarPattern)
     } else if (modelName) {
       return await processModelForName(modelName, modelPattern)
     } else if (selectedEnum) {

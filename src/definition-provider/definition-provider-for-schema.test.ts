@@ -57,6 +57,8 @@ type Mutation {
 type Subscription {
   onUserChange(id: ID!): User
 }
+
+scalar ID
 `
 
 function getAt(schema: string, range: Range | null) {
@@ -73,6 +75,7 @@ async function process(position: Position) {
     resolve(__dirname, 'test', '*.resolver.ts'),
     resolve(__dirname, 'test', '*.model.ts'),
     resolve(__dirname, 'test', '*.enum.ts'),
+    resolve(__dirname, 'test', '*.scalar.ts'),
   )
   if (!foundPosition) return ''
   const source = foundPosition.path.startsWith('schema.gql')
@@ -177,6 +180,15 @@ describe('provideDefinitionFromSchema', () => {
       trimSpaces(`
         # test/tweet-status.enum.ts:3:2
           DRAFT = 'DRAFT',`),
+    )
+  })
+
+  test('should provide definition of a scalar item', async () => {
+    const output = await process(new Position(54, 8))
+    expect(output).toEqual(
+      trimSpaces(`
+        # test/id.scalar.ts:7:13
+        export const ID = new GraphQLScalarType({`),
     )
   })
 })
