@@ -30,6 +30,10 @@ export interface GQLAssistConfig {
     enable: boolean
     fileExtensions: string[]
   }
+  scalar: {
+    enable: boolean
+    fileExtensions: string[]
+  }
   reactHook: {
     enable: boolean
     library: string
@@ -49,6 +53,7 @@ const DEFAULT_CONFIG: GQLAssistConfig = {
   resolver: { enable: true, fileExtensions: ['.resolver.ts'] },
   input: { enable: true, fileExtensions: ['.input.ts'] },
   response: { enable: true, fileExtensions: ['.response.ts'] },
+  scalar: { enable: true, fileExtensions: ['.scalar.ts'] },
   enum: { enable: true, fileExtensions: ['.enum.ts', '.model.ts', '.input.ts', '.response.ts'] },
   reactHook: {
     enable: true,
