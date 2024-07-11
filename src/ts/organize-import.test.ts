@@ -119,4 +119,25 @@ describe('organizeImport', () => {
     `),
     )
   })
+
+  test('to organize imports with inline type', async () => {
+    const sourceFile = parseTS(`
+      import { Context, Parent, ResolveField, Resolver } from '@nestjs/graphql'
+      import { type GQLContext } from '../../context'
+      import { type LocationService as LS } from '../location/location.service'
+      import { StorageLocation } from './storage-location.model'
+      import { StorageLocationType } from './storage-location.type'
+      import { FieldResolver as FR } from 'src/common/field-resolver-type'`)
+    const code = await prettify(printTS(organizeImports(sourceFile)))
+    expect(toParsedOutput(code)).toEqual(
+      toParsedOutput(`
+        import { Context, Parent, ResolveField, Resolver } from '@nestjs/graphql'
+        import { FieldResolver as FR } from 'src/common/field-resolver-type'
+        import { type GQLContext } from '../../context'
+        import { type LocationService as LS } from '../location/location.service'
+        import { StorageLocation } from './storage-location.model'
+        import { StorageLocationType } from './storage-location.type'
+    `),
+    )
+  })
 })

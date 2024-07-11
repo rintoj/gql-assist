@@ -40,7 +40,7 @@ export function organizeImports(sourceFile: ts.SourceFile): ts.SourceFile {
           statement.importClause.namedBindings.elements.map(el => {
             importStatements[importFrom].isTypeOnly = true
             return importStatements[importFrom].names.add(
-              [el.name.text, el.propertyName?.text].filter(Boolean).join(':'),
+              [el.name.text, el.propertyName?.text ?? '', el.isTypeOnly].join(':'),
             )
           })
         } else if (
@@ -49,7 +49,7 @@ export function organizeImports(sourceFile: ts.SourceFile): ts.SourceFile {
         ) {
           statement.importClause.namedBindings.elements.map(el =>
             importStatements[importFrom].names.add(
-              [el.name.text, el.propertyName?.text].filter(Boolean).join(':'),
+              [el.name.text, el.propertyName?.text ?? '', el.isTypeOnly].join(':'),
             ),
           )
         }

@@ -9,9 +9,9 @@ export function createImport(from: string, ...imports: string[]) {
           undefined,
           ts.factory.createNamedImports(
             imports.map(item => {
-              const [name, property] = item.split(':')
+              const [name, property, isTypeOnly] = item.split(':')
               return ts.factory.createImportSpecifier(
-                false,
+                isTypeOnly === 'true',
                 property ? ts.factory.createIdentifier(property) : undefined,
                 ts.factory.createIdentifier(name),
               )
@@ -33,9 +33,9 @@ export function createTypeOnlyImport(from: string, ...imports: string[]) {
           undefined,
           ts.factory.createNamedImports(
             imports.map(item => {
-              const [name, property] = item.split(':')
+              const [name, property, isTypeOnly] = item.split(':')
               return ts.factory.createImportSpecifier(
-                false,
+                isTypeOnly === 'true',
                 property ? ts.factory.createIdentifier(property) : undefined,
                 ts.factory.createIdentifier(name),
               )
