@@ -1,7 +1,7 @@
-import { command, input } from 'clifer'
+import { CliExpectedError, command, input } from 'clifer'
 import { readFile, writeFile } from 'fs-extra'
+import { GraphQLError } from 'graphql'
 import { sortSchema } from '../../schema-sort/schema-sort'
-import highlight from 'cli-highlight'
 
 interface Props {
   schema: string
@@ -10,14 +10,25 @@ interface Props {
 }
 
 async function run({ schema, write, output }: Props) {
-  const schemaSDL = await readFile(schema, 'utf-8')
-  const sorted = sortSchema(schemaSDL)
-  if (write) {
-    await writeFile(schema, sorted, 'utf-8')
-  } else if (output) {
-    await writeFile(output, sorted, 'utf-8')
-  } else {
-    console.log(highlight(sorted))
+  try {
+    const schemaSDL = await readFile(schema, 'utf-8')
+    const sorted = sortSchema(schemaSDL)
+    if (write) {
+      await writeFile(schema, sorted, 'utf-8')
+    } else if (output) {
+      await writeFile(output, sorted, 'utf-8')
+    } else {
+      console.log(sorted)
+    }
+  } catch (e) {
+    if (e instanceof GraphQLError && e.message.startsWith('Syntax Error:')) {
+      throw new CliExpectedError(`Invalid schema: "${schema}"`)
+    } else if (e.message.startsWith('ENOENT: no such file or directory')) {
+      throw new CliExpectedError(`No such file: "${schema}"`)
+    } else if (e.message.startsWith('EISDIR: illegal operation on a directory')) {
+      throw new CliExpectedError(`Provide a file name, not a directory. You provided "${schema}".`)
+    }
+    throw e
   }
 }
 
