@@ -1,7 +1,7 @@
-import { red } from 'chalk'
 import { cli, runCli } from 'clifer'
-import create from './create/create-command'
-import generate from './generate/generate-command'
+import create from './commands/create/create-command'
+import generate from './commands/generate/generate-command'
+import schema from './commands/schema/schema-command'
 
 const command = cli('gql-assist')
   .description(
@@ -10,5 +10,6 @@ const command = cli('gql-assist')
   .version('1.0')
   .command(generate)
   .command(create)
+  .command(schema)
 
 runCli(command)

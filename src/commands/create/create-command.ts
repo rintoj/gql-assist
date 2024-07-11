@@ -1,5 +1,5 @@
 import { command, input } from 'clifer'
-import { ifValidCommand, runCommand } from '../util/run-command'
+import { ifValidCommand, runCommand } from '../../util/run-command'
 
 interface Props {
   name: string

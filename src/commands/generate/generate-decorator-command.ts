@@ -1,11 +1,11 @@
 import { command, input } from 'clifer'
 import { reduceAsync, toNonNullArray } from 'tsds-tools'
 import ts from 'typescript'
-import { GQLAssistConfig, config } from '../config'
-import { generateEnum } from '../generator/enum/enum-generator'
-import { generateInput } from '../generator/input/input-generator'
-import { generateModel } from '../generator/model/model-generator'
-import { generateResolver } from '../generator/resolver/resolver-generator'
+import { GQLAssistConfig, config } from '../../config'
+import { generateEnum } from '../../generator/enum/enum-generator'
+import { generateInput } from '../../generator/input/input-generator'
+import { generateModel } from '../../generator/model/model-generator'
+import { generateResolver } from '../../generator/resolver/resolver-generator'
 import { processTypeScriptFiles } from './process-typescript-files'
 
 interface GenerateProps {
