@@ -7,6 +7,7 @@ import { Position } from '../../diff'
 import {
   createDefaultImport,
   createGraphQLQuery,
+  getExistingHookName,
   getGQLContent,
   getGraphQLQueryVariable,
   getTSNodeLocationRange,
@@ -43,6 +44,7 @@ function identifyLibrary(sourceFile: ts.SourceFile, config: GQLAssistConfig) {
 async function generateGQLHook(sourceFile: ts.SourceFile, schema: GraphQLSchema, context: Context) {
   // identify graphql variable
   const variable = getGraphQLQueryVariable(sourceFile)
+  const hookName = getExistingHookName(sourceFile)
   if (!variable) return { sourceFile, errors: [] }
   const query = getGQLContent(variable)
   if (!query || query?.trim() === '') return { sourceFile, errors: [] }
@@ -51,7 +53,7 @@ async function generateGQLHook(sourceFile: ts.SourceFile, schema: GraphQLSchema,
 
   // parse graphql
   const initialDocument = gql.parse(query.replace(/\{[\s\n]*\}/g, '{ __typename }'))
-  const { document, types } = parseDocument(initialDocument, schema)
+  const { document, types } = parseDocument(initialDocument, schema, hookName)
 
   // create imports
   const libraryName = identifyLibrary(sourceFile, context.config)

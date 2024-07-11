@@ -23,6 +23,9 @@ importers:
       chalk:
         specifier: 4.0.0
         version: 4.0.0
+      cli-highlight:
+        specifier: ^2.1.11
+        version: 2.1.11
       clifer:
         specifier: ^1.2.2
         version: 1.2.2

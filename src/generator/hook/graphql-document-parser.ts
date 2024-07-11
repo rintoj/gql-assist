@@ -232,6 +232,7 @@ function addVariableDefinitions(document: gql.DocumentNode, context: GraphQLPars
 function fixDocument(
   document: gql.DocumentNode,
   schema: gql.GraphQLSchema,
+  hookName: string | undefined,
   context: GraphQLParserContext,
 ) {
   const typeInfo = new gql.TypeInfo(schema)
@@ -241,6 +242,15 @@ function fixDocument(
     gql.visitWithTypeInfo(typeInfo, {
       OperationDefinition(node: gql.OperationDefinitionNode) {
         definition = node
+        if (hookName) {
+          return updateName(
+            node,
+            camelCase(
+              hookName.replace(/^use/, '').replace(className(node.operation), ''),
+              className(node.operation),
+            ),
+          )
+        }
         const firstField = toCamelCase(
           node.selectionSet?.selections
             .map(field => isFieldNode(field) && field?.name?.value)
@@ -296,10 +306,14 @@ function createVariablesType(document: gql.DocumentNode, context: GraphQLParserC
   }
 }
 
-export function parseDocument(inputDocument: gql.DocumentNode, schema: gql.GraphQLSchema) {
+export function parseDocument(
+  inputDocument: gql.DocumentNode,
+  schema: gql.GraphQLSchema,
+  hookName: string | undefined,
+) {
   const typeInfo = new gql.TypeInfo(schema)
   const context = new GraphQLParserContext(typeInfo)
-  const document = fixDocument(inputDocument, schema, context)
+  const document = fixDocument(inputDocument, schema, hookName, context)
   gql.visit(
     document,
     gql.visitWithTypeInfo(typeInfo, {

@@ -1,11 +1,11 @@
 import { readFile, writeFile } from 'fs-extra'
 import pluralize from 'pluralize'
 import ts from 'typescript'
-import { parseTSFile, prettify, printTS } from '../ts'
-import { md5Hex } from '../util'
-import { resolveFiles } from '../util/resolve-files'
-import { renderText } from '../util/text-formatter'
-import { withStatus } from '../util/with-status'
+import { parseTSFile, prettify, printTS } from '../../ts'
+import { md5Hex } from '../../util'
+import { resolveFiles } from '../../util/resolve-files'
+import { renderText } from '../../util/text-formatter'
+import { withStatus } from '../../util/with-status'
 
 export async function processTypeScriptFiles(
   {

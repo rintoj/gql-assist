@@ -438,6 +438,68 @@ describe('generateHook', () => {
     )
   })
 
+  test('should use the hook name set by user', async () => {
+    const query = `
+     import gql from 'graphql-tag'
+     const query = gql\`
+        query {
+          user {
+            name
+          }
+        }
+      \`
+
+      export function useMy(
+          variables: Variables,
+          options?: QueryHookOptions<UserQuery, Variables>,
+        ) {
+          return useQuery<UserAndFollowersQuery, Variables>(query, {
+            variables,
+            skip: !variables.id || !variables.followerId,
+            ...options,
+          })
+        }
+    `
+    const { hook, errors } = await generate('query.gql.ts', query)
+    expect(errors).toEqual([])
+    expect(toParsedOutput(hook)).toEqual(
+      toParsedOutput(`
+        import { QueryHookOptions, useQuery } from '@apollo/client'
+        import gql from 'graphql-tag'
+
+        const query = gql\`
+          query myQuery($id: ID!) {
+            user(id: $id) {
+              name
+            }
+          }
+        \`
+
+        export interface MyQuery {
+          user?: User
+          __typename?: 'Query'
+        }
+
+        export interface User {
+          name?: string
+          __typename?: 'User'
+        }
+
+        export interface Variables {
+          id: string | undefined
+        }
+
+        export function useMyQuery(variables: Variables, options?: QueryHookOptions<MyQuery, Variables>) {
+          return useQuery<MyQuery, Variables>(query, {
+            variables,
+            skip: !variables.id,
+            ...options,
+          })
+        }
+      `),
+    )
+  })
+
   test('should fix batched query', async () => {
     const query = toQueryJS(`
       query {
@@ -1173,9 +1235,9 @@ describe('generateHook', () => {
     expect(errors).toEqual([])
   })
 
-  test('should generate query and its types without gql', async () => {
+  test('should generate query and its types with graphql', async () => {
     const query = `
-      const query = \`
+      const query = graphql\`
         query {
           user {
             name
