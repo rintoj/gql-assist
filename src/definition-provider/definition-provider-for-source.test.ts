@@ -1,6 +1,6 @@
 import * as gql from 'graphql'
 import { config } from '../config'
-import { Position, Range } from '../diff'
+import { Position, Range } from '../position'
 import { parseTSFile } from '../ts'
 import { trimSpaces } from '../util/trim-spaces'
 import { provideDefinitionForSource } from './definition-provider-for-source'

@@ -3,7 +3,7 @@ import { GraphQLSchema } from 'graphql'
 import ts from 'typescript'
 import { GQLAssistConfig } from '../../config'
 import { Diagnostic, diagnoseGraphQLQuery } from '../../diagnostic'
-import { Position } from '../../diff'
+import { Position } from '../../position'
 import {
   createDefaultImport,
   createGraphQLQuery,

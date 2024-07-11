@@ -1,4 +1,4 @@
-import { Position, Range } from '../diff'
+import { Position, Range } from '../position'
 import { trimSpaces } from '../util/trim-spaces'
 import { provideReferenceForSchema } from './reference-provider-for-schema'
 

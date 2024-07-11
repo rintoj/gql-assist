@@ -1,5 +1,5 @@
 import * as gql from 'graphql'
-import { Position, Range } from '../diff'
+import { Position, Range } from '../position'
 import { getGQLNodeRange } from '../gql'
 
 export function isPositionWithInRange(position: Position, range: Range, includeEdges = false) {

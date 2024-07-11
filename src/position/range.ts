@@ -1,4 +1,4 @@
-import { Position } from '../diff'
+import { Position } from './position'
 
 export class Range {
   constructor(

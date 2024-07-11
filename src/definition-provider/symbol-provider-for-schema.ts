@@ -1,5 +1,5 @@
 import * as gql from 'graphql'
-import { Range } from '../diff'
+import { Range } from '../position'
 import {
   getGQLNodeRangeWithoutDescription,
   isEnumTypeDefinition,

@@ -1,9 +1,9 @@
 import * as gql from 'graphql'
 import ts from 'typescript'
 import { GQLAssistConfig } from '../config'
-import { Location, Position } from '../diff'
 import { isEnum, isHook, isInput, isModel } from '../generator'
 import { getGQLNodeRange, getGQLNodeRangeWithoutDescription, makeQueryParsable } from '../gql'
+import { Location, Position } from '../position'
 import { isPositionWithInRange } from '../position/is-position-within-range'
 import { getGQLContent, getGraphQLQueryVariable, getTSNodeLocationRange, hasDecorator } from '../ts'
 

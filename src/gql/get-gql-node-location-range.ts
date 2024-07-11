@@ -1,5 +1,5 @@
 import * as gql from 'graphql'
-import { Position, Range } from '../diff/token'
+import { Position, Range } from '../position'
 
 export function getGQLNodeRangeWithoutDescription(node: gql.ASTNode, offset?: Position) {
   const range = getGQLNodeRange(node)

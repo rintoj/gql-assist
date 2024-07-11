@@ -1,7 +1,7 @@
 import { globStream } from 'fast-glob'
 import * as gql from 'graphql'
-import { Location, Position } from '../diff'
 import { getGQLNodeRange, getGQLNodeRangeWithoutDescription, makeQueryParsable } from '../gql'
+import { Location, Position } from '../position'
 import { isPositionWithInRange } from '../position/is-position-within-range'
 import { parseGraphQLDocumentFromTS, readTSFile } from '../ts'
 import { SelectedField } from './selected-field.type'

@@ -1,5 +1,5 @@
 import ts from 'typescript'
-import { Position, Range } from '../diff/token'
+import { Position, Range } from '../position'
 
 export function getTSNodeLocationRange(node: ts.Node, sourceFile: ts.SourceFile) {
   const start = node.getStart(sourceFile)

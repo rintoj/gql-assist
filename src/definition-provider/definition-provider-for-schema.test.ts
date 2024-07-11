@@ -1,5 +1,5 @@
 import { resolve } from 'path'
-import { Position, Range } from '../diff'
+import { Position, Range } from '../position'
 import { trimSpaces } from '../util/trim-spaces'
 import { provideDefinitionForSchema } from './definition-provider-for-schema'
 import { readFileSync } from 'fs-extra'

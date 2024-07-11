@@ -1,6 +1,6 @@
 import * as gql from 'graphql'
 import { GQLAssistConfig, config } from '../config'
-import { Position } from '../diff'
+import { Position } from '../position'
 import { parseTSFile } from '../ts/parse-ts'
 import { trimSpaces } from '../util/trim-spaces'
 import { DEFAULT_SIPPET, autoCompleteHook } from './hook-auto-complete'
