@@ -3,7 +3,7 @@ import { toNonNullArray } from 'tsds-tools'
 import ts from 'typescript'
 import { GQLAssistConfig } from '../config'
 import { Diagnostic } from '../diagnostic'
-import { Position } from '../diff'
+import { Position } from '../position'
 
 export type Parent = gql.ObjectTypeDefinitionNode | gql.UnionTypeDefinitionNode
 

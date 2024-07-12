@@ -1,8 +1,8 @@
 import minEditDistance from 'minimum-edit-distance'
+import { Position, Range } from '../position'
 import { EditAction, EditActionType } from './actions'
 import { parseTrace } from './parse-trace'
-import { printDebugInfo } from './print-debug'
-import { Position, Token, Range } from './token'
+import { Token } from './token'
 
 const { diff } = minEditDistance
 

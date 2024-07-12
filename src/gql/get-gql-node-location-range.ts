@@ -1,5 +1,5 @@
 import * as gql from 'graphql'
-import { Position, Range } from '../diff/token'
+import { Position, Range } from '../position'
 
 export function getGQLNodeRangeWithoutDescription(node: gql.ASTNode, offset?: Position) {
   const range = getGQLNodeRange(node)
@@ -18,23 +18,6 @@ export function getGQLNodeRange(node: gql.ASTNode, offset?: Position) {
       new Position(offset?.line ?? 0, offset?.character ?? 1),
     )
   }
-  if (
-    loc.startToken.line === loc.endToken.line &&
-    loc.startToken.column === loc.endToken.column &&
-    loc.endToken.kind === 'Name' &&
-    !!loc.endToken.value
-  ) {
-    return new Range(
-      new Position(
-        loc.startToken.line + (offset?.line ?? 0) - 1,
-        loc.startToken.column + (offset?.character ?? 0) - 1,
-      ),
-      new Position(
-        loc.endToken.line + (offset?.line ?? 0) - 1,
-        loc.startToken.column + loc.endToken.value.length + (offset?.character ?? 0),
-      ),
-    )
-  }
   return new Range(
     new Position(
       loc.startToken.line + (offset?.line ?? 0) - 1,
@@ -42,7 +25,7 @@ export function getGQLNodeRange(node: gql.ASTNode, offset?: Position) {
     ),
     new Position(
       loc.endToken.line + (offset?.line ?? 0) - 1,
-      loc.endToken.column + (offset?.character ?? 0),
+      loc.endToken.column + loc.endToken.end - loc.endToken.start + (offset?.character ?? 0),
     ),
   )
 }

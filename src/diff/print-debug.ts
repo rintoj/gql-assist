@@ -1,7 +1,8 @@
-import { green, red, gray, yellow } from 'chalk'
-import { EditAction, EditActionType } from './actions'
-import { Position, Token } from './token'
+import { gray, green, red, yellow } from 'chalk'
 import { toArrayByProperty, toNonNullArray } from 'tsds-tools'
+import { Position } from '../position'
+import { EditAction, EditActionType } from './actions'
+import { Token } from './token'
 
 const NEW_LINE_SYMBOL = '⏎'
 const SEPARATOR_SYMBOL = ''

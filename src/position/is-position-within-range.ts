@@ -1,6 +1,6 @@
 import * as gql from 'graphql'
-import { Position, Range } from '../diff'
 import { getGQLNodeRange } from '../gql'
+import { Position, Range } from '../position'
 
 export function isPositionWithInRange(position: Position, range: Range, includeEdges = false) {
   if (position.line > range.start.line && position.line < range.end.line) {

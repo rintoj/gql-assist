@@ -1,4 +1,4 @@
-import { Range } from '../diff/token'
+import { Range } from '../position'
 
 export enum DiagnosticSeverity {
   Error = 0,

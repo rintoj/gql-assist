@@ -2,8 +2,8 @@ import { globStream } from 'fast-glob'
 import * as gql from 'graphql'
 import path from 'path'
 import ts from 'typescript'
-import { Location, Position, Range } from '../diff'
 import { getGQLNodeRangeWithoutDescription, makeQueryParsable } from '../gql'
+import { Location, Position, Range } from '../position'
 import { isInRange } from '../position/is-position-within-range'
 import { getDecorator, hasDecorator, readTSFile } from '../ts'
 import { SelectedField } from './selected-field.type'
@@ -292,13 +292,28 @@ async function processScalarName(
         ts.isNewExpression(statement?.declarationList?.declarations?.[0].initializer) &&
         ts.isIdentifier(statement?.declarationList?.declarations?.[0].initializer.expression) &&
         statement?.declarationList?.declarations?.[0].initializer.expression.text ===
-          'GraphQLScalarType'
-      ) {
-        const location = getPositionOfMethod(
-          statement?.declarationList?.declarations?.[0],
-          sourceFile,
+          'GraphQLScalarType' &&
+        !!statement?.declarationList?.declarations?.[0].initializer.arguments?.length &&
+        ts.isObjectLiteralExpression(
+          statement?.declarationList?.declarations?.[0].initializer.arguments?.[0],
         )
-        if (location) return location
+      ) {
+        const expression = statement?.declarationList?.declarations?.[0].initializer.arguments[0]
+        const nameArgument = expression.properties?.find(
+          arg =>
+            ts.isPropertyAssignment(arg) && ts.isIdentifier(arg.name) && arg.name.text === 'name',
+        ) as ts.PropertyAssignment | undefined
+        if (
+          nameArgument &&
+          ts.isStringLiteral(nameArgument.initializer) &&
+          nameArgument.initializer.text === name
+        ) {
+          const location = getPositionOfMethod(
+            statement?.declarationList?.declarations?.[0],
+            sourceFile,
+          )
+          if (location) return location
+        }
       }
     }
   }

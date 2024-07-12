@@ -1,5 +1,5 @@
 import { resolve } from 'path'
-import { Position, Range } from '../diff'
+import { Position, Range } from '../position'
 import { trimSpaces } from '../util/trim-spaces'
 import { provideDefinitionForSchema } from './definition-provider-for-schema'
 import { readFileSync } from 'fs-extra'
@@ -59,6 +59,8 @@ type Subscription {
 }
 
 scalar ID
+
+scalar TweetIdForInternalUsers
 `
 
 function getAt(schema: string, range: Range | null) {
@@ -127,7 +129,7 @@ describe('provideDefinitionFromSchema', () => {
   })
 
   test('should provide tweet status', async () => {
-    const output = await process(new Position(30, 22))
+    const output = await process(new Position(30, 18))
     expect(output).toEqual(
       trimSpaces(`
         # schema.gql:34:0
@@ -189,6 +191,15 @@ describe('provideDefinitionFromSchema', () => {
       trimSpaces(`
         # test/id.scalar.ts:7:13
         export const ID = new GraphQLScalarType({`),
+    )
+  })
+
+  test('should provide definition of a scalar item', async () => {
+    const output = await process(new Position(56, 13))
+    expect(output).toEqual(
+      trimSpaces(`
+        # test/tweet-id-for-internal-users.scalar.ts:7:13
+        export const TweetIdForInternalUsers = new GraphQLScalarType({`),
     )
   })
 })
