@@ -417,7 +417,7 @@ describe('autoCompleteHook', () => {
           }
         \`
       `,
-      new Position(13, 5),
+      new Position(13, 6),
     )
     expect(output).toEqual([
       {
