@@ -59,13 +59,15 @@ describe('generateHook', () => {
         }
 
         export interface User {
-          id: string
+          id: ID
           name?: string
           __typename?: 'User'
         }
 
+        export type ID = string
+
         export interface Variables {
-          id: string | undefined
+          id: ID | undefined
         }
 
         export function useGetUserQuery(
@@ -113,13 +115,15 @@ describe('generateHook', () => {
         }
 
         export interface User {
-          id: string
+          id: ID
           name?: string
           __typename?: 'User'
         }
 
+        export type ID = string
+
         export interface Variables {
-          id: string | undefined
+          id: ID | undefined
           limit?: number | undefined
         }
 
@@ -180,14 +184,16 @@ describe('generateHook', () => {
           __typename?: 'User'
         }
 
+        export type ID = string
+
         export interface UserFollowers {
-          id: string
+          id: ID
           name?: string
           __typename?: 'User'
         }
 
         export interface Variables {
-          id: string | undefined
+          id: ID | undefined
           limit?: number | undefined
         }
 
@@ -256,21 +262,23 @@ describe('generateHook', () => {
           __typename?: 'User'
         }
 
+        export type ID = string
+
         export interface UserFollowers {
-          id: string
+          id: ID
           name?: string
           followers: UserFollower1[]
           __typename?: 'User'
         }
 
         export interface UserFollower1 {
-          id: string
+          id: ID
           name?: string
           __typename?: 'User'
         }
 
         export interface Variables {
-          id: string | undefined
+          id: ID | undefined
           limit?: number | undefined
           followerLimit?: number | undefined
         }
@@ -331,15 +339,17 @@ describe('generateHook', () => {
           __typename?: 'User'
         }
 
+        export type ID = string
+
         export interface UserFollower {
-          id: string
+          id: ID
           name?: string
           __typename?: 'User'
         }
 
         export interface Variables {
-          id: string | undefined
-          followerId: string | undefined
+          id: ID | undefined
+          followerId: ID | undefined
         }
 
         export function useUserQuery(
@@ -406,23 +416,25 @@ describe('generateHook', () => {
           __typename?: 'User'
         }
 
+        export type ID = string
+
         export interface UserFollower {
-          id: string
+          id: ID
           name?: string
           follower?: UserFollower1
           __typename?: 'User'
         }
 
         export interface UserFollower1 {
-          id: string
+          id: ID
           name?: string
           __typename?: 'User'
         }
 
         export interface Variables {
-          id: string | undefined
-          followerId: string | undefined
-          followerId1: string | undefined
+          id: ID | undefined
+          followerId: ID | undefined
+          followerId1: ID | undefined
         }
 
         export function useUserQuery(
@@ -485,8 +497,10 @@ describe('generateHook', () => {
           __typename?: 'User'
         }
 
+        export type ID = string
+
         export interface Variables {
-          id: string | undefined
+          id: ID | undefined
         }
 
         export function useMyQuery(variables: Variables, options?: QueryHookOptions<MyQuery, Variables>) {
@@ -540,14 +554,16 @@ describe('generateHook', () => {
           __typename?: 'User'
         }
 
+        export type ID = string
+
         export interface UserFollowers {
-          id: string
+          id: ID
           __typename?: 'User'
         }
 
         export interface Variables {
-          id: string | undefined
-          followerId: string | undefined
+          id: ID | undefined
+          followerId: ID | undefined
           limit?: number | undefined
         }
 
@@ -605,14 +621,16 @@ describe('generateHook', () => {
           __typename?: 'User'
         }
 
+        export type ID = string
+
         export interface UserFollowers {
-          id: string
+          id: ID
           __typename?: 'User'
         }
 
         export interface Variables {
-          userId: string | undefined
-          followersId: string | undefined
+          userId: ID | undefined
+          followersId: ID | undefined
           limit?: number | undefined
         }
 
@@ -683,14 +701,16 @@ describe('generateHook', () => {
         }
 
         export interface Tweet {
-          id: string
+          id: ID
           author: User
           mentions?: User[]
           __typename?: 'Tweet'
         }
 
+        export type ID = string
+
         export interface User {
-          id: string
+          id: ID
           photo?: Image
           __typename?: 'User'
         }
@@ -707,7 +727,7 @@ describe('generateHook', () => {
         }
 
         export interface Variables {
-          id: string | undefined
+          id: ID | undefined
           size?: ImageSize | undefined
         }
 
@@ -759,13 +779,15 @@ describe('generateHook', () => {
         }
 
         export interface User {
-          id: string
+          id: ID
           name?: string
           __typename?: 'User'
         }
 
+        export type ID = string
+
         export interface Variables {
-          id: string | undefined
+          id: ID | undefined
         }
 
         export function useUserQuery(
@@ -815,7 +837,7 @@ describe('generateHook', () => {
         }
 
         export interface User {
-          id: string
+          id: ID
           name?: string
           __typename?: 'User'
         }
@@ -825,6 +847,8 @@ describe('generateHook', () => {
           email: string
           __typename?: 'RegisterUserInput'
         }
+
+        export type ID = string
 
         export interface Variables {
           input: RegisterUserInput
@@ -872,13 +896,15 @@ describe('generateHook', () => {
         }
 
         export interface User {
-          id: string
+          id: ID
           name?: string
           __typename?: 'User'
         }
 
+        export type ID = string
+
         export interface Variables {
-          id: string
+          id: ID
         }
 
         export function useSubscribeToToOnUserUsageSubscription(
@@ -921,7 +947,7 @@ describe('generateHook', () => {
         }
 
         export interface User {
-          id: string
+          id: ID
           name?: string
           __typename?: 'User'
         }
@@ -931,6 +957,8 @@ describe('generateHook', () => {
           email: string
           __typename?: 'RegisterUserInput'
         }
+
+        export type ID = string
 
         export interface Variables {
           input: RegisterUserInput
@@ -977,13 +1005,15 @@ describe('generateHook', () => {
         }
 
         export interface User {
-          id: string
+          id: ID
           name?: string
           __typename?: 'User'
         }
 
+        export type ID = string
+
         export interface Variables {
-          id: string
+          id: ID
         }
 
         export function useOnUserChangeSubscription(
@@ -1026,10 +1056,12 @@ describe('generateHook', () => {
         }
 
         export interface User {
-          id: string
+          id: ID
           status?: UserStatus
           __typename?: 'User'
         }
+
+        export type ID = string
 
         export enum UserStatus {
           ACTIVE = 'ACTIVE',
@@ -1037,7 +1069,7 @@ describe('generateHook', () => {
         }
 
         export interface Variables {
-          id: string | undefined
+          id: ID | undefined
         }
 
         export function useUserQuery(
@@ -1123,13 +1155,15 @@ describe('generateHook', () => {
         export type Notification = FollowNotification | TweetNotification
 
         export interface FollowNotification {
-          id: string
+          id: ID
           user: User
           __typename?: 'FollowNotification'
         }
 
+        export type ID = string
+
         export interface User {
-          id: string
+          id: ID
           photo?: Image
           __typename?: 'User'
         }
@@ -1146,13 +1180,13 @@ describe('generateHook', () => {
         }
 
         export interface TweetNotification {
-          id: string
+          id: ID
           tweet: Tweet
           __typename?: 'TweetNotification'
         }
 
         export interface Tweet {
-          id: string
+          id: ID
           author: UserAuthor
           __typename?: 'Tweet'
         }
@@ -1216,8 +1250,10 @@ describe('generateHook', () => {
 					__typename?: 'User'
         }
 
+        export type ID = string
+
         export interface Variables {
-          id: string | undefined
+          id: ID | undefined
         }
 
         export function useUserQuery(
@@ -1270,8 +1306,10 @@ describe('generateHook', () => {
 					__typename?: 'User'
         }
 
+        export type ID = string
+
         export interface Variables {
-          id: string | undefined
+          id: ID | undefined
         }
 
         export function useUserQuery(
@@ -1329,8 +1367,10 @@ describe('generateHook', () => {
 					__typename?: 'User'
         }
 
+        export type ID = string
+
         export interface Variables {
-          id: string | undefined
+          id: ID | undefined
         }
 
         export function useUserQuery(
@@ -1387,8 +1427,10 @@ describe('generateHook', () => {
 					__typename?: 'User'
         }
 
+        export type ID = string
+
         export interface Variables {
-          id: string | undefined
+          id: ID | undefined
         }
 
         export function useUserQuery(
@@ -1451,15 +1493,17 @@ describe('generateHook', () => {
 					__typename?: 'User'
         }
 
+        export type ID = string
+
         export interface Tweet {
-          id: string
+          id: ID
           content: string
 					__typename?: 'Tweet'
         }
 
         export interface Variables {
-          id: string | undefined
-          tweetId: string | undefined
+          id: ID | undefined
+          tweetId: ID | undefined
         }
 
         export function useUserAndTweetQuery(
@@ -1513,8 +1557,10 @@ describe('generateHook', () => {
 					__typename?: 'User'
         }
 
+        export type ID = string
+
         export interface Variables {
-          id: string | undefined
+          id: ID | undefined
           limit?: number | undefined
         }
 
@@ -1567,10 +1613,12 @@ describe('generateHook', () => {
         }
 
         export interface User {
-          id: string
+          id: ID
           status?: UserStatus
 					__typename?: 'User'
         }
+
+        export type ID = string
 
         export enum UserStatus {
           ACTIVE = 'ACTIVE',
@@ -1578,7 +1626,7 @@ describe('generateHook', () => {
         }
 
         export interface Variables {
-          id: string | undefined
+          id: ID | undefined
         }
 
         export function useUserQuery(
@@ -1629,10 +1677,12 @@ describe('generateHook', () => {
       }
 
       export interface User {
-        id: string
+        id: ID
         status?: UserStatus
         __typename?: 'User'
       }
+
+      export type ID = string
 
       export enum UserStatus {
         ACTIVE = 'ACTIVE',
@@ -1691,13 +1741,16 @@ describe('generateHook', () => {
         }
 
         export interface User {
-          id: string
+          id: ID
           createdAt?: DateTime
 					__typename?: 'User'
         }
 
+        export type ID = string
+        export type DateTime = string
+
         export interface Variables {
-          id: string | undefined
+          id: ID | undefined
         }
 
         export function useUserQuery(
@@ -1751,7 +1804,7 @@ describe('generateHook', () => {
         }
 
         export interface User {
-          id: string
+          id: ID
           name?: string
           email?: string
 					__typename?: 'User'
@@ -1762,6 +1815,8 @@ describe('generateHook', () => {
           email: string
 					__typename?: 'RegisterUserInput'
         }
+
+        export type ID = string
 
         export interface Variables {
           input: RegisterUserInput
@@ -1811,13 +1866,15 @@ describe('generateHook', () => {
         }
 
         export interface User {
-          id: string
+          id: ID
           name?: string
           __typename?: 'User'
         }
 
+        export type ID = string
+
         export interface Variables {
-          id: string
+          id: ID
         }
 
         export function useOnUserChangeSubscription(
@@ -1886,14 +1943,16 @@ describe('generateHook', () => {
         }
 
         export interface Tweet {
-          id: string
+          id: ID
           author: User
           mentions?: User[]
           __typename?: 'Tweet'
         }
 
+        export type ID = string
+
         export interface User {
-          id: string
+          id: ID
           photo?: Image
           __typename?: 'User'
         }
@@ -1910,7 +1969,7 @@ describe('generateHook', () => {
         }
 
         export interface Variables {
-          id: string | undefined
+          id: ID | undefined
           size?: ImageSize | undefined
         }
 
@@ -1965,11 +2024,13 @@ describe('generateHook', () => {
         }
 
         export interface User {
-          id: string
+          id: ID
           name?: string
           email?: string
 					__typename?: 'User'
         }
+
+        export type ID = string
 
         export function useMeQuery(options?: QueryHookOptions<MeQuery, never>) {
           return useQuery<MeQuery, never>(query, options)
@@ -2015,11 +2076,13 @@ describe('generateHook', () => {
         }
 
         export interface User {
-          id: string
+          id: ID
           name?: string
           email?: string
 					__typename?: 'User'
         }
+
+        export type ID = string
 
         export function useMeQuery(options?: LazyQueryHookOptions<MeQuery, never>) {
           return useLazyQuery<MeQuery, never>(lazyQuery, options)
@@ -2065,8 +2128,10 @@ describe('generateHook', () => {
 					__typename?: 'User'
         }
 
+        export type ID = string
+
         export interface Variables {
-          id: string | undefined
+          id: ID | undefined
         }
 
         export function useUserQuery(
@@ -2115,14 +2180,73 @@ describe('generateHook', () => {
         }
 
         export interface User {
-          id: string
+          id: ID
 					__typename?: 'User'
         }
+
+        export type ID = string
 
         export function useSignInMutation(options?: MutationHookOptions<SignInMutation, never>) {
           return useMutation<SignInMutation, never>(mutation, options)
         }
     `),
+    )
+  })
+
+  test('should generate scalar types', async () => {
+    const query = `
+      import gql from 'graphql-tag'
+
+      const mutation = gql\`
+        query {
+          post {
+            id
+          }
+        }
+      \`
+    `
+    const { hook, errors } = await generate('use-query.gql.ts', query)
+    expect(errors).toEqual([])
+    expect(toParsedOutput(hook)).toEqual(
+      toParsedOutput(`
+        import { QueryHookOptions, useQuery } from '@apollo/client'
+        import gql from 'graphql-tag'
+
+        const mutation = gql\`
+          query postQuery($id: PostId!) {
+            post(id: $id) {
+              id
+            }
+          }
+        \`
+
+        export interface PostQuery {
+          post?: Post
+          __typename?: 'Query'
+        }
+
+        export interface Post {
+          id: PostId
+          __typename?: 'Post'
+        }
+
+        export type PostId = string
+
+        export interface Variables {
+          id: PostId | undefined
+        }
+
+        export function usePostQuery(
+          variables: Variables,
+          options?: QueryHookOptions<PostQuery, Variables>,
+        ) {
+          return useQuery<PostQuery, Variables>(mutation, {
+            variables,
+            skip: !variables.id,
+            ...options,
+          })
+        }
+      `),
     )
   })
 
@@ -2201,13 +2325,15 @@ describe('generateHook', () => {
         export type Notification = FollowNotification | TweetNotification
 
         export interface FollowNotification {
-          id: string
+          id: ID
           user: User
           __typename?: 'FollowNotification'
         }
 
+        export type ID = string
+
         export interface User {
-          id: string
+          id: ID
           photo?: Image
           __typename?: 'User'
         }
@@ -2224,13 +2350,13 @@ describe('generateHook', () => {
         }
 
         export interface TweetNotification {
-          id: string
+          id: ID
           tweet: Tweet
           __typename?: 'TweetNotification'
         }
 
         export interface Tweet {
-          id: string
+          id: ID
           author: User
           __typename?: 'Tweet'
         }

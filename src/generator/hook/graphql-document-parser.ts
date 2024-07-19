@@ -6,6 +6,7 @@ import ts from 'typescript'
 import {
   createArgumentDefinition,
   createInputValueDefinition,
+  defaultScalarTypes,
   getFieldHash,
   getFieldName,
   hasAQuery,
@@ -37,6 +38,19 @@ function parseEnum(enumType: gql.GraphQLEnumType, context: GraphQLParserContext)
       [ts.factory.createToken(ts.SyntaxKind.ExportKeyword)],
       ts.factory.createIdentifier(enumType.name),
       members,
+    ),
+  )
+}
+
+function parseScalar(scalarType: gql.GraphQLScalarType, context: GraphQLParserContext) {
+  const name = scalarType.name
+  if (defaultScalarTypes.includes(name)) return
+  context.addScalar(
+    ts.factory.createTypeAliasDeclaration(
+      [ts.factory.createToken(ts.SyntaxKind.ExportKeyword)],
+      ts.factory.createIdentifier(scalarType.name),
+      undefined,
+      ts.factory.createKeywordTypeNode(ts.SyntaxKind.StringKeyword),
     ),
   )
 }
@@ -138,6 +152,8 @@ function parseInputType(schemaType: gql.GraphQLInputType, context: GraphQLParser
     )
   } else if (gql.isEnumType(type)) {
     parseEnum(type, context)
+  } else if (gql.isScalarType(type)) {
+    parseScalar(type, context)
   }
 }
 
@@ -330,6 +346,8 @@ export function parseDocument(
           parseObjectType(node, type, context)
         } else if (gql.isEnumType(type)) {
           parseEnum(type, context)
+        } else if (gql.isScalarType(type)) {
+          parseScalar(type, context)
         } else if (gql.isUnionType(type)) {
           parseUnionType(type, context)
         }

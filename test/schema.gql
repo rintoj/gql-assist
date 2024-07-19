@@ -1,4 +1,5 @@
 scalar DateTime
+scalar PostId
 
 enum UserStatus {
   ACTIVE
@@ -26,6 +27,20 @@ type User {
   photo: Image
 }
 
+type Post {
+  id: PostId!
+  content: String!
+  author: User!
+  createdAt: DateTime
+  updatedAt: DateTime
+  status: PostStatus
+}
+
+enum PostStatus {
+  DRAFT
+  ACTIVE
+}
+
 input RegisterUserInput {
   name: String!
   email: String!
@@ -36,6 +51,7 @@ type Query {
   user(id: ID!): User
   users(next: String): [User]!
   tweet(id: ID!): Tweet
+  post(id: PostId!): Post
   followers(id: ID!, limit: Int): [User]!
   myNotifications: [Notification]!
 }

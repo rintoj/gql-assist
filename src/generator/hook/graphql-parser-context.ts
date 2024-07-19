@@ -86,6 +86,12 @@ export class GraphQLParserContext {
     return this
   }
 
+  addScalar(type: ts.TypeAliasDeclaration) {
+    const name = type.name.escapedText ?? ''
+    this.types[name] = type
+    return this
+  }
+
   addParameter(propertyConfig: PropertyConfig, variableDefinition: gql.VariableDefinitionNode) {
     this.parameters[propertyConfig.name] = propertyConfig
     this.variableDefinition[propertyConfig.name] = variableDefinition
