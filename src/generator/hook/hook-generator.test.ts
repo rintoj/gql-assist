@@ -2250,6 +2250,65 @@ describe('generateHook', () => {
     )
   })
 
+  test('should preserve scalar type', async () => {
+    const query = `
+      import gql from 'graphql-tag'
+
+      const mutation = gql\`
+        query {
+          post {
+            id
+          }
+        }
+      \`
+
+      export type PostId = number
+    `
+    const { hook, errors } = await generate('use-query.gql.ts', query)
+    expect(errors).toEqual([])
+    expect(toParsedOutput(hook)).toEqual(
+      toParsedOutput(`
+        import { QueryHookOptions, useQuery } from '@apollo/client'
+        import gql from 'graphql-tag'
+
+        const mutation = gql\`
+          query postQuery($id: PostId!) {
+            post(id: $id) {
+              id
+            }
+          }
+        \`
+
+        export interface PostQuery {
+          post?: Post
+          __typename?: 'Query'
+        }
+
+        export interface Post {
+          id: PostId
+          __typename?: 'Post'
+        }
+
+        export type PostId = number
+
+        export interface Variables {
+          id: PostId | undefined
+        }
+
+        export function usePostQuery(
+          variables: Variables,
+          options?: QueryHookOptions<PostQuery, Variables>,
+        ) {
+          return useQuery<PostQuery, Variables>(mutation, {
+            variables,
+            skip: !variables.id,
+            ...options,
+          })
+        }
+      `),
+    )
+  })
+
   test('should generate query with union', async () => {
     const query = `
       import gql from 'graphql-tag'

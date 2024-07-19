@@ -53,7 +53,7 @@ async function generateGQLHook(sourceFile: ts.SourceFile, schema: GraphQLSchema,
 
   // parse graphql
   const initialDocument = gql.parse(query.replace(/\{[\s\n]*\}/g, '{ __typename }'))
-  const { document, types } = parseDocument(initialDocument, schema, hookName)
+  const { document, types } = parseDocument(initialDocument, schema, hookName, sourceFile)
 
   // create imports
   const libraryName = identifyLibrary(sourceFile, context.config)

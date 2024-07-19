@@ -1,4 +1,5 @@
 import ts from 'typescript'
+import { SyntaxKindToDeclaration } from './syntax-kind-to-declaration'
 
 export function getChildren(node: ts.Node) {
   const children: ts.Node[] = []
@@ -32,4 +33,21 @@ export function printSyntaxTree(node: ts.Node) {
     console.log(new Array(depth + 1).fill('--').join('') + ' ' + ts.SyntaxKind[node.kind])
     return false
   })
+}
+
+export type Traverser = {
+  [K in keyof SyntaxKindToDeclaration]?: (
+    node: SyntaxKindToDeclaration[K],
+  ) => boolean | null | undefined
+}
+
+export function traverse<T>(node: ts.Node, traverser: Traverser) {
+  function visitNode(node: ts.Node): boolean {
+    const callback = (traverser as any)[node.kind]
+    if (callback) {
+      return callback(node) === true
+    }
+    return ts.forEachChild(node, visitNode) === true
+  }
+  visitNode(node)
 }
