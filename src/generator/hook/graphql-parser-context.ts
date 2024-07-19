@@ -33,7 +33,10 @@ export class GraphQLParserContext {
   private readonly typeNameTracker = new TypeNameTracker()
   private readonly parameterNameTracker = new ParameterNameTracker()
 
-  constructor(public readonly typeInfo: gql.TypeInfo) {}
+  constructor(
+    public readonly typeInfo: gql.TypeInfo,
+    public readonly sourceFile: ts.SourceFile,
+  ) {}
 
   getParameters() {
     return Object.values(this.parameters)
@@ -81,6 +84,12 @@ export class GraphQLParserContext {
   }
 
   addEnum(type: ts.EnumDeclaration) {
+    const name = type.name.escapedText ?? ''
+    this.types[name] = type
+    return this
+  }
+
+  addScalar(type: ts.TypeAliasDeclaration) {
     const name = type.name.escapedText ?? ''
     this.types[name] = type
     return this

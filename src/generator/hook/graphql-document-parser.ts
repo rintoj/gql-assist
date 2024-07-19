@@ -6,6 +6,7 @@ import ts from 'typescript'
 import {
   createArgumentDefinition,
   createInputValueDefinition,
+  defaultScalarTypes,
   getFieldHash,
   getFieldName,
   hasAQuery,
@@ -19,7 +20,7 @@ import {
   updateName,
   updateVariableDefinitions,
 } from '../../gql'
-import { createArrayType, createType } from '../../ts'
+import { createArrayType, createType, traverse } from '../../ts'
 import { camelCase, className, toString } from '../../util'
 import { GraphQLParserContext } from './graphql-parser-context'
 
@@ -38,6 +39,34 @@ function parseEnum(enumType: gql.GraphQLEnumType, context: GraphQLParserContext)
       ts.factory.createIdentifier(enumType.name),
       members,
     ),
+  )
+}
+
+function findScalarType(sourceFile: ts.SourceFile, name: string) {
+  let typeAliasDeclaration: ts.TypeAliasDeclaration | undefined
+  traverse(sourceFile, {
+    [ts.SyntaxKind.TypeAliasDeclaration]: (node: ts.TypeAliasDeclaration) => {
+      if (node.name.getText() === name) {
+        typeAliasDeclaration = node
+        return true
+      }
+    },
+  })
+  return typeAliasDeclaration
+}
+
+function parseScalar(scalarType: gql.GraphQLScalarType, context: GraphQLParserContext) {
+  const name = scalarType.name
+  if (defaultScalarTypes.includes(name)) return
+  const existingType = findScalarType(context.sourceFile, name)
+  context.addScalar(
+    existingType ??
+      ts.factory.createTypeAliasDeclaration(
+        [ts.factory.createToken(ts.SyntaxKind.ExportKeyword)],
+        ts.factory.createIdentifier(scalarType.name),
+        undefined,
+        ts.factory.createKeywordTypeNode(ts.SyntaxKind.StringKeyword),
+      ),
   )
 }
 
@@ -138,6 +167,8 @@ function parseInputType(schemaType: gql.GraphQLInputType, context: GraphQLParser
     )
   } else if (gql.isEnumType(type)) {
     parseEnum(type, context)
+  } else if (gql.isScalarType(type)) {
+    parseScalar(type, context)
   }
 }
 
@@ -310,9 +341,10 @@ export function parseDocument(
   inputDocument: gql.DocumentNode,
   schema: gql.GraphQLSchema,
   hookName: string | undefined,
+  sourceFile: ts.SourceFile,
 ) {
   const typeInfo = new gql.TypeInfo(schema)
-  const context = new GraphQLParserContext(typeInfo)
+  const context = new GraphQLParserContext(typeInfo, sourceFile)
   const document = fixDocument(inputDocument, schema, hookName, context)
   gql.visit(
     document,
@@ -330,6 +362,8 @@ export function parseDocument(
           parseObjectType(node, type, context)
         } else if (gql.isEnumType(type)) {
           parseEnum(type, context)
+        } else if (gql.isScalarType(type)) {
+          parseScalar(type, context)
         } else if (gql.isUnionType(type)) {
           parseUnionType(type, context)
         }

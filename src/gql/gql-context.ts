@@ -29,6 +29,6 @@ export function createGraphQLContext(
     diagnostics: context.diagnostics ?? [],
     path: toNonNullArray((context.path ?? []).concat(path as string)),
     parent: nextParent,
-    parents: !nextParent ? context.parents ?? [] : [...(context.parents ?? []), nextParent],
+    parents: !nextParent ? (context.parents ?? []) : [...(context.parents ?? []), nextParent],
   }
 }
