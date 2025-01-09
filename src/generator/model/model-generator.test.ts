@@ -37,6 +37,36 @@ describe('generateModel', () => {
       `),
     )
   })
+  test('should not generate for a private field', async () => {
+    const output = await generate(
+      'user.model.ts',
+      `
+        class User {
+          id!: string
+          name?: string
+          @InternalField()
+          accountId!: string
+        }
+      `,
+    )
+    expect(toParsedOutput(output)).toBe(
+      toParsedOutput(`
+        import { Field, ID, ObjectType } from '@nestjs/graphql'
+
+        @ObjectType()
+        class User {
+          @Field(() => ID)
+          id!: string
+
+          @Field({ nullable: true })
+          name?: string
+
+          @InternalField()
+          accountId!: string
+        }
+      `),
+    )
+  })
 
   test('should generate a numeric field as Int by default', async () => {
     const output = await generate(

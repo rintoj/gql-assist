@@ -10,12 +10,17 @@ import { organizeImports } from '../../ts/organize-imports'
 import { transformName } from '../../ts/transform-name'
 import { Context, createContext } from '../context'
 import { GQLAssistConfig } from '../../config'
+import { isPrivate } from '../../ts'
 
 function processClassDeclaration(classDeclaration: ts.ClassDeclaration, context: Context) {
   return ts.visitEachChild(
     addDecorator(classDeclaration, createClassDecorator(classDeclaration, 'ObjectType', context)),
     node => {
       if (ts.isPropertyDeclaration(node) && ts.isIdentifier(node.name)) {
+        const isInternal = isInternalField(node)
+        if (isInternal) {
+          return node
+        }
         return addDecorator(
           addNullability(
             transformName(node, toCamelCase),
@@ -28,6 +33,11 @@ function processClassDeclaration(classDeclaration: ts.ClassDeclaration, context:
     },
     undefined,
   )
+}
+
+export function isInternalField(node: ts.PropertyDeclaration): boolean {
+  if (isPrivate(node)) return true
+  return hasDecorator(node, 'Internal') || hasDecorator(node, 'InternalField')
 }
 
 export function isModel(sourceFile: ts.SourceFile, config: GQLAssistConfig): boolean {

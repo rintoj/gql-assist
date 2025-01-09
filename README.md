@@ -160,6 +160,46 @@ export class User {
 }
 ```
 
+#### Handling Internal Fields
+
+In some cases, you may want to keep certain fields hidden from your GraphQL schema while still
+making them available for internal use within your application. For example, you might have a field
+that is used internally for logic or data storage but should not be exposed to clients consuming the
+GraphQL API.
+
+To achieve this, you can use the @InternalField() decorator as shown below:
+
+```ts
+import { Field, ID, ObjectType } from '@nestjs/graphql'
+
+// Define the User class
+export class User {
+  // This field is part of the GraphQL schema
+  id!: string
+
+  // Optional field exposed in the schema
+  name?: string
+
+  // Internal-only field, not exposed in the schema
+  @InternalField()
+  providerUid?: string
+}
+```
+
+- @InternalField() marks a field to be excluded from the generated GraphQL schema.
+- The providerUid field in the above example is available for backend operations but will not appear
+  in the GraphQL API exposed to clients.
+
+Use Cases
+
+1. Sensitive Data: Fields that contain sensitive data such as internal identifiers or tokens.
+2. System-Level Fields: Metadata or technical fields used only for internal processes.
+3. Data Transformation: Fields required for internal computations that should not be exposed
+   directly.
+
+By using this pattern, you maintain a clean and secure schema while ensuring flexibility for backend
+operations.
+
 ### Resolvers
 
 For GQL Assist to recognize and convert a resolver method, it should be placed in a file with the
