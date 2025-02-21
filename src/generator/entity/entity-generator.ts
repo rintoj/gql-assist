@@ -12,12 +12,15 @@ import {
   addImports,
   addNullability,
   createImport,
+  getDecorator,
   getName,
   getPropertyOrMethodType,
   hasDecorator,
   isArrayType,
+  isEnumType,
   isNullable,
   isNullableFromDecorator,
+  isPrimitiveType,
   organizeImports,
   transformName,
 } from '../../ts'
@@ -112,6 +115,74 @@ function createColumnDecorator(
   )
 }
 
+function getByFromDecorator(node: ts.PropertyDeclaration | ts.MethodDeclaration) {
+  const byDecorator = getDecorator(node, 'By')
+  if (byDecorator) {
+    const argument = (byDecorator.expression as ts.CallExpression).arguments[0]
+    if (ts.isStringLiteral(argument)) {
+      return argument.text
+    }
+  }
+  return undefined
+}
+
+function createOneToManyDecorator(
+  node: ts.PropertyDeclaration | ts.MethodDeclaration,
+  context: Context,
+) {
+  const isEnum = isEnumType(node)
+  const isArray = isArrayType(node)
+  const isReferenceType = !isPrimitiveType(node)
+  if (!isReferenceType || !isArray || isEnum) return
+  const type = getPropertyOrMethodType(node, context.config.behaviour.defaultNumberType)
+  const relatedEntity = type.replace('[]', '')
+  context.imports.push(createImport('typeorm', 'OneToMany'))
+
+  const propertyName = getByFromDecorator(node)
+  if (!propertyName) return
+
+  return factory.createDecorator(
+    factory.createCallExpression(factory.createIdentifier('OneToMany'), undefined, [
+      factory.createArrowFunction(
+        undefined,
+        undefined,
+        [],
+        undefined,
+        factory.createToken(SyntaxKind.EqualsGreaterThanToken),
+        factory.createIdentifier(relatedEntity),
+      ),
+      factory.createArrowFunction(
+        undefined,
+        undefined,
+        [
+          factory.createParameterDeclaration(
+            undefined,
+            undefined,
+            factory.createIdentifier('post'),
+            undefined,
+            undefined,
+          ),
+        ],
+        undefined,
+        factory.createToken(SyntaxKind.EqualsGreaterThanToken),
+        factory.createPropertyAccessExpression(
+          factory.createIdentifier('post'),
+          factory.createIdentifier(propertyName),
+        ),
+      ),
+      factory.createObjectLiteralExpression(
+        [
+          factory.createPropertyAssignment(
+            factory.createIdentifier('nullable'),
+            factory.createTrue(),
+          ),
+        ],
+        false,
+      ),
+    ]),
+  )
+}
+
 function createClassDecorator(context: Context) {
   const argumentsArray: ts.Expression[] = []
   context.imports.push(createImport('typeorm', 'Entity'))
@@ -133,12 +204,20 @@ function processClassDeclaration(
     addDecorator(classDeclaration, createClassDecorator(context)),
     node => {
       if (ts.isPropertyDeclaration(node) && ts.isIdentifier(node.name)) {
+        const isArray = isArrayType(node)
+        const isEnum = isEnumType(node)
+        const byDecorator = getDecorator(node, 'By')
+        const decorator =
+          byDecorator && !isEnum && isArray
+            ? createOneToManyDecorator(node, context)
+            : createColumnDecorator(node, enums, context)
+        if (!decorator) return node
         return addDecorator(
           addNullability(
             transformName(node, toCamelCase),
             context.config.behaviour.nullableByDefault,
           ),
-          createColumnDecorator(node, enums, context),
+          decorator,
         )
       }
       return node

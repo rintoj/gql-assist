@@ -117,7 +117,7 @@ describe('entity-generator', () => {
     )
     expect(toParsedOutput(output)).toBe(
       toParsedOutput(`
-        import { Column, Entity, PrimaryColumn, OneToMany } from 'typeorm'
+        import { Column, Entity, OneToMany, PrimaryColumn } from 'typeorm'
 
         @Entity()
         class User {
@@ -131,6 +131,7 @@ describe('entity-generator', () => {
           username?: string
 
           @OneToMany(() => Post, post => post.author, { nullable: true })
+          @By('author')
           posts?: Post[]
         }
       `),
