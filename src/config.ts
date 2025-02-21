@@ -14,6 +14,9 @@ export interface GQLAssistConfig {
     enable: boolean
     fileExtensions: string[]
   }
+  entity: {
+    enable: boolean
+  }
   resolver: {
     enable: boolean
     fileExtensions: string[]
@@ -50,6 +53,7 @@ const DEFAULT_CONFIG: GQLAssistConfig = {
     serverLibrary: '@nestjs/graphql',
   },
   model: { enable: true, fileExtensions: ['.model.ts'] },
+  entity: { enable: true },
   resolver: { enable: true, fileExtensions: ['.resolver.ts'] },
   input: { enable: true, fileExtensions: ['.input.ts'] },
   response: { enable: true, fileExtensions: ['.response.ts'] },

@@ -264,7 +264,7 @@ function processClassDeclaration(
 
 export function isEntity(sourceFile: ts.SourceFile, config: GQLAssistConfig): boolean {
   const { fileName } = sourceFile
-  if (!config.model.enable) return false
+  if (!config.entity.enable) return false
   return (
     !!config?.model?.fileExtensions?.find(i => fileName.endsWith(i)) ||
     sourceFile.statements.some(statement => hasDecorator(statement, 'Entity'))
