@@ -1,7 +1,7 @@
 import ts from 'typescript'
 
 export function isPrimitiveType(node: ts.PropertyDeclaration | ts.MethodDeclaration): boolean {
-  switch (node.type?.kind) {
+  switch ((node?.type as ts.ArrayTypeNode)?.elementType?.kind || node.type?.kind) {
     case ts.SyntaxKind.StringKeyword:
     case ts.SyntaxKind.NumberKeyword:
     case ts.SyntaxKind.BooleanKeyword:

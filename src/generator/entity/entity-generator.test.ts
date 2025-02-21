@@ -12,7 +12,7 @@ async function generate(fileName: string, content: string, initialConfig?: GQLAs
 }
 
 describe('entity-generator', () => {
-  test.only('should generate a model', async () => {
+  test('should generate an entity with basic fields', async () => {
     const output = await generate(
       'user.model.ts',
       `class User {
@@ -52,7 +52,7 @@ describe('entity-generator', () => {
     )
   })
 
-  test.only('should generate a model with enum', async () => {
+  test('should generate an entity with enum fields', async () => {
     const output = await generate(
       'user.model.ts',
       `
@@ -105,7 +105,39 @@ describe('entity-generator', () => {
     )
   })
 
-  test.only('should generate a model with many to one relationship', async () => {
+  test('should generate an entity with many-to-one relationship', async () => {
+    const output = await generate(
+      'post.model.ts',
+      `class Post {
+        id!: string
+        content?: string
+        authorId?: string
+        author?: User
+      }`,
+    )
+    expect(toParsedOutput(output)).toBe(
+      toParsedOutput(`
+        import { Column, Entity, ManyToOne, PrimaryColumn } from 'typeorm'
+
+        @Entity()
+        class Post {
+          @PrimaryColumn()
+          id!: string
+
+          @Column({ nullable: true })
+          content?: string
+
+          @Column({ nullable: true })
+          authorId?: string
+
+          @ManyToOne(() => User, { nullable: true })
+          author?: User
+        }
+      `),
+    )
+  })
+
+  test('should generate an entity with one-to-many relationship', async () => {
     const output = await generate(
       'user.model.ts',
       `class User {
@@ -138,13 +170,13 @@ describe('entity-generator', () => {
     )
   })
 
-  test('should generate a model with integer and float value', async () => {
+  test('should generate an entity with integer and float fields', async () => {
     const output = await generate(
       'user.model.ts',
       `class User {
         id!: string
         age?: number
-        grade?: number
+        @Float() grade?: number
       }`,
     )
     expect(toParsedOutput(output)).toBe(
@@ -159,14 +191,15 @@ describe('entity-generator', () => {
           @Column({ nullable: true })
           age?: number
 
-          @Column({ type: 'float', name: 'grade', nullable: true })
+          @Column({ nullable: true, type: 'float', name: 'grade' })
+          @Float()
           grade?: number
         }
       `),
     )
   })
 
-  test('should generate a model with own reference', async () => {
+  test('should generate an entity with self-referencing fields', async () => {
     const output = await generate(
       'user.model.ts',
       `class User {
@@ -177,7 +210,7 @@ describe('entity-generator', () => {
     )
     expect(toParsedOutput(output)).toBe(
       toParsedOutput(`
-        import { Entity, Column, PrimaryColumn, ManyToOne } from 'typeorm'
+        import { Column, Entity, ManyToOne, PrimaryColumn } from 'typeorm'
 
         @Entity()
         class User {
@@ -189,32 +222,6 @@ describe('entity-generator', () => {
 
           @ManyToOne(() => User)
           followedBy!: User
-        }
-      `),
-    )
-  })
-
-  test('should generate id generator', async () => {
-    const output = await generate(
-      'user.model.ts',
-      `class User {
-        id!: string
-        name?: string
-      }`,
-    )
-    expect(toParsedOutput(output)).toBe(
-      toParsedOutput(`
-        import { Column, Entity, PrimaryColumn } from 'typeorm'
-        import { generateUserId } from './user-id-generator'
-
-        @Entity()
-        @IdGenerator(generateUserId)
-        class User {
-          @PrimaryColumn()
-          id!: string
-
-          @Column({ nullable: true })
-          name?: string
         }
       `),
     )

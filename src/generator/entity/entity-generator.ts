@@ -44,10 +44,10 @@ function toTypeORMType(type: string) {
 
 function createColumnDecorator(
   node: ts.PropertyDeclaration | ts.MethodDeclaration,
+  decoratorName: 'Column' | 'ManyToOne',
   enums: string[],
   context: Context,
 ) {
-  const decoratorName = 'Column'
   const argumentsArray: ts.Expression[] = []
   context.imports.push(createImport('typeorm', decoratorName))
   const isId = getName(node) === 'id'
@@ -65,7 +65,21 @@ function createColumnDecorator(
   const isNull =
     isNullableFromDecorator(node) || isNullable(node, context.config.behaviour.nullableByDefault)
   const isEnum = enums.includes(type)
+  const isPrimitive = isPrimitiveType(node)
   const propertyAssignments: PropertyAssignment[] = []
+
+  if (!isPrimitive && !isEnum) {
+    argumentsArray.push(
+      factory.createArrowFunction(
+        undefined,
+        undefined,
+        [],
+        undefined,
+        factory.createToken(SyntaxKind.EqualsGreaterThanToken),
+        factory.createIdentifier(type),
+      ),
+    )
+  }
 
   if (isNull && !isId) {
     propertyAssignments.push(
@@ -98,6 +112,21 @@ function createColumnDecorator(
       factory.createPropertyAssignment(
         factory.createIdentifier('enum'),
         factory.createIdentifier(type),
+      ),
+    )
+  }
+
+  if (hasDecorator(node, 'Float')) {
+    propertyAssignments.push(
+      factory.createPropertyAssignment(
+        factory.createIdentifier('type'),
+        factory.createStringLiteral('float', false),
+      ),
+    )
+    propertyAssignments.push(
+      factory.createPropertyAssignment(
+        factory.createIdentifier('name'),
+        factory.createStringLiteral(getName(node), false),
       ),
     )
   }
@@ -137,7 +166,6 @@ function createOneToManyDecorator(
   const type = getPropertyOrMethodType(node, context.config.behaviour.defaultNumberType)
   const relatedEntity = type.replace('[]', '')
   context.imports.push(createImport('typeorm', 'OneToMany'))
-
   const propertyName = getByFromDecorator(node)
   if (!propertyName) return
 
@@ -206,11 +234,17 @@ function processClassDeclaration(
       if (ts.isPropertyDeclaration(node) && ts.isIdentifier(node.name)) {
         const isArray = isArrayType(node)
         const isEnum = isEnumType(node)
+        const isPrimitive = isPrimitiveType(node)
         const byDecorator = getDecorator(node, 'By')
         const decorator =
           byDecorator && !isEnum && isArray
             ? createOneToManyDecorator(node, context)
-            : createColumnDecorator(node, enums, context)
+            : createColumnDecorator(
+                node,
+                isPrimitive || isEnum ? 'Column' : 'ManyToOne',
+                enums,
+                context,
+              )
         if (!decorator) return node
         return addDecorator(
           addNullability(
