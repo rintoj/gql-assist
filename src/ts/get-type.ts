@@ -3,9 +3,7 @@ import { NumericType } from '../config'
 import { getAllTypes } from './get-all-types'
 import { getDecorator } from './get-decorator'
 import { getName } from './get-name'
-import { getTypeChecker } from './get-type-checker'
-import { Context } from '../generator'
-import { isArrayType } from './is-array'
+import { isArrayType } from './is-array-type'
 
 export function getTypeFromDecorator(node: ts.Node, name: string) {
   const decorator = getDecorator(node, name)
