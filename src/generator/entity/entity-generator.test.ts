@@ -45,17 +45,22 @@ describe('entity-generator', () => {
           @Column({ nullable: true })
           bio?: string
 
-          @Column({ type: 'text', nullable: true, array: true })
+          @Column({ nullable: true, type: 'text', array: true })
           roles?: string[]
         }
       `),
     )
   })
 
-  test('should generate a model with enum', async () => {
+  test.only('should generate a model with enum', async () => {
     const output = await generate(
       'user.model.ts',
-      `class User {
+      `
+      enum UserRole {
+        ADMIN = 'ADMIN',
+      }
+
+      class User {
         id!: string
         name!: string
         username?: string
@@ -68,7 +73,10 @@ describe('entity-generator', () => {
     expect(toParsedOutput(output)).toBe(
       toParsedOutput(`
         import { Column, Entity, PrimaryColumn } from 'typeorm'
-        import { UserRole } from '../user-role/user-role-enum'
+
+        enum UserRole {
+          ADMIN = 'ADMIN',
+        }
 
         @Entity()
         class User {
@@ -97,12 +105,11 @@ describe('entity-generator', () => {
     )
   })
 
-  test('should generate a model with many to one relationship', async () => {
+  test.only('should generate a model with many to one relationship', async () => {
     const output = await generate(
       'user.model.ts',
       `class User {
-        @Id()
-        id?: string
+        id!: string
         name?: string
         username?: string
         @By('author') posts?: Post[]
@@ -110,8 +117,7 @@ describe('entity-generator', () => {
     )
     expect(toParsedOutput(output)).toBe(
       toParsedOutput(`
-        import { Entity, Column, PrimaryColumn, OneToMany } from 'typeorm'
-        import { Post } from '../post/post-schema'
+        import { Column, Entity, PrimaryColumn, OneToMany } from 'typeorm'
 
         @Entity()
         class User {

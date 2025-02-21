@@ -1,5 +1,11 @@
 import { toCamelCase } from 'name-util'
-import ts, { factory, isClassDeclaration } from 'typescript'
+import ts, {
+  factory,
+  isClassDeclaration,
+  isEnumDeclaration,
+  PropertyAssignment,
+  SyntaxKind,
+} from 'typescript'
 import { GQLAssistConfig } from '../../config'
 import {
   addDecorator,
@@ -35,6 +41,7 @@ function toTypeORMType(type: string) {
 
 function createColumnDecorator(
   node: ts.PropertyDeclaration | ts.MethodDeclaration,
+  enums: string[],
   context: Context,
 ) {
   const decoratorName = 'Column'
@@ -54,33 +61,46 @@ function createColumnDecorator(
   const type = getPropertyOrMethodType(node, context.config.behaviour.defaultNumberType)
   const isNull =
     isNullableFromDecorator(node) || isNullable(node, context.config.behaviour.nullableByDefault)
-  const isArray = isArrayType(node)
-  if (isNull || isArray) {
-    argumentsArray.push(
-      factory.createObjectLiteralExpression(
-        [
-          isArray && type
-            ? factory.createPropertyAssignment(
-                factory.createIdentifier('type'),
-                factory.createStringLiteral(toTypeORMType(type), false),
-              )
-            : (undefined as any),
-          isNull
-            ? factory.createPropertyAssignment(
-                factory.createIdentifier('nullable'),
-                factory.createTrue(),
-              )
-            : (undefined as any),
-          isArray
-            ? factory.createPropertyAssignment(
-                factory.createIdentifier('array'),
-                factory.createTrue(),
-              )
-            : (undefined as any),
-        ].filter(i => !!i),
-        false,
+  const isEnum = enums.includes(type)
+  const propertyAssignments: PropertyAssignment[] = []
+
+  if (isNull && !isId) {
+    propertyAssignments.push(
+      factory.createPropertyAssignment(factory.createIdentifier('nullable'), factory.createTrue()),
+    )
+  }
+
+  if (isArrayType(node)) {
+    if (!isEnum) {
+      propertyAssignments.push(
+        factory.createPropertyAssignment(
+          factory.createIdentifier('type'),
+          factory.createStringLiteral(toTypeORMType(type), false),
+        ),
+      )
+    }
+    propertyAssignments.push(
+      factory.createPropertyAssignment(factory.createIdentifier('array'), factory.createTrue()),
+    )
+  }
+
+  if (isEnum) {
+    propertyAssignments.push(
+      factory.createPropertyAssignment(
+        factory.createIdentifier('type'),
+        factory.createStringLiteral('enum', false),
       ),
     )
+    propertyAssignments.push(
+      factory.createPropertyAssignment(
+        factory.createIdentifier('enum'),
+        factory.createIdentifier(type),
+      ),
+    )
+  }
+
+  if (propertyAssignments.length) {
+    argumentsArray.push(factory.createObjectLiteralExpression(propertyAssignments, false))
   }
 
   return factory.createDecorator(
@@ -104,7 +124,11 @@ function createClassDecorator(context: Context) {
   )
 }
 
-function processClassDeclaration(classDeclaration: ts.ClassDeclaration, context: Context) {
+function processClassDeclaration(
+  classDeclaration: ts.ClassDeclaration,
+  enums: string[],
+  context: Context,
+) {
   return ts.visitEachChild(
     addDecorator(classDeclaration, createClassDecorator(context)),
     node => {
@@ -114,7 +138,7 @@ function processClassDeclaration(classDeclaration: ts.ClassDeclaration, context:
             transformName(node, toCamelCase),
             context.config.behaviour.nullableByDefault,
           ),
-          createColumnDecorator(node, context),
+          createColumnDecorator(node, enums, context),
         )
       }
       return node
@@ -138,10 +162,11 @@ export async function generateEntity(
 ): Promise<ts.SourceFile> {
   if (!isEntity(sourceFile, config) && !isResponse(sourceFile, config)) return sourceFile
   const context = createContext({ config })
+  const enums = sourceFile.statements.filter(isEnumDeclaration).map(node => getName(node as any))
   const updatedSourcefile = ts.visitEachChild(
     sourceFile,
     node => {
-      if (isClassDeclaration(node)) return processClassDeclaration(node, context)
+      if (isClassDeclaration(node)) return processClassDeclaration(node, enums, context)
       return node
     },
     undefined,

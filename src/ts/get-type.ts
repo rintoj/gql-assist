@@ -47,6 +47,7 @@ export function getPropertyOrMethodType(
   if (node.type) {
     const type = node.type.getText()
     if (isArrayType(node)) return type.replace('[]', '')
+    return type
   }
   if (ts.isMethodDeclaration(node) && node.typeParameters && node.typeParameters.length > 0) {
     return defaultType
