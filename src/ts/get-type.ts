@@ -3,6 +3,9 @@ import { NumericType } from '../config'
 import { getAllTypes } from './get-all-types'
 import { getDecorator } from './get-decorator'
 import { getName } from './get-name'
+import { getTypeChecker } from './get-type-checker'
+import { Context } from '../generator'
+import { isArrayType } from './is-array'
 
 export function getTypeFromDecorator(node: ts.Node, name: string) {
   const decorator = getDecorator(node, name)
@@ -35,4 +38,18 @@ export function getType(
   if (type === 'string') return
   if (type === 'number') return defaultNumericType
   if (type) return type
+}
+
+export function getPropertyOrMethodType(
+  node: ts.PropertyDeclaration | ts.MethodDeclaration,
+  defaultType: string,
+): string {
+  if (node.type) {
+    const type = node.type.getText()
+    if (isArrayType(node)) return type.replace('[]', '')
+  }
+  if (ts.isMethodDeclaration(node) && node.typeParameters && node.typeParameters.length > 0) {
+    return defaultType
+  }
+  return defaultType
 }
