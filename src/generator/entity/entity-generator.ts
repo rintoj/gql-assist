@@ -17,7 +17,6 @@ import {
   getPropertyOrMethodType,
   hasDecorator,
   isArrayType,
-  isEnumType,
   isNullable,
   isNullableFromDecorator,
   isPrimitiveType,
@@ -157,13 +156,14 @@ function getByFromDecorator(node: ts.PropertyDeclaration | ts.MethodDeclaration)
 
 function createOneToManyDecorator(
   node: ts.PropertyDeclaration | ts.MethodDeclaration,
+  enums: string[],
   context: Context,
 ) {
-  const isEnum = isEnumType(node)
   const isArray = isArrayType(node)
   const isReferenceType = !isPrimitiveType(node)
-  if (!isReferenceType || !isArray || isEnum) return
   const type = getPropertyOrMethodType(node, context.config.behaviour.defaultNumberType)
+  const isEnum = enums.includes(type)
+  if (!isReferenceType || !isArray || isEnum) return
   const relatedEntity = type.replace('[]', '')
   context.imports.push(createImport('typeorm', 'OneToMany'))
   const propertyName = getByFromDecorator(node)
@@ -233,12 +233,14 @@ function processClassDeclaration(
     node => {
       if (ts.isPropertyDeclaration(node) && ts.isIdentifier(node.name)) {
         const isArray = isArrayType(node)
-        const isEnum = isEnumType(node)
         const isPrimitive = isPrimitiveType(node)
         const byDecorator = getDecorator(node, 'By')
+        const isEnum = enums.includes(
+          getPropertyOrMethodType(node, context.config.behaviour.defaultNumberType),
+        )
         const decorator =
           byDecorator && !isEnum && isArray
-            ? createOneToManyDecorator(node, context)
+            ? createOneToManyDecorator(node, enums, context)
             : createColumnDecorator(
                 node,
                 isPrimitive || isEnum ? 'Column' : 'ManyToOne',
