@@ -12,6 +12,11 @@ import { Context, createContext } from '../context'
 import { GQLAssistConfig } from '../../config'
 import { isPrivate } from '../../ts'
 
+function isInternalField(node: ts.PropertyDeclaration): boolean {
+  if (isPrivate(node)) return true
+  return hasDecorator(node, 'InternalField')
+}
+
 function processClassDeclaration(classDeclaration: ts.ClassDeclaration, context: Context) {
   return ts.visitEachChild(
     addDecorator(classDeclaration, createClassDecorator(classDeclaration, 'ObjectType', context)),
@@ -33,11 +38,6 @@ function processClassDeclaration(classDeclaration: ts.ClassDeclaration, context:
     },
     undefined,
   )
-}
-
-export function isInternalField(node: ts.PropertyDeclaration): boolean {
-  if (isPrivate(node)) return true
-  return hasDecorator(node, 'Internal') || hasDecorator(node, 'InternalField')
 }
 
 export function isModel(sourceFile: ts.SourceFile, config: GQLAssistConfig): boolean {
