@@ -2,6 +2,7 @@ import { command, input } from 'clifer'
 import { reduceAsync, toNonNullArray } from 'tsds-tools'
 import ts from 'typescript'
 import { GQLAssistConfig, config } from '../../config'
+import { generateEntity } from '../../generator/entity/entity-generator'
 import { generateEnum } from '../../generator/enum/enum-generator'
 import { generateInput } from '../../generator/input/input-generator'
 import { generateModel } from '../../generator/model/model-generator'
@@ -14,7 +15,7 @@ interface GenerateProps {
   ignore?: string
 }
 
-const plugins = [generateModel, generateInput, generateResolver, generateEnum]
+const plugins = [generateModel, generateEntity, generateInput, generateResolver, generateEnum]
 
 export async function generate(sourceFile: ts.SourceFile, config: GQLAssistConfig) {
   return await reduceAsync(
